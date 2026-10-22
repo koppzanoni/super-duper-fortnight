@@ -28,3 +28,5 @@ HUD\Auras.xml
 HUD\Auras.lua
 HUD\Minimap.lua
 HUD\DefaultPositions.lua
+Inventory\Filters.lua
+Inventory\GridModel.lua
