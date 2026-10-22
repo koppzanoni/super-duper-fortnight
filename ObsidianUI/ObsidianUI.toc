@@ -22,3 +22,5 @@ Settings\Settings.lua
 HUD\MenuPanels.lua
 HUD\SpecialBars.lua
 HUD\UnitFrames.lua
+HUD\CastBar.lua
+HUD\ClassResource.lua
