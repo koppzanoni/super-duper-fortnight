@@ -22,3 +22,12 @@ def test_login_and_resize_run_without_errors(lua, ns):
     for ev in ("UNIT_HEALTH", "UNIT_POWER_FREQUENT", "UNIT_DISPLAYPOWER", "UNIT_AURA"):
         lua.execute(f'STUB_FIRE("{ev}", "player")')
     assert ns.HUD.u is not None and ns.HUD.u > 0
+
+
+def test_default_positions_apply_only_once(lua, ns):
+    for f in toc_files():
+        load_addon_file(lua, f, ns)
+    lua.execute('STUB_FIRE("ADDON_LOADED", "ObsidianUI")')
+    assert not ns.db.positioned
+    lua.execute('STUB_FIRE("PLAYER_ENTERING_WORLD")')
+    assert ns.db.positioned is True
