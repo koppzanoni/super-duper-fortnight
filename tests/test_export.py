@@ -49,3 +49,10 @@ def test_export_manifest(tmp_path):
     assert lua_manifest["inventory"]["h"] == 1334
     assert lua_manifest["mask_circle"]["w"] == 256
     assert lua_manifest["gem_on"]["file"] == "Interface\\AddOns\\ObsidianUI\\Media\\gem_on"
+
+
+def test_vignette_dark_edge_clear_center():
+    v = ex.vignette(128)
+    assert v.getpixel((64, 64))[3] == 0
+    assert v.getpixel((64, 2))[3] > 180
+    assert v.getpixel((64, 2))[:3] == (0, 0, 0)

@@ -125,7 +125,19 @@ def aura_border(size=64, width=3):
     return Image.fromarray(a, "RGBA")
 
 
+def vignette(size=256):
+    # Inner shadow for the orbs: clear center, black toward the rim (volume without any reflection).
+    y, x = np.mgrid[0:size, 0:size]
+    c = (size - 1) / 2
+    d = np.sqrt((x - c) ** 2 + (y - c) ** 2) / c
+    alpha = np.clip((d - 0.55) / 0.45, 0, 1) ** 1.6 * 235
+    a = np.zeros((size, size, 4), np.uint8)
+    a[..., 3] = alpha.astype(np.uint8)
+    return Image.fromarray(a, "RGBA")
+
+
 PROCEDURAL = {
+    "vignette": vignette,
     "mask_circle": mask_circle,
     "liquid": liquid,
     "swirl": swirl,

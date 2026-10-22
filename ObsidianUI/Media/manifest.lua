@@ -20,5 +20,6 @@ ns.MediaManifest = {
   unit_small = { file = "Interface\\AddOns\\ObsidianUI\\Media\\unit_small", w = 1274, h = 494, potW = 2048, potH = 512 },
   vbar1 = { file = "Interface\\AddOns\\ObsidianUI\\Media\\vbar1", w = 156, h = 1279, potW = 256, potH = 2048 },
   vbar2 = { file = "Interface\\AddOns\\ObsidianUI\\Media\\vbar2", w = 256, h = 1279, potW = 256, potH = 2048 },
+  vignette = { file = "Interface\\AddOns\\ObsidianUI\\Media\\vignette", w = 256, h = 256, potW = 256, potH = 256 },
   wave = { file = "Interface\\AddOns\\ObsidianUI\\Media\\wave", w = 256, h = 32, potW = 256, potH = 32 },
 }
