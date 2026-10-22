@@ -21,7 +21,7 @@ def load_addon_file(rt, path, ns):
     if not path.is_absolute():
         path = ADDON / path
     chunk = rt.eval("function(src, name) return assert(loadstring(src, name)) end")(
-        path.read_text(encoding="utf-8"), "@" + str(path.relative_to(ROOT)))
+        path.read_text(encoding="utf-8"), "@" + path.name)
     chunk("ObsidianUI", ns)
     return ns
 

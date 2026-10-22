@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from PIL import Image
 
-from conftest import ROOT, new_runtime
+from conftest import ROOT, load_addon_file, new_runtime
 
 sys.path.insert(0, str(ROOT / "tools"))
 import export_textures as ex  # noqa: E402
@@ -42,7 +42,9 @@ def test_export_manifest(tmp_path):
     assert (manifest["hud_connector"]["w"], manifest["hud_connector"]["h"]) == (333, 381)
     assert (tmp_path / "hud_cap.tga").exists()
     rt = new_runtime(with_stub=False)
-    lua_manifest = rt.execute((tmp_path / "manifest.lua").read_text(encoding="utf-8"))
+    ns = rt.table()
+    load_addon_file(rt, tmp_path / "manifest.lua", ns)
+    lua_manifest = ns.MediaManifest
     assert lua_manifest["hud_cap"]["potW"] == 1024
     assert lua_manifest["inventory"]["h"] == 1334
     assert lua_manifest["mask_circle"]["w"] == 256

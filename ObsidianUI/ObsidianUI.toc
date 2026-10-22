@@ -7,4 +7,8 @@
 
 Core\Init.lua
 Core\Resolve.lua
+Core\Layout.lua
+Core\Data.lua
+Media\manifest.lua
+Core\Media.lua
 Core\Diag.lua
