@@ -31,3 +31,18 @@ def test_default_positions_apply_only_once(lua, ns):
     assert not ns.db.positioned
     lua.execute('STUB_FIRE("PLAYER_ENTERING_WORLD")')
     assert ns.db.positioned is True
+
+
+def test_inventory_toggle_opens_and_closes(lua, ns):
+    for f in toc_files():
+        load_addon_file(lua, f, ns)
+    lua.execute('STUB_FIRE("ADDON_LOADED", "ObsidianUI")')
+    lua.execute('STUB_FIRE("PLAYER_LOGIN")')
+    shown = {"v": False}
+    ns.Inventory.frame.Show = lambda self: shown.__setitem__("v", True)
+    ns.Inventory.frame.Hide = lambda self: shown.__setitem__("v", False)
+    ns.Inventory.frame.IsShown = lambda self: shown["v"]
+    ns.Inventory.Toggle()
+    assert shown["v"] is True
+    ns.Inventory.Toggle()
+    assert shown["v"] is False
