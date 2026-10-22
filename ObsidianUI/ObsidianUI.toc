@@ -16,3 +16,4 @@ Core\HideBlizzard.lua
 HUD\Bottom.lua
 HUD\XPBar.lua
 HUD\Orbs.lua
+HUD\ActionBars.lua
