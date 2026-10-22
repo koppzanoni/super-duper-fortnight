@@ -1,0 +1,5 @@
+.meshy-key.txt
+.superpowers/
+__pycache__/
+.pytest_cache/
+art/meshy/
