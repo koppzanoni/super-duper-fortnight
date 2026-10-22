@@ -36,6 +36,7 @@ end
 -- Widths of the connector tiles that fill a gap; the last one is cut to fit.
 function Layout.ConnectorPieces(stretch, tileW)
   local pieces = {}
+  if tileW <= 0 then return pieces end
   local left = stretch
   while left > 0.01 do
     local w = math.min(tileW, left)

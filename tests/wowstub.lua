@@ -5,6 +5,9 @@ local stubmt = {}
 local function newstub() return setmetatable({}, stubmt) end
 stubmt.__index = function(t, k) local s = newstub(); rawset(t, k, s); return s end
 stubmt.__call = function() return newstub() end
+local function zero() return 0 end
+stubmt.__add, stubmt.__sub, stubmt.__mul, stubmt.__div, stubmt.__unm = zero, zero, zero, zero, zero
+stubmt.__concat = function() return "" end
 
 STUB_EVENTS = {}
 
@@ -14,6 +17,11 @@ function CreateFrame()
   f.SetScript = function(self, name, fn) self.handlers[name] = fn end
   f.GetScript = function(self, name) return self.handlers[name] end
   f.RegisterEvent = function(self, ev) STUB_EVENTS[#STUB_EVENTS + 1] = { frame = self, event = ev } end
+  f.GetFrameLevel = function() return 1 end
+  f.GetSize = function() return 1920, 1080 end
+  f.GetWidth = function() return 1920 end
+  f.GetHeight = function() return 1080 end
+  f.IsProtected = function() return false end
   return f
 end
 
@@ -27,11 +35,22 @@ end
 STUB_COMBAT = false
 function InCombatLockdown() return STUB_COMBAT end
 SlashCmdList = {}
+UIParent = CreateFrame()
 UISpecialFrames = {}
 Enum = { PowerType = { Mana = 0, Rage = 1, Focus = 2, Energy = 3, ComboPoints = 4, Runes = 5, RunicPower = 6,
   SoulShards = 7, HolyPower = 9, Chi = 12, ArcaneCharges = 16 } }
 PowerBarColor = setmetatable({}, { __index = function() return { r = 0.5, g = 0.5, b = 0.5 } end })
 function hooksecurefunc() end
 function print() end
+-- Plain numbers for APIs the addon does math with (non-secret values only).
+function UnitLevel() return 10 end
+function GetMaxPlayerLevel() return 60 end
+function UnitXP() return 300 end
+function UnitXPMax() return 1000 end
+function GetXPExhaustion() return nil end
 
-setmetatable(_G, { __index = function(t, k) local s = newstub(); rawset(t, k, s); return s end })
+-- Saved variables start as nil in the game; everything else unknown becomes a stub.
+setmetatable(_G, { __index = function(t, k)
+  if type(k) == "string" and k:find("^ObsidianUI") then return nil end
+  local s = newstub(); rawset(t, k, s); return s
+end })

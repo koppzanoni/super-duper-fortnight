@@ -6,3 +6,12 @@ def test_every_toc_file_loads(lua, ns):
     assert files, "the .toc lists no Lua files"
     for f in files:
         load_addon_file(lua, f, ns)
+
+
+def test_login_and_resize_run_without_errors(lua, ns):
+    for f in toc_files():
+        load_addon_file(lua, f, ns)
+    lua.execute('STUB_FIRE("ADDON_LOADED", "ObsidianUI")')
+    lua.execute('STUB_FIRE("PLAYER_LOGIN")')
+    lua.execute('STUB_FIRE("DISPLAY_SIZE_CHANGED")')
+    assert ns.HUD.u is not None and ns.HUD.u > 0

@@ -12,3 +12,6 @@ Core\Data.lua
 Media\manifest.lua
 Core\Media.lua
 Core\Diag.lua
+Core\HideBlizzard.lua
+HUD\Bottom.lua
+HUD\XPBar.lua
