@@ -26,3 +26,4 @@ HUD\CastBar.lua
 HUD\ClassResource.lua
 HUD\Auras.xml
 HUD\Auras.lua
+HUD\Minimap.lua

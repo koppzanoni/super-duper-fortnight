@@ -3,7 +3,11 @@
 -- on a missing API. Tests that need real behavior replace specific globals.
 local stubmt = {}
 local function newstub() return setmetatable({}, stubmt) end
-stubmt.__index = function(t, k) local s = newstub(); rawset(t, k, s); return s end
+local NUMERIC = { GetWidth = 32, GetHeight = 32, GetFrameLevel = 1, GetScale = 1 }
+stubmt.__index = function(t, k)
+  if NUMERIC[k] then local v = NUMERIC[k]; return function() return v end end
+  local s = newstub(); rawset(t, k, s); return s
+end
 stubmt.__call = function() return newstub() end
 local function zero() return 0 end
 stubmt.__add, stubmt.__sub, stubmt.__mul, stubmt.__div, stubmt.__unm = zero, zero, zero, zero, zero
