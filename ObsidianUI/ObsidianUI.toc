@@ -31,3 +31,4 @@ HUD\DefaultPositions.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Window.lua
+Inventory\BagGrid.lua

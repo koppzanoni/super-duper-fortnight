@@ -52,6 +52,17 @@ function GetMaxPlayerLevel() return 60 end
 function UnitXP() return 300 end
 function UnitXPMax() return 1000 end
 function GetXPExhaustion() return nil end
+STUB_TIME = 100
+function GetTime() return STUB_TIME end
+C_Container = {
+  GetContainerNumSlots = function(bag) if bag <= 4 then return 4 end return 0 end,
+  GetContainerItemInfo = function(bag, slot)
+    if bag == 0 and slot == 1 then return { iconFileID = 1, stackCount = 5, quality = 2, itemID = 25 } end
+    return nil
+  end,
+  ContainerIDToInventoryID = function(bag) return 30 + bag end,
+}
+C_Item = { GetItemInfoInstant = function(id) return id, "", "", "", 1, 2, 0 end }
 
 -- Saved variables start as nil in the game; everything else unknown becomes a stub.
 setmetatable(_G, { __index = function(t, k)
