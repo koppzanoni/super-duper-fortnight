@@ -76,7 +76,9 @@ function ActionBars.UpdateBindings()
     for _, b in ipairs(ActionBars.buttons) do
       local key1, key2 = GetBindingKey(b.binding)
       for _, key in ipairs({ key1, key2 }) do
-        if key then SetOverrideBindingClick(bindingOwner, false, key, b:GetName(), "LeftButton") end
+        if key and b.obEnabled ~= false then
+          SetOverrideBindingClick(bindingOwner, false, key, b:GetName(), "LeftButton")
+        end
       end
       local hotkey = b.HotKey or _G[b:GetName() .. "HotKey"]
       if hotkey then hotkey:SetText(key1 and GetBindingText(key1, true) or "") end

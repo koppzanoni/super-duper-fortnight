@@ -64,7 +64,9 @@ SlashCmdList.OBSIDIANUI = function(msg)
   if msg == "diag" then
     armed = true
     run()
+  elseif msg == "config" then
+    ns.OpenSettings()
   else
-    out("comandos: /obui diag")
+    out("comandos: /obui diag, /obui config")
   end
 end

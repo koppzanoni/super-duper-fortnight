@@ -17,3 +17,5 @@ HUD\Bottom.lua
 HUD\XPBar.lua
 HUD\Orbs.lua
 HUD\ActionBars.lua
+HUD\VerticalBars.lua
+Settings\Settings.lua
