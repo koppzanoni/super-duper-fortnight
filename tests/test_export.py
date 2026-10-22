@@ -56,3 +56,10 @@ def test_vignette_dark_edge_clear_center():
     assert v.getpixel((64, 64))[3] == 0
     assert v.getpixel((64, 2))[3] > 180
     assert v.getpixel((64, 2))[:3] == (0, 0, 0)
+
+
+def test_ring_glow_peaks_near_rim():
+    r = ex.ring_glow(128)
+    assert r.getpixel((64, 64))[3] == 0
+    rim = max(r.getpixel((64, y))[3] for y in range(0, 12))
+    assert rim > 200

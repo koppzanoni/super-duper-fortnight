@@ -21,3 +21,4 @@ HUD\VerticalBars.lua
 Settings\Settings.lua
 HUD\MenuPanels.lua
 HUD\SpecialBars.lua
+HUD\UnitFrames.lua

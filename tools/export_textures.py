@@ -136,7 +136,20 @@ def vignette(size=256):
     return Image.fromarray(a, "RGBA")
 
 
+def ring_glow(size=256):
+    # Thin soft ring at the rim; tinted by classification (elite purple, rare silver).
+    y, x = np.mgrid[0:size, 0:size]
+    c = (size - 1) / 2
+    d = np.sqrt((x - c) ** 2 + (y - c) ** 2) / c
+    alpha = np.exp(-((d - 0.93) / 0.045) ** 2) * 255
+    a = np.zeros((size, size, 4), np.uint8)
+    a[..., :3] = 255
+    a[..., 3] = alpha.astype(np.uint8)
+    return Image.fromarray(a, "RGBA")
+
+
 PROCEDURAL = {
+    "ring_glow": ring_glow,
     "vignette": vignette,
     "mask_circle": mask_circle,
     "liquid": liquid,
