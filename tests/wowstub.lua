@@ -1,0 +1,37 @@
+-- Permissive stand-in for the WoW API so addon files can be loaded outside the game.
+-- Any unknown global, field or call returns another stub, so load-time code never errors
+-- on a missing API. Tests that need real behavior replace specific globals.
+local stubmt = {}
+local function newstub() return setmetatable({}, stubmt) end
+stubmt.__index = function(t, k) local s = newstub(); rawset(t, k, s); return s end
+stubmt.__call = function() return newstub() end
+
+STUB_EVENTS = {}
+
+function CreateFrame()
+  local f = newstub()
+  f.handlers = {}
+  f.SetScript = function(self, name, fn) self.handlers[name] = fn end
+  f.GetScript = function(self, name) return self.handlers[name] end
+  f.RegisterEvent = function(self, ev) STUB_EVENTS[#STUB_EVENTS + 1] = { frame = self, event = ev } end
+  return f
+end
+
+-- Fire an event on every stub frame that registered it.
+function STUB_FIRE(event, ...)
+  for _, r in ipairs(STUB_EVENTS) do
+    if r.event == event and r.frame.handlers.OnEvent then r.frame.handlers.OnEvent(r.frame, event, ...) end
+  end
+end
+
+STUB_COMBAT = false
+function InCombatLockdown() return STUB_COMBAT end
+SlashCmdList = {}
+UISpecialFrames = {}
+Enum = { PowerType = { Mana = 0, Rage = 1, Focus = 2, Energy = 3, ComboPoints = 4, Runes = 5, RunicPower = 6,
+  SoulShards = 7, HolyPower = 9, Chi = 12, ArcaneCharges = 16 } }
+PowerBarColor = setmetatable({}, { __index = function() return { r = 0.5, g = 0.5, b = 0.5 } end })
+function hooksecurefunc() end
+function print() end
+
+setmetatable(_G, { __index = function(t, k) local s = newstub(); rawset(t, k, s); return s end })

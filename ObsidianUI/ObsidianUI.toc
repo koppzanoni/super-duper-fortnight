@@ -1,0 +1,10 @@
+## Interface: 16001, 120105
+## Title: ObsidianUI
+## Notes: HUD e inventário em pedra e bronze, estilo Path of Exile 2.
+## Author: Arthur
+## Version: 0.1.0
+## SavedVariables: ObsidianUIDB
+
+Core\Init.lua
+Core\Resolve.lua
+Core\Diag.lua
