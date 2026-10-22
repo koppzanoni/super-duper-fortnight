@@ -20,3 +20,4 @@ HUD\ActionBars.lua
 HUD\VerticalBars.lua
 Settings\Settings.lua
 HUD\MenuPanels.lua
+HUD\SpecialBars.lua
