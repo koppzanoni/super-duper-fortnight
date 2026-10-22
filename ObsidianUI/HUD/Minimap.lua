@@ -2,8 +2,15 @@ local _, ns = ...
 
 -- Round minimap in the thin stone ring (spec 7.1), top-right corner.
 local S = ns.Data.MINIMAP
+local WIDTH = 0.222 -- of the screen height
 local container = CreateFrame("Frame", "ObsidianUIMinimap", UIParent)
 container:SetFrameStrata("LOW")
+ns.Minimap = { frame = container }
+
+function ns.Minimap.Width()
+  local _, H = UIParent:GetSize()
+  return WIDTH * H
+end
 local ringFrame = CreateFrame("Frame", nil, container)
 local ring = ringFrame:CreateTexture(nil, "ARTWORK")
 ring:SetAllPoints(container)
@@ -12,19 +19,11 @@ zone:SetTextColor(0.91, 0.77, 0.42)
 local sockets = {}
 for i = 1, 4 do sockets[i] = CreateFrame("Frame", nil, ringFrame) end
 
-local function nested(...)
-  local obj = _G
-  for i = 1, select("#", ...) do
-    obj = obj and obj[select(i, ...)]
-  end
-  return obj
-end
-
 local function socketTargets()
   return {
     ns.Resolve.First(ns.Data.FRAME_CANDIDATES.clock),
-    ns.Resolve.First(ns.Data.FRAME_CANDIDATES.mail) or nested("MinimapCluster", "IndicatorFrame", "MailFrame"),
-    ns.Resolve.First(ns.Data.FRAME_CANDIDATES.tracking) or nested("MinimapCluster", "Tracking"),
+    ns.Resolve.First(ns.Data.FRAME_CANDIDATES.mail) or ns.Resolve.Nested("MinimapCluster", "IndicatorFrame", "MailFrame"),
+    ns.Resolve.First(ns.Data.FRAME_CANDIDATES.tracking) or ns.Resolve.Nested("MinimapCluster", "Tracking"),
     ns.Resolve.First(ns.Data.FRAME_CANDIDATES.calendar),
   }
 end
@@ -33,7 +32,7 @@ local function updateZone() zone:SetText(GetMinimapZoneText() or "") end
 
 local function layout()
   local _, H = UIParent:GetSize()
-  local w = 0.222 * H
+  local w = WIDTH * H
   local u = w / S.w
   container:ClearAllPoints()
   container:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -0.012 * H, -0.02 * H)

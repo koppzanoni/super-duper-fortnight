@@ -31,6 +31,21 @@ local function apply()
   end
 end
 
+-- /obui reset: forget the dragged inventory spot and put the default frames back.
+function ns.ResetPositions()
+  if not ns.db then return end
+  ns.db.invPos = nil
+  ns.RunOutOfCombat(function()
+    apply()
+    ns.db.positioned = true
+    moveChat()
+    if ns.Inventory then
+      ns.Inventory.frame.obPlaced = false
+      ns.Inventory.Layout()
+    end
+  end)
+end
+
 ns.On("PLAYER_ENTERING_WORLD", function()
   ns.RunOutOfCombat(moveChat)
   if not ns.db or ns.db.positioned then return end

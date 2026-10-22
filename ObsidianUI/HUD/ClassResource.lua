@@ -2,6 +2,14 @@ local _, ns = ...
 
 -- Class resource gems between the cast bar and the action bar. Hidden for classes without one.
 local MAX_GEMS = 10
+local SIZE, GAP = 0.033, 0.005 -- of the screen height
+ns.ClassResource = {}
+
+-- Half the width of a row of `count` gems, for frames placed beside it.
+function ns.ClassResource.HalfWidth(count)
+  local _, H = UIParent:GetSize()
+  return (count * SIZE + (count - 1) * GAP) * H / 2
+end
 local holder = CreateFrame("Frame", "ObsidianUIClassResource", UIParent)
 holder:SetFrameStrata("LOW")
 local gems = {}
@@ -22,7 +30,7 @@ local function layoutGems(count)
   if count == shownCount then return end
   shownCount = count
   local _, H = UIParent:GetSize()
-  local size, gap = 0.033 * H, 0.005 * H
+  local size, gap = SIZE * H, GAP * H
   local total = count * size + (count - 1) * gap
   holder:ClearAllPoints()
   holder:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, ns.Stack.BarTop() + 34)

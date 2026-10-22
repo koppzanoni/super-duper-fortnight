@@ -79,6 +79,14 @@ function Data.DebuffColor(dispelName)
   return c[1], c[2], c[3]
 end
 
+-- State icons in the health orb: combat replaces resting (like the player frame), then leader.
+function Data.PlayerStatusIcons(inCombat, resting, leader)
+  local list = {}
+  if inCombat then list[#list + 1] = "combat" elseif resting then list[#list + 1] = "rest" end
+  if leader then list[#list + 1] = "leader" end
+  return list
+end
+
 -- x offset for a SecureAuraHeader anchored by its first icon's TOP, so a row of `count`
 -- icons (wrapping after `wrapAfter`) is centered on the anchor.
 function Data.AuraRowOffset(count, wrapAfter, step)
@@ -186,4 +194,9 @@ Data.FRAME_CANDIDATES = {
   calendar = { "GameTimeFrame" },
   objectivetracker = { "ObjectiveTrackerFrame", "QuestWatchFrame" },
   combinedbags = { "ContainerFrameCombinedBags" },
+  queue = { "QueueStatusButton", "QueueStatusMinimapButton", "MiniMapLFGFrame" },
+  difficulty = { "MiniMapInstanceDifficulty" },
+  durability = { "DurabilityFrame" },
+  lootrolls = { "GroupLootContainer" },
+  mirrortimers = { "MirrorTimerContainer", "MirrorTimer1" },
 }

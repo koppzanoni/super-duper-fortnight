@@ -110,3 +110,7 @@ TargetFrameSpellBar:SetMinMaxValues(0, 1); TargetFrameSpellBar:SetValue(0.35)
 TargetFrameSpellBar.Text = TargetFrameSpellBar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 TargetFrameSpellBar.Text:SetText("Uivo Aterrorizante")
 TargetFrameSpellBar.Text:SetPoint("CENTER")
+-- Player state shown in the health orb: in combat and leading a group.
+function UnitAffectingCombat(u) return u == "player" end
+function IsResting() return false end
+function UnitIsGroupLeader(u) return u == "player" end

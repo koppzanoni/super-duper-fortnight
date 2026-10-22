@@ -5,7 +5,14 @@ local _, ns = ...
 local M = ns.MediaManifest
 local S = ns.Data.CASTBAR
 local art
+local WIDTH = 0.47 -- of the screen height
 ns.CastBar = {}
+
+-- Half the cast bar art width, for frames placed beside it.
+function ns.CastBar.HalfWidth()
+  local _, H = UIParent:GetSize()
+  return WIDTH * H / 2
+end
 
 local function castbar() return ns.Resolve.First(ns.Data.FRAME_CANDIDATES.castbar) end
 
@@ -24,7 +31,7 @@ local function layout()
   local bar = castbar()
   if not bar then return end
   local _, H = UIParent:GetSize()
-  local w = 0.47 * H
+  local w = WIDTH * H
   local u = w / S.w
   if not art then
     art = CreateFrame("Frame", nil, bar)

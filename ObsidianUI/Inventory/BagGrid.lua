@@ -144,6 +144,17 @@ local function relayout()
   child:SetSize(Inventory.gridArea:GetWidth(), ns.GridModel.Rows(#visible, COLS) * pitchY)
 end
 
+-- Item buttons may only move out of combat: lay out now, or once when combat ends.
+local relayoutQueued = false
+local function scheduleRelayout()
+  if relayoutQueued then return end
+  relayoutQueued = true
+  ns.RunOutOfCombat(function()
+    relayoutQueued = false
+    relayout()
+  end)
+end
+
 local function refreshVisuals()
   for _, bag in ipairs(BAGS) do
     for slot, b in pairs(buttons[bag]) do
@@ -159,7 +170,7 @@ local function setTab(tab)
   for _, t in ipairs(tabs) do
     if t.tab == tab then t.text:SetTextColor(1, 0.82, 0) else t.text:SetTextColor(0.73, 0.68, 0.58) end
   end
-  ns.RunOutOfCombat(relayout)
+  scheduleRelayout()
 end
 for i, tab in ipairs(ns.Filters.TABS) do
   local t = CreateFrame("Button", nil, frame)
@@ -250,17 +261,24 @@ Inventory.onOpen = function()
   updateFooter()
 end
 
+-- The grid stays laid out while the window is closed, so opening it in combat (when item
+-- buttons cannot move) still shows every item.
 ns.On("BAG_UPDATE_DELAYED", function()
+  scheduleRelayout()
   if not frame:IsShown() then return end
   refreshVisuals()
-  ns.RunOutOfCombat(relayout)
   updateFooter()
 end)
 ns.On("ITEM_LOCK_CHANGED", function() if frame:IsShown() then refreshVisuals() end end)
 ns.On("BAG_UPDATE_COOLDOWN", function() if frame:IsShown() then refreshVisuals() end end)
 ns.On("INVENTORY_SEARCH_UPDATE", function() if frame:IsShown() then refreshVisuals() end end)
 ns.On("PLAYER_MONEY", function() if frame:IsShown() then updateFooter() end end)
-ns.On("PLAYER_LOGIN", function() ns.RunOutOfCombat(ensureButtons) end)
+ns.On("PLAYER_LOGIN", function()
+  ns.RunOutOfCombat(function()
+    Inventory.Layout()
+    scheduleRelayout()
+  end)
+end)
 
 -- Default bag frames stay hidden; every bag toggle opens/closes this window instead.
 -- The window is the source of truth: opening/closing it also tells Blizzard, so B never needs

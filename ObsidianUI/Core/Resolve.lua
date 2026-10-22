@@ -11,3 +11,12 @@ function ns.Resolve.First(names, env)
   end
   return nil
 end
+
+-- _G.a.b.c, or nil as soon as one link is missing.
+function ns.Resolve.Nested(...)
+  local obj = _G
+  for i = 1, select("#", ...) do
+    obj = obj and obj[select(i, ...)]
+  end
+  return obj
+end

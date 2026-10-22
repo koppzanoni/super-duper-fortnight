@@ -13,27 +13,11 @@ function ns.Stack.BarTop()
   return (HUD.h or 0) - BAR_TOP_TEX_Y * (HUD.u or 0)
 end
 
-local moved = {}
-
 local function pin(key, point, x, yAboveBar)
-  local frame = ns.Resolve.First(ns.Data.FRAME_CANDIDATES[key])
-  if not frame then return end
-  local entry = moved[key] or { frame = frame }
-  entry.point, entry.x, entry.y = point, x, yAboveBar
-  if not moved[key] then
-    moved[key] = entry
-    hooksecurefunc(frame, "SetPoint", function(self)
-      if entry.applying or InCombatLockdown() then return end
-      entry.applying = true
-      self:ClearAllPoints()
-      self:SetPoint(entry.point, UIParent, "BOTTOM", entry.x, ns.Stack.BarTop() + entry.y)
-      entry.applying = false
-    end)
-  end
-  entry.applying = true
-  frame:ClearAllPoints()
-  frame:SetPoint(point, UIParent, "BOTTOM", x, ns.Stack.BarTop() + yAboveBar)
-  entry.applying = false
+  ns.Pin(ns.Resolve.First(ns.Data.FRAME_CANDIDATES[key]), function(frame)
+    frame:ClearAllPoints()
+    frame:SetPoint(point, UIParent, "BOTTOM", x, ns.Stack.BarTop() + yAboveBar)
+  end)
 end
 
 local function hideArt(frame)
@@ -46,11 +30,14 @@ end
 
 local function layout()
   ns.RunOutOfCombat(function()
-    pin("stancebar", "BOTTOMRIGHT", -12, 6)
-    pin("petbar", "BOTTOMLEFT", 12, 6)
+    -- Stance (left) and pet (right) bars start past the widest gem row (6 runes).
+    local gems = ns.ClassResource.HalfWidth(6) + 8
+    pin("stancebar", "BOTTOMRIGHT", -gems, 6)
+    pin("petbar", "BOTTOMLEFT", gems, 6)
     pin("extrabutton", "BOTTOMRIGHT", -8, 150)
     pin("zoneability", "BOTTOMLEFT", 8, 150)
-    pin("vehicleleave", "BOTTOMLEFT", 0.12 * (HUD.W or 1920), 92)
+    -- Vehicle exit just right of the cast bar, at its height.
+    pin("vehicleleave", "BOTTOMLEFT", ns.CastBar.HalfWidth() + 8, 70)
     hideArt(ns.Resolve.First(ns.Data.FRAME_CANDIDATES.stancebar))
     hideArt(ns.Resolve.First(ns.Data.FRAME_CANDIDATES.petbar))
     hideArt(ns.Resolve.First(ns.Data.FRAME_CANDIDATES.extrabutton))

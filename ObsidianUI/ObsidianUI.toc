@@ -13,6 +13,7 @@ Media\manifest.lua
 Core\Media.lua
 Core\Diag.lua
 Core\HideBlizzard.lua
+Core\Pin.lua
 HUD\Bottom.lua
 HUD\XPBar.lua
 HUD\Orbs.lua
@@ -27,6 +28,8 @@ HUD\ClassResource.lua
 HUD\Auras.xml
 HUD\Auras.lua
 HUD\Minimap.lua
+HUD\Extras.lua
+HUD\PlayerStatus.lua
 HUD\DefaultPositions.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua

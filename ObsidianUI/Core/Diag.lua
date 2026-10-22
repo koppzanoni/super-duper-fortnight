@@ -66,7 +66,10 @@ SlashCmdList.OBSIDIANUI = function(msg)
     run()
   elseif msg == "config" then
     ns.OpenSettings()
+  elseif msg == "reset" then
+    ns.ResetPositions()
+    out("posições restauradas.")
   else
-    out("comandos: /obui diag, /obui config")
+    out("comandos: /obui diag, /obui config, /obui reset")
   end
 end
