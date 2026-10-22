@@ -24,3 +24,5 @@ HUD\SpecialBars.lua
 HUD\UnitFrames.lua
 HUD\CastBar.lua
 HUD\ClassResource.lua
+HUD\Auras.xml
+HUD\Auras.lua

@@ -30,7 +30,7 @@ def toc_files():
     files = []
     for line in (ADDON / "ObsidianUI.toc").read_text(encoding="utf-8").splitlines():
         line = line.strip()
-        if not line or line.startswith("#") or line.startswith("Libs"):
+        if not line or line.startswith("#") or line.startswith("Libs") or not line.endswith(".lua"):
             continue
         files.append(line.replace("\\", "/"))
     return files
