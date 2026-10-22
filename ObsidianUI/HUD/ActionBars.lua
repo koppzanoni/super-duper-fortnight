@@ -46,6 +46,13 @@ function ActionBars.CreateButton(parent, name, actionID, binding)
     end
   end)
   skin(b)
+  -- Blizzard's UpdateHotkeys does not know our bindings and blanks the text: put ours back.
+  if type(b.UpdateHotkeys) == "function" then
+    hooksecurefunc(b, "UpdateHotkeys", function(self)
+      local hotkey = self.HotKey or _G[self:GetName() .. "HotKey"]
+      if hotkey and self.obHotkey then hotkey:SetText(self.obHotkey) end
+    end)
+  end
   ActionBars.buttons[#ActionBars.buttons + 1] = b
   return b
 end
@@ -85,8 +92,9 @@ function ActionBars.UpdateBindings()
           SetOverrideBindingClick(bindingOwner, false, key, b:GetName(), "LeftButton")
         end
       end
+      b.obHotkey = key1 and GetBindingText(key1, true) or ""
       local hotkey = b.HotKey or _G[b:GetName() .. "HotKey"]
-      if hotkey then hotkey:SetText(key1 and GetBindingText(key1, true) or "") end
+      if hotkey then hotkey:SetText(b.obHotkey) end
     end
   end)
 end

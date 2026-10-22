@@ -14,6 +14,7 @@ frame:SetMovable(true)
 frame:SetClampedToScreen(true)
 frame:EnableMouse(true)
 frame:Hide()
+frame.obPlaced = false
 Inventory.frame = frame
 table.insert(UISpecialFrames, "ObsidianUIInventory")
 
@@ -33,7 +34,10 @@ local title = CreateFrame("Frame", nil, frame)
 title:EnableMouse(true)
 title:RegisterForDrag("LeftButton")
 title:SetScript("OnDragStart", function() frame:StartMoving() end)
-title:SetScript("OnDragStop", function() frame:StopMovingOrSizing() end)
+title:SetScript("OnDragStop", function()
+  frame:StopMovingOrSizing()
+  Inventory.SavePosition()
+end)
 local titleText = title:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 titleText:SetAllPoints(title)
 titleText:SetText("PERSONAGEM")
@@ -159,7 +163,7 @@ end
 local function smallButton(label, onClick)
   local b = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
   b:SetText(label)
-  b:SetSize(84, 20)
+  b:SetSize(70, 20)
   b:SetScript("OnClick", onClick)
   return b
 end
@@ -173,13 +177,32 @@ tokenButton:SetPoint("LEFT", repButton, "RIGHT", 4, 0)
 -- Area the bag grid fills (8 columns x 6 visible rows).
 Inventory.gridArea = CreateFrame("Frame", nil, frame)
 
+-- Default spot: above the bottom HUD and left of the minimap, never under either of them.
+-- The window shrinks when a large HUD scale leaves less room.
+function Inventory.DefaultPlacement(W, H, hudH)
+  local h = math.min(0.72 * H, H - hudH - 0.06 * H)
+  return "BOTTOMRIGHT", -0.27 * H, hudH + 0.02 * H, h
+end
+
+-- Where the player dragged the window, kept across sessions.
+function Inventory.SavePosition()
+  local point, _, relPoint, x, y = frame:GetPoint()
+  if not point or not ns.db then return end
+  ns.db.invPos = { point = point, relPoint = relPoint or point, x = x, y = y }
+end
+
 function Inventory.Layout()
-  local _, H = UIParent:GetSize()
-  local h = 0.72 * H
+  local W, H = UIParent:GetSize()
+  local point, x, y, h = Inventory.DefaultPlacement(W, H, ns.HUD.h or 0.25 * H)
   frame:SetSize(h * S.w / S.h, h)
   if not frame.obPlaced then
     frame:ClearAllPoints()
-    frame:SetPoint("RIGHT", UIParent, "RIGHT", -0.12 * H, 0)
+    local pos = ns.db and ns.db.invPos
+    if pos then
+      frame:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y)
+    else
+      frame:SetPoint(point, UIParent, point, x, y)
+    end
     frame.obPlaced = true
   end
   ns.Media.Apply(art, "inventory")

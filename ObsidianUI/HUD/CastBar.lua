@@ -5,6 +5,7 @@ local _, ns = ...
 local M = ns.MediaManifest
 local S = ns.Data.CASTBAR
 local art
+ns.CastBar = {}
 
 local function castbar() return ns.Resolve.First(ns.Data.FRAME_CANDIDATES.castbar) end
 
@@ -17,6 +18,7 @@ local function reskin(bar)
     if region and region.SetAlpha then region:SetAlpha(0) end
   end
 end
+ns.CastBar.Reskin = reskin
 
 local function layout()
   local bar = castbar()

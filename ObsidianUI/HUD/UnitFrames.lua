@@ -79,14 +79,32 @@ function UnitFrames.Create(unit, kind)
     setRect(self.name, self, k.spec, k.spec.name, w, h)
   end
 
+  f:SetScript("OnEnter", function(self)
+    GameTooltip_SetDefaultAnchor(GameTooltip, self)
+    if GameTooltip:SetUnit(self.unit) then GameTooltip:Show() end
+  end)
+  f:SetScript("OnLeave", GameTooltip_Hide)
+
   RegisterUnitWatch(f)
   UnitFrames.frames[unit] = f
   return f
 end
 
+local function healthColor(unit)
+  local classColor
+  if UnitIsPlayer(unit) then
+    local _, classToken = UnitClass(unit)
+    classColor = classToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken]
+  end
+  return ns.Data.HealthColor(UnitIsTapDenied(unit), classColor, UnitReaction(unit, "player"))
+end
+
 local function updateValues(f)
   local unit = f.unit
   if not UnitExists(unit) then return end
+  -- Unit flags can be secret on some units: keep the last color instead of erroring.
+  local ok, r, g, b = pcall(healthColor, unit)
+  if ok and type(r) == "number" then f.health:SetStatusBarColor(r, g, b) end
   f.health:SetMinMaxValues(0, UnitHealthMax(unit))
   f.health:SetValue(UnitHealth(unit))
   local pType, token = UnitPowerType(unit)
@@ -172,6 +190,46 @@ local function updateTargetDebuffs()
   end
 end
 
+-- Blizzard's target/focus cast bars (secret-aware timing) lived inside the frames we hide:
+-- move them under ours and keep them there when Blizzard re-anchors them.
+local castbars = {}
+local function placeCastbar(bar, f)
+  bar.obApplying = true
+  bar:ClearAllPoints()
+  bar:SetPoint("TOPLEFT", f.health, "BOTTOMLEFT", 0, -f:GetHeight() * (f.kind == "large" and 0.46 or 0.30))
+  bar:SetSize(f.health:GetWidth(), math.max(8, f:GetHeight() * 0.08))
+  bar.obApplying = false
+end
+
+local function adoptCastbar(key, f)
+  local bar = ns.Resolve.First(ns.Data.FRAME_CANDIDATES[key])
+  if not bar or not f then return end
+  if not castbars[key] then
+    castbars[key] = { bar = bar, frame = f }
+    bar:SetParent(f)
+    if bar.SetFrameLevel then bar:SetFrameLevel(f:GetFrameLevel() + 4) end
+    hooksecurefunc(bar, "SetPoint", function(self)
+      if self.obApplying then return end
+      placeCastbar(self, f)
+    end)
+    -- Dark well with a thin bronze edge, like the other bars.
+    local edge = bar:CreateTexture(nil, "BACKGROUND", nil, -8)
+    edge:SetPoint("TOPLEFT", -2, 2)
+    edge:SetPoint("BOTTOMRIGHT", 2, -2)
+    edge:SetColorTexture(0.54, 0.43, 0.23, 1)
+    local well = bar:CreateTexture(nil, "BACKGROUND", nil, -7)
+    well:SetPoint("TOPLEFT", -1, 1)
+    well:SetPoint("BOTTOMRIGHT", 1, -1)
+    well:SetColorTexture(0.02, 0.024, 0.031, 1)
+    if ns.CastBar and ns.CastBar.Reskin then
+      ns.CastBar.Reskin(bar)
+      bar:HookScript("OnEvent", ns.CastBar.Reskin)
+      bar:HookScript("OnShow", ns.CastBar.Reskin)
+    end
+  end
+  placeCastbar(bar, f)
+end
+
 local function layout()
   local W, H = UIParent:GetSize()
   local s = H / 900
@@ -182,6 +240,14 @@ local function layout()
   focus:ClearAllPoints(); focus:SetPoint("TOPLEFT", target, "BOTTOMLEFT", 20 * s, -34 * s)
   tot:ClearAllPoints(); tot:SetPoint("TOPLEFT", target, "TOPRIGHT", 8 * s, -18 * s)
   pet:ClearAllPoints(); pet:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0.012 * W, (ns.HUD.h or 0) + 6 * s)
+  adoptCastbar("targetcastbar", target)
+  adoptCastbar("focuscastbar", focus)
+end
+
+-- Fill every frame now: after /reload or a zone change no "target changed" event comes.
+local function refreshAll()
+  for _, f in pairs(UnitFrames.frames) do updateAll(f) end
+  updateTargetDebuffs()
 end
 
 ns.On("PLAYER_LOGIN", function()
@@ -191,9 +257,11 @@ ns.On("PLAYER_LOGIN", function()
     UnitFrames.Create("targettarget", "tiny")
     UnitFrames.Create("pet", "tiny")
     layout()
+    refreshAll()
     table.insert(ns.HUD.onResize, function() ns.RunOutOfCombat(layout) end)
   end)
 end)
+ns.On("PLAYER_ENTERING_WORLD", refreshAll)
 
 local function refresh(unit) local f = UnitFrames.frames[unit]; if f then updateAll(f) end end
 ns.On("PLAYER_TARGET_CHANGED", function() refresh("target"); refresh("targettarget"); updateTargetDebuffs() end)
@@ -206,6 +274,7 @@ end
 ns.On("UNIT_NAME_UPDATE", function(_, unit) refresh(unit) end)
 ns.On("UNIT_PORTRAIT_UPDATE", function(_, unit) refresh(unit) end)
 ns.On("UNIT_CLASSIFICATION_CHANGED", function(_, unit) refresh(unit) end)
+ns.On("UNIT_FACTION", function(_, unit) local f = UnitFrames.frames[unit]; if f then updateValues(f) end end)
 ns.On("UNIT_AURA", function(_, unit) if unit == "target" then updateTargetDebuffs() end end)
 
 -- Target-of-target has no reliable events; poll it gently.

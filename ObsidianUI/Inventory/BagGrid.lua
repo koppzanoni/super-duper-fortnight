@@ -24,6 +24,7 @@ for _, bag in ipairs(BAGS) do
 end
 
 local activeTab = "all"
+local searchText = ""
 local unit = 1 -- screen units per texture pixel, set on layout
 
 local function newButton(bag, slot)
@@ -31,6 +32,8 @@ local function newButton(bag, slot)
   local ok, b = pcall(CreateFrame, "ItemButton", name, bagFrames[bag], "ContainerFrameItemButtonTemplate")
   if not ok then b = CreateFrame("Button", name, bagFrames[bag], "ContainerFrameItemButtonTemplate") end
   b:SetID(slot)
+  b.Cooldown = b.Cooldown or _G[name .. "Cooldown"]
+  b.IconQuestTexture = b.IconQuestTexture or _G[name .. "IconQuestTexture"]
   b.obBorder = b:CreateTexture(nil, "OVERLAY", nil, 7)
   b.obBorder:SetAllPoints(b)
   b.obBorder:SetTexture(M.aura_border.file)
@@ -50,8 +53,50 @@ local function ensureButtons()
   end
 end
 
+local QUEST_BANG = "Interface\\ContainerFrame\\UI-Icon-QuestBang"
+local QUEST_BORDER = "Interface\\ContainerFrame\\UI-Icon-QuestBorder"
+
+local function itemName(info)
+  return info.itemName or (info.hyperlink and info.hyperlink:match("%[(.-)%]"))
+end
+
+-- The game's own search (SetItemSearch) flags items; older clients get a name match.
+local function filteredOut(info)
+  if not info or searchText == "" then return false end
+  if C_Container.SetItemSearch then return info.isFiltered == true end
+  return not ns.Filters.MatchesSearch(searchText, itemName(info))
+end
+
+-- Overlays the template has but only Blizzard's bag code fills: cooldown, quest, new, junk.
+local function setMarkers(b, bag, slot, info)
+  local quest = info and C_Container.GetContainerItemQuestInfo and C_Container.GetContainerItemQuestInfo(bag, slot)
+  local isNew = info and C_NewItems and C_NewItems.IsNewItem and C_NewItems.IsNewItem(bag, slot)
+  local m = ns.Filters.Markers(info, quest, isNew)
+  if b.JunkIcon then b.JunkIcon:SetShown(m.junk) end
+  local qt = b.IconQuestTexture
+  if qt then
+    if m.questStarter then qt:SetTexture(QUEST_BANG); qt:Show()
+    elseif m.quest then qt:SetTexture(QUEST_BORDER); qt:Show()
+    else qt:Hide() end
+  end
+  if b.NewItemTexture then
+    if m.new then b.NewItemTexture:SetAtlas("bags-glow-white"); b.NewItemTexture:Show() else b.NewItemTexture:Hide() end
+  end
+  if b.BattlepayItemTexture then b.BattlepayItemTexture:Hide() end
+  local cd = b.Cooldown
+  if cd then
+    if info and C_Container.GetContainerItemCooldown and CooldownFrame_Set then
+      pcall(function() CooldownFrame_Set(cd, C_Container.GetContainerItemCooldown(bag, slot)) end)
+    else
+      cd:Hide()
+    end
+  end
+end
+
 local function refreshButton(b, bag, slot)
   local info = C_Container.GetContainerItemInfo(bag, slot)
+  setMarkers(b, bag, slot, info)
+  b:SetAlpha(filteredOut(info) and 0.25 or 1)
   SetItemButtonTexture(b, info and info.iconFileID or nil)
   SetItemButtonCount(b, info and info.stackCount or 0)
   if SetItemButtonDesaturated then SetItemButtonDesaturated(b, info and info.isLocked) end
@@ -149,6 +194,35 @@ for i = 1, 5 do
 end
 local gold = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 
+-- Search box and sort button, on the row above the window (right of the stats buttons).
+local search = CreateFrame("EditBox", "ObsidianUIBagSearch", frame, "SearchBoxTemplate")
+search:SetSize(110, 20)
+search:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", -30, 2)
+search:SetAutoFocus(false)
+search:SetScript("OnTextChanged", function(self)
+  if SearchBoxTemplate_OnTextChanged then SearchBoxTemplate_OnTextChanged(self) end
+  searchText = self:GetText() or ""
+  if C_Container.SetItemSearch then C_Container.SetItemSearch(searchText) end
+  refreshVisuals()
+end)
+Inventory.searchBox = search
+
+local sort = CreateFrame("Button", nil, frame)
+sort:SetSize(22, 22)
+sort:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", -4, 1)
+sort:SetNormalTexture("Interface\\Icons\\INV_Pet_Broom")
+sort:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+sort:SetScript("OnClick", function()
+  if C_Container.SortBags then C_Container.SortBags() end
+end)
+sort:SetScript("OnEnter", function(self)
+  GameTooltip:SetOwner(self, "ANCHOR_TOP")
+  GameTooltip:SetText("Organizar bolsas")
+  GameTooltip:Show()
+end)
+sort:SetScript("OnLeave", GameTooltip_Hide)
+Inventory.sortButton = sort
+
 local function updateFooter()
   for _, b in ipairs(footerBags) do
     local tex = b.bag == 0 and "Interface\\Buttons\\Button-Backpack-Up" or GetInventoryItemTexture("player", b.invSlot)
@@ -183,6 +257,8 @@ ns.On("BAG_UPDATE_DELAYED", function()
   updateFooter()
 end)
 ns.On("ITEM_LOCK_CHANGED", function() if frame:IsShown() then refreshVisuals() end end)
+ns.On("BAG_UPDATE_COOLDOWN", function() if frame:IsShown() then refreshVisuals() end end)
+ns.On("INVENTORY_SEARCH_UPDATE", function() if frame:IsShown() then refreshVisuals() end end)
 ns.On("PLAYER_MONEY", function() if frame:IsShown() then updateFooter() end end)
 ns.On("PLAYER_LOGIN", function() ns.RunOutOfCombat(ensureButtons) end)
 
@@ -199,7 +275,12 @@ local function syncBlizzard(fn)
 end
 local baseOpen, baseClose = Inventory.Open, Inventory.Close
 function Inventory.Open() baseOpen(); syncBlizzard(OpenAllBags) end
-function Inventory.Close() baseClose(); syncBlizzard(CloseAllBags) end
+function Inventory.Close()
+  baseClose()
+  syncBlizzard(CloseAllBags)
+  -- Items stop being "new" once the player has seen the bags, like the default bags.
+  if C_NewItems and C_NewItems.ClearAll then pcall(C_NewItems.ClearAll) end
+end
 
 local function guarded(method)
   return function()

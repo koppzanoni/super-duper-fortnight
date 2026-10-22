@@ -10,13 +10,17 @@ for i = 1, MAX_GEMS do
   gems[i] = g
 end
 
-local current -- { powerType, color }
+local current -- { powerType, token, color }
+-- Last drawn state: redraw only what changed (combo/energy events fire many times a second).
+local shownCount, litState = nil, {}
 
 local function specIndex()
   return GetSpecialization and GetSpecialization() or nil
 end
 
 local function layoutGems(count)
+  if count == shownCount then return end
+  shownCount = count
   local _, H = UIParent:GetSize()
   local size, gap = 0.033 * H, 0.005 * H
   local total = count * size + (count - 1) * gap
@@ -32,6 +36,8 @@ local function layoutGems(count)
 end
 
 local function setLit(i, lit)
+  if litState[i] == lit then return end
+  litState[i] = lit
   local g = gems[i]
   ns.Media.Apply(g, lit and "gem_on" or "gem_off")
   if lit and current then g:SetVertexColor(current.color.r, current.color.g, current.color.b) else g:SetVertexColor(1, 1, 1) end
@@ -59,9 +65,21 @@ local function update()
   for i = 1, count do setLit(i, i <= value) end
 end
 
+-- Forget what was drawn (new resource, new color or new screen size).
+local function redraw()
+  shownCount, litState = nil, {}
+  update()
+end
+
 local function refreshResource()
   local _, classToken = UnitClass("player")
   current = ns.Data.ClassResourceFor(classToken, specIndex(), (UnitPowerType("player")))
+  redraw()
+end
+
+local function onPower(_, unit, token)
+  if unit ~= "player" or not current then return end
+  if token and current.token and token ~= current.token then return end
   update()
 end
 
@@ -69,7 +87,7 @@ ns.On("PLAYER_ENTERING_WORLD", refreshResource)
 ns.On("PLAYER_SPECIALIZATION_CHANGED", refreshResource)
 ns.On("UPDATE_SHAPESHIFT_FORM", refreshResource)
 ns.On("UNIT_DISPLAYPOWER", function(_, unit) if unit == "player" then refreshResource() end end)
-ns.On("UNIT_POWER_FREQUENT", function(_, unit) if unit == "player" then update() end end)
-ns.On("UNIT_MAXPOWER", function(_, unit) if unit == "player" then update() end end)
+ns.On("UNIT_POWER_FREQUENT", onPower)
+ns.On("UNIT_MAXPOWER", onPower)
 ns.On("RUNE_POWER_UPDATE", update)
-table.insert(ns.HUD.onResize, update)
+table.insert(ns.HUD.onResize, redraw)

@@ -98,3 +98,15 @@ PlayerCastingBarFrame:SetMinMaxValues(0, 1); PlayerCastingBarFrame:SetValue(0.58
 PlayerCastingBarFrame.Icon = PlayerCastingBarFrame:CreateTexture(nil, "OVERLAY"); PlayerCastingBarFrame.Icon:SetTexture("ICON:3")
 PlayerCastingBarFrame.Text = PlayerCastingBarFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 PlayerCastingBarFrame.Text:SetText("Bola de Fogo")
+-- Reactions and classes for health colors (hostile wolf, friendly pet, the player is a rogue).
+function UnitIsTapDenied() return false end
+function UnitIsPlayer(u) return u == "player" or u == "targettarget" end
+local REACTION = { target = 2, focus = 2, pet = 5, targettarget = 5 }
+function UnitReaction(u) return REACTION[u] end
+RAID_CLASS_COLORS = { ROGUE = { r = 1.0, g = 0.96, b = 0.41 } }
+-- The wolf is casting too: Blizzard's target cast bar, adopted by our target frame.
+TargetFrameSpellBar = CreateFrame("StatusBar", "TargetFrameSpellBar", UIParent)
+TargetFrameSpellBar:SetMinMaxValues(0, 1); TargetFrameSpellBar:SetValue(0.35)
+TargetFrameSpellBar.Text = TargetFrameSpellBar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+TargetFrameSpellBar.Text:SetText("Uivo Aterrorizante")
+TargetFrameSpellBar.Text:SetPoint("CENTER")

@@ -61,23 +61,52 @@ function Data.PowerColor(token)
   return c.r, c.g, c.b
 end
 
+-- Unit frame health: grey when tapped by someone else, class color for players, else reaction.
+local HOSTILE, NEUTRAL, FRIENDLY = { 0.78, 0.16, 0.12 }, { 0.85, 0.70, 0.15 }, { 0.20, 0.62, 0.18 }
+function Data.HealthColor(tapDenied, classColor, reaction)
+  if tapDenied then return 0.5, 0.5, 0.5 end
+  if classColor then return classColor.r, classColor.g, classColor.b end
+  local c = HOSTILE
+  if reaction == 4 then c = NEUTRAL elseif reaction and reaction >= 5 then c = FRIENDLY end
+  return c[1], c[2], c[3]
+end
+
+-- Debuff border by dispel type (Blizzard's DebuffTypeColor), red when undispellable.
+local DISPEL = { Magic = { 0.2, 0.6, 1.0 }, Curse = { 0.6, 0.0, 1.0 }, Disease = { 0.6, 0.4, 0.0 },
+  Poison = { 0.0, 0.6, 0.0 } }
+function Data.DebuffColor(dispelName)
+  local c = dispelName and DISPEL[dispelName] or { 0.77, 0.15, 0.11 }
+  return c[1], c[2], c[3]
+end
+
+-- x offset for a SecureAuraHeader anchored by its first icon's TOP, so a row of `count`
+-- icons (wrapping after `wrapAfter`) is centered on the anchor.
+function Data.AuraRowOffset(count, wrapAfter, step)
+  local n = math.min(count, wrapAfter)
+  if n <= 1 then return 0 end
+  return -(n - 1) * step / 2
+end
+
 -- Secondary class resources shown as gems.
 local GOLD, LIGHT, PURPLE, CYAN, JADE, ARCANE =
   { 1.00, 0.76, 0.23 }, { 0.95, 0.90, 0.60 }, { 0.64, 0.21, 0.93 }, { 0.00, 0.78, 0.92 }, { 0.31, 0.88, 0.63 }, { 0.44, 0.63, 1.00 }
 
 function Data.ClassResourceFor(classToken, specIndex, unitPowerType)
   local P = Enum.PowerType
-  local function r(pt, color) return { powerType = pt, color = { r = color[1], g = color[2], b = color[3] } } end
-  if classToken == "ROGUE" then return r(P.ComboPoints, GOLD) end
+  -- token: the powerType string UNIT_POWER_FREQUENT passes, so other resources' ticks are skipped.
+  local function r(pt, token, color)
+    return { powerType = pt, token = token, color = { r = color[1], g = color[2], b = color[3] } }
+  end
+  if classToken == "ROGUE" then return r(P.ComboPoints, "COMBO_POINTS", GOLD) end
   if classToken == "DRUID" then
-    if unitPowerType == P.Energy then return r(P.ComboPoints, GOLD) end
+    if unitPowerType == P.Energy then return r(P.ComboPoints, "COMBO_POINTS", GOLD) end
     return nil
   end
-  if classToken == "PALADIN" then return r(P.HolyPower, LIGHT) end
-  if classToken == "WARLOCK" then return r(P.SoulShards, PURPLE) end
-  if classToken == "DEATHKNIGHT" then return r(P.Runes, CYAN) end
-  if classToken == "MONK" and specIndex == 3 then return r(P.Chi, JADE) end
-  if classToken == "MAGE" and specIndex == 1 then return r(P.ArcaneCharges, ARCANE) end
+  if classToken == "PALADIN" then return r(P.HolyPower, "HOLY_POWER", LIGHT) end
+  if classToken == "WARLOCK" then return r(P.SoulShards, "SOUL_SHARDS", PURPLE) end
+  if classToken == "DEATHKNIGHT" then return r(P.Runes, "RUNES", CYAN) end
+  if classToken == "MONK" and specIndex == 3 then return r(P.Chi, "CHI", JADE) end
+  if classToken == "MAGE" and specIndex == 1 then return r(P.ArcaneCharges, "ARCANE_CHARGES", ARCANE) end
   return nil
 end
 
@@ -145,6 +174,7 @@ Data.FRAME_CANDIDATES = {
   playerframe = { "PlayerFrame" }, targetframe = { "TargetFrame" }, focusframe = { "FocusFrame" },
   buffframe = { "BuffFrame" }, debuffframe = { "DebuffFrame" },
   castbar = { "PlayerCastingBarFrame", "CastingBarFrame" },
+  targetcastbar = { "TargetFrameSpellBar" }, focuscastbar = { "FocusFrameSpellBar" },
   stancebar = { "StanceBar", "StanceBarFrame" },
   petbar = { "PetActionBar", "PetActionBarFrame" },
   extrabutton = { "ExtraActionBarFrame" }, zoneability = { "ZoneAbilityFrame" },

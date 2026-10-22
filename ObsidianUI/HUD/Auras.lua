@@ -3,6 +3,7 @@ local _, ns = ...
 -- Player buffs (top row) and debuffs (row below), top center of the screen (spec 4.8).
 local M = ns.MediaManifest
 local BRONZE, RED = { 0.54, 0.43, 0.23 }, { 0.77, 0.15, 0.11 }
+local STEP, WRAP = 30, 16
 
 local function header(filter)
   local h = CreateFrame("Frame", "ObsidianUIAuras" .. filter, UIParent, "SecureAuraHeaderTemplate")
@@ -10,9 +11,9 @@ local function header(filter)
   h:SetAttribute("filter", filter)
   h:SetAttribute("template", "ObsidianUIAuraTemplate")
   h:SetAttribute("point", "TOP")
-  h:SetAttribute("xOffset", 30)
+  h:SetAttribute("xOffset", STEP)
   h:SetAttribute("yOffset", 0)
-  h:SetAttribute("wrapAfter", 16)
+  h:SetAttribute("wrapAfter", WRAP)
   h:SetAttribute("wrapYOffset", -42)
   h:SetAttribute("maxWraps", 2)
   h:SetAttribute("sortMethod", "TIME")
@@ -20,6 +21,7 @@ local function header(filter)
   h:SetAttribute("minWidth", 30)
   h:SetAttribute("minHeight", 30)
   h.filter = filter
+  h.obCount = 0
   return h
 end
 
@@ -56,6 +58,10 @@ local function updateChild(child, filter)
   local aura = C_UnitAuras.GetAuraDataByIndex("player", index, filter)
   if not aura then return end
   child.icon:SetTexture(aura.icon)
+  if filter == "HARMFUL" then
+    local ok, r, g, b = pcall(ns.Data.DebuffColor, aura.dispelName)
+    if ok then child.border:SetVertexColor(r, g, b) else child.border:SetVertexColor(RED[1], RED[2], RED[3]) end
+  end
   if not pcall(function() child.count:SetText(aura.applications > 1 and aura.applications or "") end) then
     child.count:SetText("")
   end
@@ -72,33 +78,45 @@ local function updateChild(child, filter)
 end
 
 local function updateHeader(h)
+  local shown = 0
   for i = 1, 40 do
     local child = h:GetAttribute("child" .. i)
     if not child then break end
-    if child:IsShown() then updateChild(child, h.filter) end
+    if child:IsShown() then
+      shown = shown + 1
+      updateChild(child, h.filter)
+    end
+  end
+  h.obCount = shown
+end
+
+-- Rows are centered on the screen for the current number of auras. Secure headers cannot
+-- move in combat: they keep their spot and re-center when combat ends.
+local function layout()
+  if InCombatLockdown() then return end
+  local _, H = UIParent:GetSize()
+  local scale = H / 900
+  for h, y in pairs({ [buffs] = 0.025, [debuffs] = 0.095 }) do
+    h:SetScale(scale)
+    h:ClearAllPoints()
+    h:SetPoint("TOP", UIParent, "TOP", ns.Data.AuraRowOffset(h.obCount, WRAP, STEP), -y * H / scale)
   end
 end
 
-local function layout()
-  local _, H = UIParent:GetSize()
-  local scale = H / 900
-  buffs:SetScale(scale)
-  debuffs:SetScale(scale)
-  buffs:ClearAllPoints()
-  buffs:SetPoint("TOP", UIParent, "TOP", -7.5 * 30 / 2, -0.025 * H / scale)
-  debuffs:ClearAllPoints()
-  debuffs:SetPoint("TOP", UIParent, "TOP", -7.5 * 30 / 2, -0.095 * H / scale)
+local function updateAll()
+  updateHeader(buffs); updateHeader(debuffs)
+  layout()
 end
 
 ns.On("PLAYER_LOGIN", function()
   ns.RunOutOfCombat(function()
-    layout()
     buffs:Show(); debuffs:Show()
-    updateHeader(buffs); updateHeader(debuffs)
+    updateAll()
   end)
 end)
 ns.On("UNIT_AURA", function(_, unit)
   -- Let SecureAuraHeader reassign child indexes first, then read them.
-  if unit == "player" then C_Timer.After(0, function() updateHeader(buffs); updateHeader(debuffs) end) end
+  if unit == "player" then C_Timer.After(0, updateAll) end
 end)
+ns.On("PLAYER_REGEN_ENABLED", layout)
 table.insert(ns.HUD.onResize, function() ns.RunOutOfCombat(layout) end)
