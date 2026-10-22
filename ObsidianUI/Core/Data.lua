@@ -138,6 +138,7 @@ Data.FRAME_CANDIDATES = {
   mainbar = { "MainActionBar", "MainMenuBar" },
   multibl = { "MultiBarBottomLeft" }, multibr = { "MultiBarBottomRight" },
   multir = { "MultiBarRight" }, multil = { "MultiBarLeft" },
+  overridebar = { "OverrideActionBar" },
   micromenu = { "MicroMenuContainer", "MicroButtonAndBagsBar" },
   bagsbar = { "BagsBar" },
   statusbar = { "StatusTrackingBarManager", "MainStatusTrackingBarContainer" },

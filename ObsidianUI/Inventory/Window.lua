@@ -192,17 +192,27 @@ function Inventory.Layout()
   if Inventory.onLayout then Inventory.onLayout() end
 end
 
-function Inventory.Open()
-  Inventory.Layout()
-  frame:Show()
-  updateEquipment()
-  if Inventory.onOpen then Inventory.onOpen() end
+-- The item buttons make the window protected on clients where their template is protected:
+-- then it can only open/close out of combat.
+local function safely(fn)
+  if InCombatLockdown() and frame:IsProtected() then ns.RunOutOfCombat(fn) else fn() end
 end
 
-function Inventory.Close() frame:Hide() end
+function Inventory.Open()
+  safely(function()
+    Inventory.Layout()
+    frame:Show()
+    updateEquipment()
+    if Inventory.onOpen then Inventory.onOpen() end
+  end)
+end
+
+function Inventory.Close() safely(function() frame:Hide() end) end
 
 function Inventory.Toggle()
-  if frame:IsShown() then Inventory.Close() else Inventory.Open() end
+  safely(function()
+    if frame:IsShown() then Inventory.Close() else Inventory.Open() end
+  end)
 end
 
 ns.On("PLAYER_EQUIPMENT_CHANGED", function() if frame:IsShown() then updateEquipment(); model:SetUnit("player") end end)

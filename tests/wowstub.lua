@@ -26,6 +26,10 @@ function CreateFrame()
   f.GetWidth = function() return 1920 end
   f.GetHeight = function() return 1080 end
   f.IsProtected = function() return false end
+  f.hooks = {}
+  f.HookScript = function(self, name, fn) self.hooks[name] = fn end
+  f.calls = {}
+  f.UpdateAction = function(self) self.calls.UpdateAction = (self.calls.UpdateAction or 0) + 1 end
   return f
 end
 
@@ -44,7 +48,14 @@ UISpecialFrames = {}
 Enum = { PowerType = { Mana = 0, Rage = 1, Focus = 2, Energy = 3, ComboPoints = 4, Runes = 5, RunicPower = 6,
   SoulShards = 7, HolyPower = 9, Chi = 12, ArcaneCharges = 16 } }
 PowerBarColor = setmetatable({}, { __index = function() return { r = 0.5, g = 0.5, b = 0.5 } end })
-function hooksecurefunc() end
+-- Post-hooks like the game: hooksecurefunc("Global", fn) or hooksecurefunc(table, "method", fn).
+function hooksecurefunc(a, b, c)
+  local tbl, name, fn = _G, a, b
+  if type(a) == "table" then tbl, name, fn = a, b, c end
+  local orig = rawget(tbl, name)
+  if type(orig) ~= "function" then return end
+  rawset(tbl, name, function(...) local r = { orig(...) }; fn(...); return unpack(r) end)
+end
 function print() end
 -- Plain numbers for APIs the addon does math with (non-secret values only).
 function UnitLevel() return 10 end

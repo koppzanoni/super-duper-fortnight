@@ -98,6 +98,7 @@ ns.On("PLAYER_LOGIN", function()
   end)
 end)
 ns.On("UNIT_AURA", function(_, unit)
-  if unit == "player" then updateHeader(buffs); updateHeader(debuffs) end
+  -- Let SecureAuraHeader reassign child indexes first, then read them.
+  if unit == "player" then C_Timer.After(0, function() updateHeader(buffs); updateHeader(debuffs) end) end
 end)
 table.insert(ns.HUD.onResize, function() ns.RunOutOfCombat(layout) end)

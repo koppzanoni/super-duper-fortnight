@@ -2,7 +2,7 @@ local _, ns = ...
 
 -- Hide the default frames the HUD replaces. Cast bar, stance/pet bars and extra buttons are
 -- repositioned by their own modules instead.
-local HIDE = { "mainbar", "multibl", "multibr", "multir", "multil", "micromenu", "bagsbar", "statusbar",
+local HIDE = { "mainbar", "multibl", "multibr", "multir", "multil", "overridebar", "micromenu", "bagsbar", "statusbar",
   "playerframe", "targetframe", "focusframe", "buffframe", "debuffframe" }
 
 local hidden = CreateFrame("Frame")

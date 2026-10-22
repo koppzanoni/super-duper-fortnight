@@ -94,9 +94,13 @@ local function updateValues(f)
   f.power:SetValue(UnitPower(unit, pType))
   f.power:SetStatusBarColor(ns.Data.PowerColor(token))
   if f.kind == "large" then
-    local pct = UnitHealthPercent and UnitHealthPercent(unit, true, CurveConstants and CurveConstants.ScaleTo100)
-    local ok = pct ~= nil and pcall(f.hpText.SetFormattedText, f.hpText, "%.0f%% · %s", pct, AbbreviateNumbers(UnitHealth(unit)))
-    if not ok then pcall(f.hpText.SetText, f.hpText, AbbreviateNumbers(UnitHealth(unit))) end
+    local curveTo100 = CurveConstants and CurveConstants.ScaleTo100
+    local ok = UnitHealthPercent and pcall(function()
+      f.hpText:SetFormattedText("%.0f%% · %s", UnitHealthPercent(unit, true, curveTo100), AbbreviateNumbers(UnitHealth(unit)))
+    end)
+    if not ok and not pcall(function() f.hpText:SetText(AbbreviateNumbers(UnitHealth(unit))) end) then
+      f.hpText:SetText("")
+    end
   end
 end
 

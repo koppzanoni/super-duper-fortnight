@@ -31,13 +31,18 @@ function ActionBars.CreateButton(parent, name, actionID, binding)
   local b = CreateFrame("CheckButton", name, parent, "ActionBarButtonTemplate")
   b:SetAttribute("type", "action")
   b:SetAttribute("action", actionID)
-  b.action = actionID
   b.binding = binding
   b:RegisterForClicks("AnyUp", "AnyDown")
+  -- Blizzard's UpdateAction touches protected attributes: only call it out of combat.
+  -- In combat (form shift, vehicle) refresh the icon ourselves and finish after combat.
   b:HookScript("OnAttributeChanged", function(self, attr, value)
-    if attr == "action" then
-      self.action = value
-      if self.UpdateAction then self:UpdateAction(true) end
+    if attr ~= "action" or not self.UpdateAction then return end
+    if InCombatLockdown() then
+      local icon = self.icon or _G[self:GetName() .. "Icon"]
+      if icon then icon:SetTexture(GetActionTexture(value)) end
+      ns.RunOutOfCombat(function() self:UpdateAction(true) end)
+    else
+      self:UpdateAction(true)
     end
   end)
   skin(b)
@@ -88,6 +93,10 @@ end
 
 ns.On("PLAYER_LOGIN", function()
   ns.RunOutOfCombat(function()
+    -- Register every button's action slot with the game once (the template starts on action 1).
+    for _, b in ipairs(ActionBars.buttons) do
+      if b.UpdateAction then b:UpdateAction(true) end
+    end
     RegisterStateDriver(header, "page", ns.Data.PagingDriver())
   end)
   ActionBars.UpdateBindings()

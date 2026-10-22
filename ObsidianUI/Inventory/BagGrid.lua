@@ -187,24 +187,37 @@ ns.On("PLAYER_MONEY", function() if frame:IsShown() then updateFooter() end end)
 ns.On("PLAYER_LOGIN", function() ns.RunOutOfCombat(ensureButtons) end)
 
 -- Default bag frames stay hidden; every bag toggle opens/closes this window instead.
--- Toggle functions call Open/Close internally, so ignore a second action in the same instant.
-local last = 0
-local function guarded(fn)
+-- The window is the source of truth: opening/closing it also tells Blizzard, so B never needs
+-- two presses. Toggle functions call Open/Close internally, so ignore a second action in the
+-- same instant, and ignore the hooks fired by our own sync calls.
+local last, syncing = 0, false
+local function syncBlizzard(fn)
+  if syncing or type(fn) ~= "function" then return end
+  syncing = true
+  pcall(fn)
+  syncing = false
+end
+local baseOpen, baseClose = Inventory.Open, Inventory.Close
+function Inventory.Open() baseOpen(); syncBlizzard(OpenAllBags) end
+function Inventory.Close() baseClose(); syncBlizzard(CloseAllBags) end
+
+local function guarded(method)
   return function()
+    if syncing then return end
     local now = GetTime()
     if now - last < 0.05 then return end
     last = now
-    fn()
+    Inventory[method]()
   end
 end
 for _, name in ipairs({ "ToggleAllBags", "ToggleBackpack", "ToggleBag" }) do
-  if _G[name] then hooksecurefunc(name, guarded(Inventory.Toggle)) end
+  if _G[name] then hooksecurefunc(name, guarded("Toggle")) end
 end
 for _, name in ipairs({ "OpenAllBags", "OpenBackpack" }) do
-  if _G[name] then hooksecurefunc(name, guarded(Inventory.Open)) end
+  if _G[name] then hooksecurefunc(name, guarded("Open")) end
 end
 for _, name in ipairs({ "CloseAllBags", "CloseBackpack" }) do
-  if _G[name] then hooksecurefunc(name, guarded(Inventory.Close)) end
+  if _G[name] then hooksecurefunc(name, guarded("Close")) end
 end
 
 ns.On("PLAYER_LOGIN", function()

@@ -76,13 +76,11 @@ local function makeOrb(x)
 end
 
 -- Text through C-side formatting so secret values are never touched by Lua.
-local function setTexts(orb, cur, max, percent)
-  if percent ~= nil then
-    if not pcall(orb.pct.SetFormattedText, orb.pct, "%.0f%%", percent) then orb.pct:SetText("") end
-  else
-    orb.pct:SetText("")
-  end
-  if not pcall(orb.val.SetFormattedText, orb.val, "%s / %s", AbbreviateNumbers(cur), AbbreviateNumbers(max)) then
+-- percentFn may be nil (API missing). Everything that touches a possibly-secret value runs in pcall.
+local function setTexts(orb, cur, max, percentFn)
+  local ok = percentFn and pcall(function() orb.pct:SetFormattedText("%.0f%%", percentFn()) end)
+  if not ok then orb.pct:SetText("") end
+  if not pcall(function() orb.val:SetFormattedText("%s / %s", AbbreviateNumbers(cur), AbbreviateNumbers(max)) end) then
     orb.val:SetText("")
   end
 end
@@ -100,7 +98,7 @@ local function updateHealth()
   local cur, max = UnitHealth("player"), UnitHealthMax("player")
   health.bar:SetMinMaxValues(0, max)
   health.bar:SetValue(cur)
-  setTexts(health, cur, max, UnitHealthPercent and UnitHealthPercent("player", true, curve()) or nil)
+  setTexts(health, cur, max, UnitHealthPercent and function() return UnitHealthPercent("player", true, curve()) end)
 end
 
 local function updatePower()
@@ -108,7 +106,7 @@ local function updatePower()
   local cur, max = UnitPower("player", pType), UnitPowerMax("player", pType)
   power.bar:SetMinMaxValues(0, max)
   power.bar:SetValue(cur)
-  setTexts(power, cur, max, UnitPowerPercent and UnitPowerPercent("player", pType, true, curve()) or nil)
+  setTexts(power, cur, max, UnitPowerPercent and function() return UnitPowerPercent("player", pType, true, curve()) end)
 end
 
 local function updatePowerColor()
