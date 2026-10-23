@@ -122,6 +122,8 @@ local function slotButton(slotName)
   b.border = b:CreateTexture(nil, "OVERLAY")
   b.border:SetAllPoints(b)
   b.border:SetTexture(M.aura_border.file)
+  -- Blue glow on hover, like the default character sheet's slots.
+  b:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
   b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
   b:RegisterForDrag("LeftButton")
   b:SetScript("OnClick", function(self)
@@ -424,27 +426,66 @@ ns.On("PLAYER_LOGIN", bindCharacterKeys)
 ns.On("UPDATE_BINDINGS", bindCharacterKeys)
 
 -- WoW Forever binds the character key (and the character menu button) to its own character
--- window, ToggleWoWHackCharacterUI. Whenever that window shows, it is hidden again and this
--- window toggles instead (once per press, shared with the key button above). The window may
--- be created late, so it is looked for again each time the game toggles it.
-local function replaceForeverWindow(win)
+-- window through ToggleWoWHackCharacterUI. Whenever such a window shows, it is hidden again
+-- and this window toggles instead (once per press, shared with the key button above).
+-- The function and its window may only exist after this file loads, so they are looked for
+-- again on login, on every addon load and each time the game toggles the window. Any shown
+-- frame named like the Forever character window counts (its exact name is not published).
+local foreverHooked, watched, reported = false, {}, false
+local function isForeverWindow(f)
+  local name = f.GetName and f:GetName()
+  return type(name) == "string" and name:find("WoWHack") ~= nil and name:find("Character") ~= nil
+end
+local function hideForeverWindow(win)
   if InCombatLockdown() and win:IsProtected() then return end
   win:Hide()
   toggleOncePerPress()
 end
-local watchedForever = false
-local function watchForeverWindow()
-  local win = rawget(_G, "WoWHackCharacterUI")
-  if watchedForever or type(win) ~= "table" or type(win.HookScript) ~= "function" then return end
-  watchedForever = true
-  win:HookScript("OnShow", replaceForeverWindow)
-  if win:IsShown() then replaceForeverWindow(win) end
+local function watchForeverWindows()
+  local found = false
+  local f = type(EnumerateFrames) == "function" and EnumerateFrames()
+  while f do
+    if not f:IsForbidden() and isForeverWindow(f) then
+      found = true
+      if not watched[f] then
+        watched[f] = true
+        f:HookScript("OnShow", hideForeverWindow)
+      end
+      if f:IsShown() then hideForeverWindow(f) end
+    end
+    f = EnumerateFrames(f)
+  end
+  return found
 end
-if type(rawget(_G, "ToggleWoWHackCharacterUI")) == "function" then
-  hooksecurefunc("ToggleWoWHackCharacterUI", watchForeverWindow)
+-- After the game's toggle: if no Forever window was found, name in chat the character
+-- windows that are open, once, so the next fix knows what to hide.
+local function afterForeverToggle()
+  if watchForeverWindows() or reported then return end
+  local names = {}
+  local f = type(EnumerateFrames) == "function" and EnumerateFrames()
+  while f do
+    local name = not f:IsForbidden() and f:IsVisible() and f:GetName()
+    if type(name) == "string" and name:find("Character") and f:GetParent() == UIParent then
+      names[#names + 1] = name
+    end
+    f = EnumerateFrames(f)
+  end
+  reported = true
+  print("|cffe8c46aObsidianUI|r: janela de personagem não identificada. Abertas: "
+    .. (#names > 0 and table.concat(names, ", ") or "nenhuma") .. ". Mande este aviso para ajuste.")
 end
-ns.On("PLAYER_LOGIN", watchForeverWindow)
-ns.On("ADDON_LOADED", watchForeverWindow)
+local function hookForeverToggle()
+  if not foreverHooked and type(rawget(_G, "ToggleWoWHackCharacterUI")) == "function" then
+    foreverHooked = true
+    hooksecurefunc("ToggleWoWHackCharacterUI", afterForeverToggle)
+  end
+  watchForeverWindows()
+end
+Inventory.HookForeverToggle = hookForeverToggle
+hookForeverToggle()
+ns.On("PLAYER_LOGIN", hookForeverToggle)
+ns.On("ADDON_LOADED", hookForeverToggle)
+ns.On("PLAYER_ENTERING_WORLD", hookForeverToggle)
 
 -- Once in the world, check the character key really clicks our button; if not, say in chat
 -- what holds it (so it can be fixed without the player typing anything).

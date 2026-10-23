@@ -379,28 +379,65 @@ def test_empty_slot_tooltip_survives_set_inventory_item_hiding_it(lua, ns):
 
 # WoW Forever binds the character key to ToggleWoWHackCharacterUI (its own character window).
 # Whenever that window shows, it is hidden and the unified window toggles instead.
-def test_forever_character_window_is_replaced_by_the_unified_window(lua, ns):
-    boot(lua, ns, pre="""
-      WoWHackCharacterUI = CreateFrame()
-      WoWHackCharacterUI.shown = false
-      WoWHackCharacterUI.Hide = function(self) self.shown = false end
-      WoWHackCharacterUI.IsShown = function(self) return self.shown end
-      function ToggleWoWHackCharacterUI()
-        WoWHackCharacterUI.shown = not WoWHackCharacterUI.shown
-        if WoWHackCharacterUI.shown and WoWHackCharacterUI.hooks.OnShow then WoWHackCharacterUI.hooks.OnShow(WoWHackCharacterUI) end
-      end
-    """)
+FOREVER_PRE = """
+  FOREVER_WIN = CreateFrame()
+  FOREVER_WIN.shown = false
+  FOREVER_WIN.GetName = function() return "WoWHackCharacterUIFrame" end
+  FOREVER_WIN.IsForbidden = function() return false end
+  FOREVER_WIN.Hide = function(self) self.shown = false end
+  FOREVER_WIN.IsShown = function(self) return self.shown end
+  FOREVER_WIN.HookScript = function(self, name, fn) self.hooks[name] = fn end
+  function EnumerateFrames(f) if f == nil then return FOREVER_WIN end return nil end
+  function DEFINE_FOREVER_TOGGLE()
+    function ToggleWoWHackCharacterUI()
+      FOREVER_WIN.shown = not FOREVER_WIN.shown
+      if FOREVER_WIN.shown and FOREVER_WIN.hooks.OnShow then FOREVER_WIN.hooks.OnShow(FOREVER_WIN) end
+    end
+  end
+"""
+
+
+def _forever_presses(lua, ns):
     toggles = {"n": 0}
     ns.Inventory.Toggle = lambda: toggles.__setitem__("n", toggles["n"] + 1)
     g = lua.globals()
     g.ToggleWoWHackCharacterUI()
-    assert toggles["n"] == 1 and not g.WoWHackCharacterUI.shown
+    assert toggles["n"] == 1 and not g.FOREVER_WIN.shown
     g.STUB_TIME = 200
     g.ToggleWoWHackCharacterUI()
-    assert toggles["n"] == 2 and not g.WoWHackCharacterUI.shown
+    assert toggles["n"] == 2 and not g.FOREVER_WIN.shown
     # Same press also clicking our key button toggles only once.
     g.STUB_TIME = 300
     b = ns.Inventory.toggleButton
     b.handlers.OnClick(b, "LeftButton", True)
     g.ToggleWoWHackCharacterUI()
-    assert toggles["n"] == 3
+    assert toggles["n"] == 3 and not g.FOREVER_WIN.shown
+
+
+def test_forever_character_window_is_replaced_by_the_unified_window(lua, ns):
+    boot(lua, ns, pre=FOREVER_PRE + "DEFINE_FOREVER_TOGGLE()")
+    _forever_presses(lua, ns)
+
+
+# The game's toggle function may only exist after the addon loads.
+def test_forever_toggle_defined_late_is_still_replaced(lua, ns):
+    boot(lua, ns, pre=FOREVER_PRE)
+    lua.execute("DEFINE_FOREVER_TOGGLE()")
+    lua.execute('STUB_FIRE("PLAYER_ENTERING_WORLD")')
+    _forever_presses(lua, ns)
+
+
+# Equipment slots glow blue on hover, like the default character sheet.
+def test_equipment_slots_glow_on_hover(lua, ns):
+    boot(lua, ns, pre="""
+      HIGHLIGHTS = {}
+      local cf = CreateFrame
+      function CreateFrame(...)
+        local f = cf(...)
+        f.SetHighlightTexture = function(self, tex, mode) HIGHLIGHTS[#HIGHLIGHTS + 1] = tex .. "|" .. mode end
+        return f
+      end
+    """)
+    hl = lua.globals().HIGHLIGHTS
+    assert len(hl) >= len(list(ns.Inventory.slotButtons.values()))
+    assert hl[1] == "Interface\\Buttons\\ButtonHilight-Square|ADD"
