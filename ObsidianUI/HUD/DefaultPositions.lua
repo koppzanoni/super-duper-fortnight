@@ -3,7 +3,9 @@ local _, ns = ...
 -- First load only: move the default frames that stay on screen away from the HUD.
 -- Afterwards the user and Edit Mode own their positions.
 -- Edit Mode puts the chat back on every login, so it is moved whenever it overlaps the HUD.
+local movingChat, chatHooked = false, false
 local function moveChat()
+  if movingChat then return end
   local W, H = UIParent:GetSize()
   local s = H / 900
   local hudTop = ns.HUD.h or 0.25 * H
@@ -11,9 +13,21 @@ local function moveChat()
   if not chat or type(chat.GetBottom) ~= "function" then return end
   local bottom = chat:GetBottom()
   if bottom and bottom >= hudTop + 10 then return end
+  movingChat = true
   chat:ClearAllPoints()
   chat:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0.012 * W, hudTop + 80 * s)
   if FCF_SavePositionAndDimensions then FCF_SavePositionAndDimensions(chat) end
+  movingChat = false
+end
+
+-- Edit Mode re-anchors the chat after login (and on layout changes), back over the HUD:
+-- check again every time something moves it. A chat the player put elsewhere is left alone.
+local function watchChat()
+  if chatHooked or not ChatFrame1 or type(ChatFrame1.GetBottom) ~= "function" then return end
+  chatHooked = true
+  hooksecurefunc(ChatFrame1, "SetPoint", function()
+    if not movingChat then ns.RunOutOfCombat(moveChat) end
+  end)
 end
 
 local function apply()
@@ -47,6 +61,7 @@ function ns.ResetPositions()
 end
 
 ns.On("PLAYER_ENTERING_WORLD", function()
+  watchChat()
   ns.RunOutOfCombat(moveChat)
   if not ns.db or ns.db.positioned then return end
   ns.RunOutOfCombat(function()

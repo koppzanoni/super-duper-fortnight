@@ -67,8 +67,10 @@ local function makeOrb(x)
     wave:SetHeight(math.max(2, 10 * u))
   end)
 
-  local orb = { well = well, bar = bar, wave = wave, pct = pct, val = val }
+  local orb = { well = well, bg = bg, bar = bar, wave = wave, pct = pct, val = val }
   function orb:SetColor(r, g, b)
+    -- The empty part reads as dark tinted glass, not a black hole.
+    self.bg:SetColorTexture(0.02 + r * 0.10, 0.02 + g * 0.10, 0.03 + b * 0.10, 1)
     self.bar:SetStatusBarColor(r, g, b)
     self.wave:SetVertexColor(math.min(1, r * 1.25), math.min(1, g * 1.25), math.min(1, b * 1.25))
   end

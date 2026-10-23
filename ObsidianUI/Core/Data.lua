@@ -7,7 +7,8 @@ ns.Data = Data
 -- Bottom HUD (full virtual texture 2692x381; left half is mirrored to the right). Spec 4.2.
 Data.HUD = {
   width = 2692, height = 381, half = 1346,
-  orb = { x = 68, y = 52, w = 249, h = 256 },
+  -- Ring opening is x 66-317, y 52-307; the orb tucks 4px under the ring so no gap shows.
+  orb = { x = 62, y = 48, w = 260, h = 264 },
   menuCols = { 429, 488, 547 }, menuRows = { 143, 202, 262 }, menuSlot = { w = 35, h = 41 },
   barCols = { 710, 782, 853, 925, 997, 1069, 1140, 1211, 1283 }, barRows = { 114, 215 },
   barSlot = { w = 56, h = 61 },
@@ -20,7 +21,7 @@ Data.VBAR1 = { w = 156, h = 1279, cols = { 38 }, slot = { w = 78, h = 75 },
 Data.VBAR2 = { w = 256, h = 1279, cols = { 38, 138 }, slot = { w = 78, h = 75 }, rows = Data.VBAR1.rows }
 
 -- Unit frames. Spec 4.6 and 7.1.
-Data.TARGET = { w = 1298, h = 424, portrait = { x = 104, y = 72, w = 296, h = 302 },
+Data.TARGET = { w = 1298, h = 458, portrait = { x = 104, y = 72, w = 296, h = 302 },
   name = { x = 490, y = 105, w = 580, h = 80 }, health = { x = 456, y = 202, w = 784, h = 55 },
   power = { x = 461, y = 272, w = 543, h = 24 } }
 Data.UNIT_SMALL = { w = 1274, h = 494, portrait = { x = 67, y = 66, w = 351, h = 360 },
@@ -175,6 +176,7 @@ Data.FRAME_CANDIDATES = {
   mainbar = { "MainActionBar", "MainMenuBar" },
   multibl = { "MultiBarBottomLeft" }, multibr = { "MultiBarBottomRight" },
   multir = { "MultiBarRight" }, multil = { "MultiBarLeft" },
+  multibar5 = { "MultiBar5" }, multibar6 = { "MultiBar6" }, multibar7 = { "MultiBar7" },
   overridebar = { "OverrideActionBar" },
   micromenu = { "MicroMenuContainer", "MicroButtonAndBagsBar" },
   bagsbar = { "BagsBar" },

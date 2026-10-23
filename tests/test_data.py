@@ -86,7 +86,7 @@ def test_equip_slots(D):
 def test_hud_coordinates_from_spec(D):
     H = D.HUD
     assert (H.width, H.height) == (2692, 381)
-    assert (H.orb.x, H.orb.y, H.orb.w, H.orb.h) == (68, 52, 249, 256)
+    assert (H.orb.x, H.orb.y, H.orb.w, H.orb.h) == (62, 48, 260, 264)
     assert list(H.barCols.values()) == [710, 782, 853, 925, 997, 1069, 1140, 1211, 1283]
     assert list(H.barRows.values()) == [114, 215]
     assert list(H.menuCols.values()) == [429, 488, 547]

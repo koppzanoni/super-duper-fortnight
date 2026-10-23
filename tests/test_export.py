@@ -54,7 +54,7 @@ def test_export_manifest(tmp_path):
 def test_vignette_dark_edge_clear_center():
     v = ex.vignette(128)
     assert v.getpixel((64, 64))[3] == 0
-    assert v.getpixel((64, 2))[3] > 180
+    assert v.getpixel((64, 2))[3] > 120
     assert v.getpixel((64, 2))[:3] == (0, 0, 0)
 
 
@@ -63,3 +63,37 @@ def test_ring_glow_peaks_near_rim():
     assert r.getpixel((64, 64))[3] == 0
     rim = max(r.getpixel((64, y))[3] for y in range(0, 12))
     assert rim > 200
+
+
+# In-game: the liquid looked smaller than the ring opening (dark band all around).
+RING_OPENING = (66, 317, 52, 307)  # transparent hole in hud_cap: x0, x1, y0, y1
+
+
+def test_orb_rect_tucks_under_the_ring_opening():
+    rt = new_runtime()
+    ns = load_addon_file(rt, "Core/Data.lua", rt.table())
+    o = ns.Data.HUD.orb
+    x0, x1, y0, y1 = RING_OPENING
+    assert o.x <= x0 - 3 and o.x + o.w >= x1 + 4
+    assert o.y <= y0 - 3 and o.y + o.h >= y1 + 4
+
+
+def _radius_alpha(img, frac):
+    a = np.asarray(img)[..., 3]
+    c = (img.width - 1) / 2
+    return int(a[int(c), int(c + frac * c)])
+
+
+def test_vignette_only_darkens_the_rim():
+    img = ex.vignette()
+    assert _radius_alpha(img, 0.80) == 0
+    assert _radius_alpha(img, 0.99) > 100
+
+
+def test_liquid_body_is_bright_inside_the_circle():
+    img = np.asarray(ex.liquid()).astype(float)
+    size = img.shape[0]
+    y, x = np.mgrid[0:size, 0:size]
+    c = (size - 1) / 2
+    inside = np.sqrt((x - c) ** 2 + (y - c) ** 2) < c * 0.95
+    assert img[..., 0][inside].min() >= 0.45 * 255

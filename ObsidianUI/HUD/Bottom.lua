@@ -2,7 +2,8 @@ local _, ns = ...
 
 -- The bottom HUD: cap | tiled connector | half bar | half bar (mirrored) | connector | cap (mirrored).
 -- Always touches the bottom and both side edges of the screen.
-local HUD = { onResize = {} }
+-- BOTTOM_PAD: transparent rows at the bottom of the HUD art, pushed below the screen edge.
+local HUD = { onResize = {}, BOTTOM_PAD = 19 }
 ns.HUD = HUD
 
 local D = ns.Data.HUD
@@ -60,14 +61,14 @@ function HUD.Place(region, x, y, w, h)
   if HUD.u then applyPlace(p) end
 end
 
-local function layoutConnectors(side, x0, stretch, u)
+local function layoutConnectors(side, x0, stretch, u, h)
   local pieces = ns.Layout.ConnectorPieces(stretch, TILE_W * u)
   local x = x0
   for i, w in ipairs(pieces) do
     local t = connector(side, i)
     t:ClearAllPoints()
     t:SetPoint("BOTTOMLEFT", root, "BOTTOMLEFT", x, 0)
-    t:SetSize(w, HUD.h)
+    t:SetSize(w, h)
     ns.Media.Apply(t, "hud_connector", side == "right", w / (TILE_W * u))
     t:Show()
     x = x + w
@@ -78,10 +79,12 @@ end
 function HUD.Layout()
   local W, H = UIParent:GetSize()
   local h, u, stretch = ns.Layout.HudSize(W, H, ns.db and ns.db.scale or 1)
-  HUD.u, HUD.h, HUD.W = u, h, W
+  -- HUD.h: visible height above the screen bottom (the art minus its sunk transparent rows).
+  local sink = HUD.BOTTOM_PAD * u
+  HUD.u, HUD.h, HUD.W = u, h - sink, W
 
   root:ClearAllPoints()
-  root:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT")
+  root:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, -sink)
   root:SetSize(W, h)
 
   local capW, barW = CAP_W * u, BAR_W * u
@@ -94,8 +97,8 @@ function HUD.Layout()
   ns.Media.Apply(barL, "hud_bar")
   ns.Media.Apply(barR, "hud_bar", true)
 
-  layoutConnectors("left", capW, stretch, u)
-  layoutConnectors("right", W / 2 + barW, stretch, u)
+  layoutConnectors("left", capW, stretch, u, h)
+  layoutConnectors("right", W / 2 + barW, stretch, u, h)
 
   for _, p in ipairs(placed) do applyPlace(p) end
   for _, fn in ipairs(HUD.onResize) do fn(u, h, W) end

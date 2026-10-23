@@ -38,7 +38,9 @@ end
 local function microButton(entry)
   local micro = ns.Resolve.First(entry.candidates)
   local b = CreateFrame("Button", nil, HUD.over, "SecureActionButtonTemplate")
-  b:RegisterForClicks("AnyUp")
+  -- Secure buttons fire on the edge chosen by the ActionButtonUseKeyDown CVar (on by default):
+  -- registered for "AnyUp" only, they never fired.
+  b:RegisterForClicks("AnyUp", "AnyDown")
   local icon = iconOf(b)
   if micro then
     b:SetAttribute("type", "click")

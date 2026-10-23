@@ -131,3 +131,79 @@ def test_reset_command_forgets_positions(lua, ns):
     lua.globals().SlashCmdList.OBSIDIANUI("reset")
     assert ns.db.invPos is None
     assert ns.db.positioned is True
+
+
+# In-game: the HUD art has transparent rows at the bottom; it must sit flush with the screen.
+def test_hud_sinks_transparent_bottom_rows_below_screen(lua, ns):
+    boot(lua, ns)
+    lua.execute("ROOT_Y = nil")
+    ns.HUD.frame.SetPoint = lua.eval("function(_, _, _, _, x, y) ROOT_Y = y end")
+    ns.HUD.Layout()
+    full, u, _ = ns.Layout.HudSize(1920, 1080, 1)
+    pad = ns.HUD.BOTTOM_PAD * u
+    assert ns.HUD.BOTTOM_PAD == 19
+    assert abs(lua.globals().ROOT_Y + pad) < 1e-6
+    assert abs(ns.HUD.h - (full - pad)) < 1e-6
+    assert abs(ns.Stack.BarTop() - (ns.HUD.h - 87 * u)) < 1e-6
+
+
+# In-game: action bars 6-8 of the modern client showed up over the HUD.
+def test_extra_action_bars_are_hidden(lua, ns):
+    boot(lua, ns, pre="""
+      HIDDEN = {}
+      for _, n in ipairs({ "MultiBar5", "MultiBar6", "MultiBar7" }) do
+        local f = CreateFrame()
+        f.SetParent = function() HIDDEN[n] = true end
+        _G[n] = f
+      end
+    """)
+    for n in ("MultiBar5", "MultiBar6", "MultiBar7"):
+        assert lua.globals().HIDDEN[n], n
+
+
+# In-game: the target frame art was cut at the bottom; its spec must match the exported art.
+def test_target_frame_spec_matches_exported_art(lua, ns):
+    boot(lua, ns)
+    m = ns.MediaManifest.target_frame
+    assert (ns.Data.TARGET.w, ns.Data.TARGET.h) == (m.w, m.h)
+
+
+# In-game: the menu panel buttons did nothing.
+def test_menu_secure_buttons_fire_on_key_down_too(lua, ns):
+    boot(lua, ns, pre="""
+      CLICK_REGS = {}
+      CharacterMicroButton = CreateFrame()
+      SpellbookMicroButton = CreateFrame()
+      local cf = CreateFrame
+      function CreateFrame(kind, name, parent, template)
+        local f = cf(kind, name, parent, template)
+        if template == "SecureActionButtonTemplate" then
+          f.RegisterForClicks = function(_, ...) CLICK_REGS[#CLICK_REGS + 1] = table.concat({ ... }, ",") end
+        end
+        return f
+      end
+    """)
+    regs = list(lua.globals().CLICK_REGS.values())
+    assert regs, "no secure menu buttons created"
+    for r in regs:
+        assert "AnyDown" in r and "AnyUp" in r
+
+
+def test_chat_pushed_off_hud_when_edit_mode_moves_it_back(lua, ns):
+    boot(lua, ns, pre="""
+      CHAT_BOTTOM = 20
+      CHAT_MOVES = 0
+      ChatFrame1 = CreateFrame()
+      ChatFrame1.GetBottom = function() return CHAT_BOTTOM end
+      ChatFrame1.ClearAllPoints = function() end
+      -- Blizzard's own anchor (x = 32) puts it over the HUD; ours lifts it.
+      ChatFrame1.SetPoint = function(_, _, _, _, x)
+        CHAT_MOVES = CHAT_MOVES + 1
+        CHAT_BOTTOM = (x == 32) and 20 or 400
+      end
+    """)
+    lua.execute('STUB_FIRE("PLAYER_ENTERING_WORLD")')
+    g = lua.globals()
+    moves = g.CHAT_MOVES
+    g.ChatFrame1.SetPoint(g.ChatFrame1, "BOTTOMLEFT", None, "BOTTOMLEFT", 32, 40)  # Edit Mode
+    assert g.CHAT_MOVES == moves + 2  # Blizzard's move, then ours

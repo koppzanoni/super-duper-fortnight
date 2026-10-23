@@ -82,10 +82,14 @@ def mask_circle(size=256):
 
 
 def liquid(size=256):
-    # Grayscale body, brighter near the top surface; tinted in game with SetVertexColor.
+    # Grayscale body tinted in game with SetVertexColor: a lit sphere of liquid, brighter toward
+    # the top and the upper-left light, darker (never black) toward the bottom.
     y, x = np.mgrid[0:size, 0:size] / (size - 1)
-    d = np.sqrt((x - 0.5) ** 2 + (y - 0.25) ** 2)
-    v = np.clip(1.0 - d * 1.15, 0.22, 1.0) * 255
+    vertical = 1.0 - 0.38 * y
+    d2 = ((x - 0.5) ** 2 + (y - 0.5) ** 2) / 0.25
+    sphere = 0.78 + 0.22 * np.sqrt(np.clip(1.0 - d2, 0, 1))
+    light = 0.10 * np.exp(-((x - 0.36) ** 2 + (y - 0.32) ** 2) / 0.03)
+    v = np.clip(vertical * sphere + light, 0.5, 1.0) * 255
     a = np.dstack([v, v, v, np.full_like(v, 255)]).astype(np.uint8)
     return Image.fromarray(a, "RGBA")
 
@@ -126,11 +130,11 @@ def aura_border(size=64, width=3):
 
 
 def vignette(size=256):
-    # Inner shadow for the orbs: clear center, black toward the rim (volume without any reflection).
+    # Thin inner shadow for the orbs where the liquid meets the ring (no reflection).
     y, x = np.mgrid[0:size, 0:size]
     c = (size - 1) / 2
     d = np.sqrt((x - c) ** 2 + (y - c) ** 2) / c
-    alpha = np.clip((d - 0.55) / 0.45, 0, 1) ** 1.6 * 235
+    alpha = np.clip((d - 0.84) / 0.16, 0, 1) ** 1.4 * 200
     a = np.zeros((size, size, 4), np.uint8)
     a[..., 3] = alpha.astype(np.uint8)
     return Image.fromarray(a, "RGBA")

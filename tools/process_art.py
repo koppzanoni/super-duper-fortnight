@@ -1,6 +1,6 @@
 """Key out the magenta background of the Meshy pieces, crop them and save transparent PNGs.
 
-Usage: python tools/process_art.py
+Usage: python tools/process_art.py [name ...]   (no names: every piece)
 Reads art/meshy/*.png, writes art/processed/*.png
 """
 import pathlib
@@ -15,8 +15,10 @@ DST = ROOT / "art" / "processed"
 # Region (x0, y0, x1, y1) to keep before trimming, for images where Meshy added extra content.
 REGIONS = {
     "action_bar": (0, 100, 1376, 470),
-    "target_frame": (0, 20, 1376, 458),
 }
+# Images with two separate pieces whose outlines overlap vertically: keep only the topmost
+# piece by its outline (a straight crop cut the bottom of the target frame's portrait ring).
+TOP_PIECE = {"target_frame"}
 SKIP = {"hud_full"}
 
 
@@ -35,20 +37,34 @@ def key_magenta(img):
     return Image.fromarray(out, "RGBA")
 
 
-def main():
+def keep_top_piece(img):
+    from scipy import ndimage
+    a = np.asarray(img).copy()
+    labels, n = ndimage.label(a[..., 3] > 40)
+    if n > 1:
+        tops = [np.where(labels == i)[0].min() for i in range(1, n + 1)]
+        top = 1 + int(np.argmin(tops))
+        a[..., 3] = np.where(labels == top, a[..., 3], 0)
+    return Image.fromarray(a, "RGBA")
+
+
+def main(names=None):
     DST.mkdir(parents=True, exist_ok=True)
     for path in sorted(SRC.glob("*.png")):
         name = path.stem
-        if name in SKIP:
+        if name in SKIP or (names and name not in names):
             continue
         img = Image.open(path)
         if name in REGIONS:
             img = img.crop(REGIONS[name])
         out = key_magenta(img)
+        if name in TOP_PIECE:
+            out = keep_top_piece(out)
         out = out.crop(out.getchannel("A").point(lambda v: 255 if v > 8 else 0).getbbox())
         out.save(DST / f"{name}.png")
         print(f"{name}: {out.size[0]}x{out.size[1]}")
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(sys.argv[1:] or None)
