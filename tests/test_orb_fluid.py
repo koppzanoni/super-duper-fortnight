@@ -46,3 +46,15 @@ def test_export_registers_orb_textures_and_drops_swirl(tmp_path):
     assert {"fluid_a", "fluid_b", "fluid_c", "orb_glass", "orb_spark"} <= set(e)
     assert (e["fluid_a"]["w"], e["fluid_a"]["potW"]) == (1024, 1024)
     assert "swirl" not in e
+
+
+# The liquid deepens toward the glass like the approved preview (body fading to the deep tone);
+# it lives inside the liquid only, so the empty glass gets no dark band.
+def test_depth_is_clear_in_the_middle_and_deep_at_the_rim():
+    a = np.asarray(of.depth())[..., 3]
+    assert of.depth().size == (256, 256)
+    assert a[128, 128] == 0 and a[128, 4] > 120 and a[0, 0] == 0
+
+
+def test_export_registers_orb_depth(tmp_path):
+    assert "orb_depth" in ex.export_all(tmp_path)

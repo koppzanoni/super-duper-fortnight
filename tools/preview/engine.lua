@@ -180,6 +180,10 @@ function Region:SetTexCoord(...) self.tc = { ... } end
 function Region:SetVertexColor(r, g, b, a) self.vc = { r, g, b, a or 1 } end
 function Region:SetDesaturated(v) self.desat = v end
 function Region:SetBlendMode(m) self.blend = m end
+function Region:SetRotation(a) self.rot = a end
+function Region:SetClipsChildren(v) self.clips = v end
+function Region:SetGradient(orientation, minColor, maxColor) self.grad = { orientation, minColor, maxColor } end
+function CreateColor(r, g, b, a) return { r = r, g = g, b = b, a = a or 1 } end
 function Region:AddMaskTexture(m) self.mask = m end
 
 -- Font strings ----------------------------------------------------------------------------------

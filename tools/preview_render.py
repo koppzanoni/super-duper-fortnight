@@ -6,6 +6,7 @@ OUT_DIR/preview_extra.png (smaller HUD with 3 extra action columns).
 Icons and portraits come from the reference art (the game provides real ones).
 """
 import argparse
+import math
 import pathlib
 import re
 
@@ -218,6 +219,16 @@ def render(rt, scene, out_path):
             img = tex_crop(src, r.tc).resize((box[2], box[3]), Image.LANCZOS)
         else:
             continue
+        if r.grad and r.color:
+            _, lo, hi = list(r.grad.values())
+            col = [[c.r, c.g, c.b, c.a] for c in (lo, hi)]
+            grad = Image.new("RGBA", (1, box[3]))
+            for yy in range(box[3]):
+                f = 1 - yy / max(1, box[3] - 1)  # 0 at the bottom (minColor), 1 at the top
+                grad.putpixel((0, yy), tuple(int((col[0][i] + (col[1][i] - col[0][i]) * f) * 255) for i in range(4)))
+            img = grad.resize((box[2], box[3]))
+        if r.rot:
+            img = img.rotate(math.degrees(r.rot), resample=Image.BICUBIC)
         vc = list(r.vc.values())
         if r.desat:
             img = Image.merge("RGBA", (*[ImageOps.grayscale(img)] * 3, img.getchannel("A")))
@@ -235,6 +246,16 @@ def render(rt, scene, out_path):
             full = Image.new("L", (W, H), 0)
             full.paste(circle_mask((mbox[2], mbox[3])), (mbox[0], mbox[1]))
             local = full.crop((box[0], box[1], box[0] + box[2], box[1] + box[3]))
+            img.putalpha(ImageChops.multiply(img.getchannel("A"), local))
+        clipper = r.parent
+        while clipper is not None and not clipper.clips:
+            clipper = clipper.parent
+        if clipper is not None:
+            cr = tuple(clipper.Rect(clipper).values())
+            cbox = (int(round(cr[0])), int(round(H - (cr[1] + cr[3]))), int(round(cr[2])), int(round(cr[3])))
+            keep = Image.new("L", (W, H), 0)
+            keep.paste(255, (cbox[0], cbox[1], cbox[0] + cbox[2], cbox[1] + cbox[3]))
+            local = keep.crop((box[0], box[1], box[0] + box[2], box[1] + box[3]))
             img.putalpha(ImageChops.multiply(img.getchannel("A"), local))
         if r.blend == "ADD":
             layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))

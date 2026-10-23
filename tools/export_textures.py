@@ -233,6 +233,7 @@ def export_all(out_dir=MEDIA):
         save(f"fluid_{style}", orb_fluid.sheet(style))
     save("orb_glass", orb_fluid.glass())
     save("orb_spark", orb_fluid.spark())
+    save("orb_depth", orb_fluid.depth())
 
     write_manifest(entries, out_dir / "manifest.lua")
     return entries

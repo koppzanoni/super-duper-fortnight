@@ -107,6 +107,18 @@ def glass(size=256):
     return Image.fromarray(a, "RGBA")
 
 
+def depth(size=256):
+    """Radial deepening of the liquid: clear in the middle, toward the deep tone at the glass."""
+    y, x = np.mgrid[0:size, 0:size] / (size - 1) * 2 - 1
+    r = np.sqrt(x * x + y * y)
+    alpha = np.clip((r - 0.55) / 0.45, 0, 1) ** 1.6 * 0.85
+    alpha[r > 1] = 0
+    a = np.zeros((size, size, 4), np.uint8)
+    a[..., :3] = 255
+    a[..., 3] = (alpha * 255).astype(np.uint8)
+    return Image.fromarray(a, "RGBA")
+
+
 def spark(size=32):
     """Small soft dot of light (the rising bubbles of the Energia style)."""
     y, x = np.mgrid[0:size, 0:size]

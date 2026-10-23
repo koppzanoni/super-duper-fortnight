@@ -1,12 +1,21 @@
 local _, ns = ...
 
--- Health (left) and resource (right) orbs. Values go straight into a vertical StatusBar and
--- FontStrings: no Lua math on unit values (they can be secret in combat).
+-- Health (left) and resource (right) orbs: a slow PoE2-style liquid (flipbook of flowing wisps,
+-- tools/orb_fluid.py) inside the glass; transparent above the liquid. Values go straight into a
+-- vertical StatusBar and FontStrings: no Lua math on unit values (they can be secret in combat).
+-- The liquid follows the level through a clip frame anchored to the top of the fill.
 local D = ns.Data.HUD
+local Data = ns.Data
 local HUD = ns.HUD
 local M = ns.MediaManifest
 
 ns.Orbs = {}
+
+local FRAMES = 64
+local SPARKS = 6
+local WAVE_SPEED = 0.025
+
+local function clamp(v) return math.min(1, v) end
 
 local function makeOrb(x)
   local well = CreateFrame("Frame", nil, HUD.under)
@@ -15,30 +24,88 @@ local function makeOrb(x)
   local mask = well:CreateMaskTexture()
   mask:SetTexture(M.mask_circle.file, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
   mask:SetAllPoints(well)
+  local function masked(t) t:AddMaskTexture(mask); return t end
 
-  local bg = well:CreateTexture(nil, "BACKGROUND")
-  bg:SetAllPoints(well)
-  bg:SetColorTexture(0.02, 0.024, 0.031, 1)
-  bg:AddMaskTexture(mask)
-
+  -- Body: dark sphere tinted with the palette, cut at the level by the status bar.
   local bar = CreateFrame("StatusBar", nil, well)
   bar:SetAllPoints(well)
   bar:SetOrientation("VERTICAL")
   bar:SetStatusBarTexture(M.liquid.file)
-  bar:GetStatusBarTexture():AddMaskTexture(mask)
   local fill = bar:GetStatusBarTexture()
+  masked(fill)
 
-  -- Wavy surface anchored to the top of the fill: follows the value without any math.
-  local wave = bar:CreateTexture(nil, "ARTWORK", nil, 3)
+  -- Everything of the liquid lives in this frame, which ends at the top of the fill.
+  local clip = CreateFrame("Frame", nil, well)
+  clip:SetFrameLevel(bar:GetFrameLevel() + 1)
+  clip:SetPoint("TOPLEFT", fill, "TOPLEFT")
+  clip:SetPoint("TOPRIGHT", fill, "TOPRIGHT")
+  clip:SetPoint("BOTTOMLEFT", well, "BOTTOMLEFT")
+  clip:SetPoint("BOTTOMRIGHT", well, "BOTTOMRIGHT")
+  clip:SetClipsChildren(true)
+
+  -- Two textures per wisp layer, crossfading between consecutive flipbook frames.
+  local function wispPair(sublevel)
+    local pair = {}
+    for i = 1, 2 do
+      local t = masked(clip:CreateTexture(nil, "ARTWORK", nil, sublevel))
+      t:SetPoint("CENTER", well, "CENTER")
+      t:SetBlendMode("ADD")
+      pair[i] = t
+    end
+    return pair
+  end
+  local wisp2 = wispPair(1)
+  local wisp = wispPair(2)
+
+  local core = masked(clip:CreateTexture(nil, "ARTWORK", nil, 3))
+  core:SetTexture(M.orb_spark.file)
+  core:SetPoint("CENTER", well, "CENTER")
+  core:SetBlendMode("ADD")
+
+  local sparks = {}
+  for i = 1, SPARKS do
+    local s = masked(clip:CreateTexture(nil, "ARTWORK", nil, 4))
+    s:SetTexture(M.orb_spark.file)
+    s:SetBlendMode("ADD")
+    -- Fixed lane and pace per spark: a slow rise over 12-20 s.
+    s.obX, s.obPhase, s.obPeriod = 0.2 + 0.6 * ((i * 0.37) % 1), i * 2.3, 12 + (i * 1.7) % 8
+    sparks[i] = s
+  end
+
+  -- Deeper toward the glass (deep tone of the palette, inside the liquid only).
+  local rim = masked(clip:CreateTexture(nil, "ARTWORK", nil, 5))
+  rim:SetAllPoints(well)
+  rim:SetTexture(M.orb_depth.file)
+
+  -- Deeper toward the bottom of the liquid.
+  local depth = masked(clip:CreateTexture(nil, "ARTWORK", nil, 5))
+  depth:SetAllPoints(well)
+  depth:SetColorTexture(1, 1, 1, 1)
+  if CreateColor then depth:SetGradient("VERTICAL", CreateColor(0, 0, 0, 0.5), CreateColor(0, 0, 0, 0)) end
+
+  -- Above the liquid: surface, rim shadow and glass.
+  local top = CreateFrame("Frame", nil, well)
+  top:SetAllPoints(well)
+  top:SetFrameLevel(clip:GetFrameLevel() + 1)
+
+  -- Wavy surface anchored to the top of the fill: follows the value without any math. A thin
+  -- glow added on the liquid (a solid band looked like a stripe of paint).
+  local wave = masked(top:CreateTexture(nil, "ARTWORK"))
   wave:SetTexture(M.wave.file, "REPEAT", "CLAMP")
+  wave:SetBlendMode("ADD")
+  wave:SetAlpha(0.45)
   wave:SetPoint("BOTTOMLEFT", fill, "TOPLEFT", 0, -1)
   wave:SetPoint("BOTTOMRIGHT", fill, "TOPRIGHT", 0, -1)
-  wave:AddMaskTexture(mask)
 
-  local shade = bar:CreateTexture(nil, "OVERLAY")
+  local shade = masked(top:CreateTexture(nil, "OVERLAY"))
   shade:SetAllPoints(well)
   shade:SetTexture(M.vignette.file)
-  shade:AddMaskTexture(mask)
+
+  local glass = masked(top:CreateTexture(nil, "OVERLAY", nil, 1))
+  glass:SetAllPoints(well)
+  glass:SetTexture(M.orb_glass.file)
+  glass:SetBlendMode("ADD")
+  glass:SetAlpha(0.8)
 
   local textHolder = CreateFrame("Frame", nil, HUD.over)
   HUD.Place(textHolder, x, D.orb.y, D.orb.w, D.orb.h)
@@ -49,23 +116,89 @@ local function makeOrb(x)
   local val = textHolder:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   val:SetPoint("TOP", pct, "BOTTOM", 0, -1)
 
-  local offset = 0
-  well:SetScript("OnUpdate", function(_, elapsed)
-    offset = (offset + elapsed * 0.05) % 1
-    wave:SetTexCoord(offset, offset + 1, 0, 1)
-  end)
+  local orb = { well = well, bar = bar, fill = fill, clip = clip, wisp = wisp, wisp2 = wisp2, core = core,
+    sparks = sparks, depth = depth, rim = rim, wave = wave, glass = glass, pct = pct, val = val, t = 0, waveOffset = 0 }
 
   table.insert(HUD.onResize, function(u)
-    wave:SetHeight(math.max(2, 10 * u))
+    wave:SetHeight(math.max(2, 5 * u))
+    local w = well:GetWidth()
+    for i = 1, 2 do
+      wisp[i]:SetSize(w * 1.08, w * 1.08)
+      wisp2[i]:SetSize(w * 1.25, w * 1.25)
+    end
+    core:SetSize(w * 0.6, w * 0.6)
+    for _, s in ipairs(sparks) do s:SetSize(8 * u, 8 * u) end
   end)
 
-  local orb = { well = well, bg = bg, bar = bar, wave = wave, pct = pct, val = val }
-  function orb:SetColor(r, g, b)
-    -- The empty part reads as dark tinted glass, not a black hole.
-    self.bg:SetColorTexture(0.02 + r * 0.10, 0.02 + g * 0.10, 0.03 + b * 0.10, 1)
-    self.bar:SetStatusBarColor(r, g, b)
-    self.wave:SetVertexColor(math.min(1, r * 1.25), math.min(1, g * 1.25), math.min(1, b * 1.25))
+  -- One wisp layer at flipbook position f (frames, may be fractional), crossfaded.
+  local function showFrame(pair, f, alpha, angle)
+    local i = math.floor(f)
+    local k = f - i
+    pair[1]:SetTexCoord(Data.FlipbookCoords(i))
+    pair[2]:SetTexCoord(Data.FlipbookCoords(i + 1))
+    pair[1]:SetAlpha(alpha * (1 - k))
+    pair[2]:SetAlpha(alpha * k)
+    pair[1]:SetRotation(angle)
+    pair[2]:SetRotation(angle)
   end
+
+  -- Advance the animation (OnUpdate of every style but the still one).
+  function orb:Step(elapsed)
+    local st = self.styleDef
+    self.t = self.t + elapsed
+    local t = self.t
+    local f = (t * st.fps) % FRAMES
+    showFrame(self.wisp, f, st.wisp, t * st.spin)
+    if st.wisp2 > 0 then showFrame(self.wisp2, (f + FRAMES / 2) % FRAMES, st.wisp2, t * st.spin2) end
+    if st.core > 0 then self.core:SetAlpha(st.core * (0.6 + 0.4 * math.sin(t * 0.8))) end
+    if st.sparks then
+      local w, h = self.well:GetWidth(), self.well:GetHeight()
+      for _, s in ipairs(self.sparks) do
+        local rise = ((t + s.obPhase) / s.obPeriod) % 1
+        s:ClearAllPoints()
+        s:SetPoint("CENTER", self.well, "BOTTOMLEFT", s.obX * w + math.sin(t * 2 + s.obPhase) * 3, rise * h)
+      end
+    end
+    self.waveOffset = (self.waveOffset + elapsed * WAVE_SPEED) % 1
+    self.wave:SetTexCoord(self.waveOffset, self.waveOffset + 1, 0, 1)
+  end
+
+  function orb:SetStyle(key)
+    local st = Data.ORB_STYLES[key]
+    self.style, self.styleDef = key, st
+    local file = M[st.sheet].file
+    for i = 1, 2 do
+      self.wisp[i]:SetTexture(file)
+      self.wisp2[i]:SetTexture(file)
+      self.wisp2[i]:SetShown(st.wisp2 > 0)
+    end
+    self.core:SetShown(st.core > 0)
+    for _, s in ipairs(self.sparks) do s:SetShown(st.sparks) end
+    if st.still then
+      self.well:SetScript("OnUpdate", nil)
+      showFrame(self.wisp, st.stillFrame, st.wisp, 0)
+      showFrame(self.wisp2, st.stillFrame + FRAMES / 2, st.wisp2, 0)
+    else
+      self.well:SetScript("OnUpdate", function(_, elapsed) self:Step(elapsed) end)
+      self:Step(0)
+    end
+  end
+
+  function orb:SetPalette(pal)
+    self.palette = pal
+    local body, wispC, line = pal.body, pal.wisp, pal.line
+    self.bar:SetStatusBarColor(body[1], body[2], body[3])
+    for i = 1, 2 do
+      self.wisp[i]:SetVertexColor(wispC[1], wispC[2], wispC[3])
+      self.wisp2[i]:SetVertexColor(clamp(body[1] * 1.8), clamp(body[2] * 1.8), clamp(body[3] * 1.8))
+    end
+    self.core:SetVertexColor(wispC[1], wispC[2], wispC[3])
+    for _, s in ipairs(self.sparks) do s:SetVertexColor(line[1], line[2], line[3]) end
+    self.wave:SetVertexColor(line[1], line[2], line[3])
+    self.rim:SetVertexColor(pal.deep[1], pal.deep[2], pal.deep[3])
+  end
+
+  orb:SetStyle(Data.OrbStyle(nil))
   return orb
 end
 
@@ -86,7 +219,16 @@ end
 local health = makeOrb(D.orb.x)
 local power = makeOrb(ns.Layout.MirrorX(D.width, D.orb.x, D.orb.w))
 ns.Orbs.health, ns.Orbs.power = health, power
-health:SetColor(ns.Data.ORB_COLORS.HEALTH.r, ns.Data.ORB_COLORS.HEALTH.g, ns.Data.ORB_COLORS.HEALTH.b)
+health:SetPalette(Data.OrbPalette("HEALTH"))
+power:SetPalette(Data.OrbPalette("MANA"))
+
+-- Both orbs share the style (setting "orbStyle"); an unknown saved value falls back to "a".
+function ns.Orbs.SetStyle(key)
+  key = Data.OrbStyle(key)
+  if ns.db then ns.db.orbStyle = key end
+  health:SetStyle(key)
+  power:SetStyle(key)
+end
 
 local function updateHealth()
   local cur, max = UnitHealth("player"), UnitHealthMax("player")
@@ -105,7 +247,7 @@ end
 
 local function updatePowerColor()
   local _, token = UnitPowerType("player")
-  power:SetColor(ns.Data.PowerColor(token))
+  power:SetPalette(Data.OrbPalette(token or "MANA"))
   updatePower()
 end
 
@@ -122,7 +264,12 @@ local function forPlayer(fn)
   return function(_, unit) if unit == "player" then fn() end end
 end
 
-ns.On("PLAYER_ENTERING_WORLD", function() updateHealth(); updatePowerColor(); ns.Orbs.ApplyTextVisibility() end)
+ns.On("PLAYER_ENTERING_WORLD", function()
+  ns.Orbs.SetStyle(ns.db and ns.db.orbStyle)
+  updateHealth()
+  updatePowerColor()
+  ns.Orbs.ApplyTextVisibility()
+end)
 ns.On("UNIT_HEALTH", forPlayer(updateHealth))
 ns.On("UNIT_MAXHEALTH", forPlayer(updateHealth))
 ns.On("UNIT_POWER_FREQUENT", forPlayer(updatePower))

@@ -48,3 +48,138 @@ def test_other_power_palette_is_derived(D):
     p = D.OrbPalette("RAGE")  # ORB_COLORS.RAGE = 0.62, 0.08, 0.05
     assert abs(p.deep[1] - 0.62 * 0.08) < 1e-9 and abs(p.body[1] - 0.62 * 0.35) < 1e-9
     assert abs(p.wisp[1] - (0.62 + 0.38 * 0.10)) < 1e-9 and abs(p.line[1] - (0.62 + 0.38 * 0.55)) < 1e-9
+
+
+# ---- Orbs (HUD/Orbs.lua) ----
+from conftest import load_addon_file, toc_files  # noqa: E402
+
+# Frames and textures record their setters (the plain stub returns stubs and keeps nothing).
+RECORD = """
+  local SETTERS = { "SetPoint", "ClearAllPoints", "SetClipsChildren", "SetTexCoord", "SetRotation",
+    "SetAlpha", "SetVertexColor", "SetTexture", "SetBlendMode", "SetSize", "SetAllPoints",
+    "SetStatusBarColor", "SetGradient" }
+  local function instrument(o)
+    o.last, o.points, o.shown = {}, {}, true
+    for _, name in ipairs(SETTERS) do
+      o[name] = function(self, ...)
+        self.last[name] = { ... }
+        if name == "SetPoint" then table.insert(self.points, { ... }) end
+        if name == "ClearAllPoints" then self.points = {} end
+      end
+    end
+    o.Show = function(self) self.shown = true end
+    o.Hide = function(self) self.shown = false end
+    o.SetShown = function(self, v) self.shown = v and true or false end
+    local ct = o.CreateTexture
+    o.CreateTexture = function(self, ...) local t = ct(self, ...); instrument(t); return t end
+    return o
+  end
+  local cf = CreateFrame
+  function CreateFrame(...) return instrument(cf(...)) end
+"""
+
+
+def boot(lua, ns, pre="", db=None):
+    lua.execute(RECORD + pre)
+    for f in toc_files():
+        load_addon_file(lua, f, ns)
+    lua.execute('STUB_FIRE("ADDON_LOADED", "ObsidianUI")')
+    for k, v in (db or {}).items():
+        ns.db[k] = v
+    lua.execute('STUB_FIRE("PLAYER_LOGIN")')
+    lua.execute('STUB_FIRE("PLAYER_ENTERING_WORLD")')
+    return ns
+
+
+def last(region, name):
+    args = region.last[name]
+    return tuple(args[i] for i in range(1, len(args) + 1))
+
+
+def coords(ns, i):
+    return tuple(ns.Data.FlipbookCoords(i))
+
+
+def test_empty_part_is_transparent(lua, ns):
+    boot(lua, ns)
+    assert ns.Orbs.health.bg is None
+
+
+def test_liquid_is_clipped_to_the_fill(lua, ns):
+    boot(lua, ns)
+    o = ns.Orbs.health
+    assert last(o.clip, "SetClipsChildren") == (True,)
+    lua.globals().O = o
+    has = lua.eval("""function(point, rel)
+      for _, p in ipairs(O.clip.points) do
+        if p[1] == point and p[2] == O[rel] and p[3] == point then return true end
+      end
+      return false
+    end""")
+    assert has("TOPLEFT", "fill") and has("TOPRIGHT", "fill")
+    assert has("BOTTOMLEFT", "well") and has("BOTTOMRIGHT", "well")
+
+
+def test_step_plays_the_flipbook_with_crossfade(lua, ns):
+    boot(lua, ns)
+    ns.Orbs.SetStyle("a")
+    o = ns.Orbs.health
+    o.t = 0
+    o.Step(o, 1.0)  # t = 1 s at 7 fps: frame 7, no blend yet
+    w1, w2 = o.wisp[1], o.wisp[2]
+    assert last(w1, "SetTexCoord") == coords(ns, 7) and last(w2, "SetTexCoord") == coords(ns, 8)
+    assert last(w1, "SetAlpha") == (0.62,) and last(w2, "SetAlpha") == (0,)
+    assert abs(last(w1, "SetRotation")[0] - 0.05) < 1e-9
+    assert last(o.wisp2[1], "SetTexCoord") == coords(ns, 39)
+    assert abs(last(o.wisp2[1], "SetRotation")[0] + 0.03) < 1e-9
+    o.Step(o, 1 / 14)  # half a frame later: crossfade halfway
+    assert abs(last(w1, "SetAlpha")[0] - 0.31) < 1e-6 and abs(last(w2, "SetAlpha")[0] - 0.31) < 1e-6
+
+
+def test_still_style_has_no_onupdate_and_resumes(lua, ns):
+    boot(lua, ns)
+    ns.Orbs.SetStyle("d")
+    o = ns.Orbs.health
+    assert o.well.handlers.OnUpdate is None
+    assert last(o.wisp[1], "SetTexCoord") == coords(ns, 21) and last(o.wisp[1], "SetAlpha") == (0.62,)
+    assert last(o.wisp[2], "SetAlpha") == (0,)
+    ns.Orbs.SetStyle("a")
+    assert o.well.handlers.OnUpdate is not None
+
+
+def test_sparks_only_in_energy_style(lua, ns):
+    boot(lua, ns)
+    o = ns.Orbs.power
+    for style in ("b", "a", "b"):
+        ns.Orbs.SetStyle(style)
+    assert len(o.sparks) == 6 and all(s.shown for s in o.sparks.values())
+    ns.Orbs.SetStyle("a")
+    assert not any(s.shown for s in o.sparks.values())
+
+
+def test_saved_style_applied_on_login_with_fallback(lua, ns):
+    boot(lua, ns, db={"orbStyle": "zzz"})
+    assert ns.Orbs.health.style == "a" and ns.Orbs.power.style == "a" and ns.db.orbStyle == "a"
+
+
+def test_saved_style_is_used(lua, ns):
+    boot(lua, ns, db={"orbStyle": "c"})
+    assert ns.Orbs.health.style == "c" and ns.Orbs.power.style == "c"
+
+
+def test_power_type_change_recolors_and_keeps_style(lua, ns):
+    boot(lua, ns, pre='function UnitPowerType() return 1, "RAGE" end')
+    ns.Orbs.SetStyle("c")
+    lua.execute('STUB_FIRE("UNIT_DISPLAYPOWER", "player")')
+    o = ns.Orbs.power
+    wisp = ns.Data.OrbPalette("RAGE").wisp
+    assert last(o.wisp[1], "SetVertexColor")[:3] == (wisp[1], wisp[2], wisp[3])
+    assert o.style == "c"
+
+
+def test_health_uses_the_health_palette(lua, ns):
+    boot(lua, ns)
+    o = ns.Orbs.health
+    wisp, body = ns.Data.OrbPalette("HEALTH").wisp, ns.Data.OrbPalette("HEALTH").body
+    assert last(o.wisp[1], "SetVertexColor")[:3] == (wisp[1], wisp[2], wisp[3])
+    assert last(o.bar, "SetStatusBarColor")[:3] == (body[1], body[2], body[3])

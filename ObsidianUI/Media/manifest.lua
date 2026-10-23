@@ -21,6 +21,7 @@ ns.MediaManifest = {
   map_rim = { file = "Interface\\AddOns\\ObsidianUI\\Media\\map_rim", w = 512, h = 512, potW = 512, potH = 512 },
   mask_circle = { file = "Interface\\AddOns\\ObsidianUI\\Media\\mask_circle", w = 256, h = 256, potW = 256, potH = 256 },
   minimap_ring = { file = "Interface\\AddOns\\ObsidianUI\\Media\\minimap_ring", w = 1008, h = 1012, potW = 1024, potH = 1024 },
+  orb_depth = { file = "Interface\\AddOns\\ObsidianUI\\Media\\orb_depth", w = 256, h = 256, potW = 256, potH = 256 },
   orb_glass = { file = "Interface\\AddOns\\ObsidianUI\\Media\\orb_glass", w = 256, h = 256, potW = 256, potH = 256 },
   orb_spark = { file = "Interface\\AddOns\\ObsidianUI\\Media\\orb_spark", w = 32, h = 32, potW = 32, potH = 32 },
   plate = { file = "Interface\\AddOns\\ObsidianUI\\Media\\plate", w = 128, h = 32, potW = 128, potH = 32 },
