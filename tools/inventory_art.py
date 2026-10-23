@@ -27,13 +27,15 @@ FRAME_ROWS = 8
 
 # Weapon frames: same frame as the equipment, bottoms where the old 100px frames ended.
 WEAPON_CX = (232, 344, 456)
-WEAPON_BOTTOM = 618
-WEAPON_CLEAR = (178, 512, 512, 624)  # the old frames, covered with stone from above
-WEAPON_STONE_DY = 110
+WEAPON_BOTTOM = 658  # just above the panel's inner bottom (662), level with the last equipment row
+WEAPON_CLEAR = (178, 512, 512, 660)  # the old frames, covered with plain stone from above
+WEAPON_STONE_DY = 200
 
 # Extra textures cut from the reworked art for the addon's own panels and buttons.
 STONE_TILE = (200, 150, 456, 406)  # plain stone of the model panel, 256x256
-PLATE_SIZE = (128, 64)
+# One plate of the reworked row (they moved), without the rail under it.
+PLATE_TEX_SRC = (PLATES_X[1], 702, PLATES_X[1] + PLATE_W, 741)
+PLATE_SIZE = (128, 32)  # about the buttons' shape, so it scales evenly
 
 
 def nine_slice(src, w, h, margin):
@@ -81,5 +83,5 @@ def rework(img):
 
 def pieces(reworked):
     """Textures for the addon's own widgets, already power-of-two sized."""
-    plate = nine_slice(reworked.crop(PLATE_SRC), PLATE_SIZE[0], PLATE_SIZE[1], 10)
+    plate = nine_slice(reworked.crop(PLATE_TEX_SRC), PLATE_SIZE[0], PLATE_SIZE[1], 8)
     return {"stone_tile": reworked.crop(STONE_TILE), "plate": plate}

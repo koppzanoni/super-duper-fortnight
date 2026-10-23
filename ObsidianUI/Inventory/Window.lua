@@ -58,8 +58,8 @@ local function refreshModel()
   model:SetUnit("player")
   model:SetPortraitZoom(zoom)
   local db = ns.db or {}
-  if model.SetCamDistanceScale then pcall(model.SetCamDistanceScale, model, db.modelDistance or 0.85) end
-  if model.SetPosition then pcall(model.SetPosition, model, 0, 0, db.modelHeight or 0) end
+  if model.SetCamDistanceScale then pcall(model.SetCamDistanceScale, model, db.modelDistance or 0.9) end
+  if model.SetPosition then pcall(model.SetPosition, model, 0, 0, db.modelHeight or -0.12) end
 end
 Inventory.RefreshModel = refreshModel
 model:SetScript("OnShow", refreshModel)

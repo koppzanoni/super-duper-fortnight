@@ -15,7 +15,7 @@ ns.MediaManifest = {
   liquid = { file = "Interface\\AddOns\\ObsidianUI\\Media\\liquid", w = 256, h = 256, potW = 256, potH = 256 },
   mask_circle = { file = "Interface\\AddOns\\ObsidianUI\\Media\\mask_circle", w = 256, h = 256, potW = 256, potH = 256 },
   minimap_ring = { file = "Interface\\AddOns\\ObsidianUI\\Media\\minimap_ring", w = 1008, h = 1012, potW = 1024, potH = 1024 },
-  plate = { file = "Interface\\AddOns\\ObsidianUI\\Media\\plate", w = 128, h = 64, potW = 128, potH = 64 },
+  plate = { file = "Interface\\AddOns\\ObsidianUI\\Media\\plate", w = 128, h = 32, potW = 128, potH = 32 },
   ring_glow = { file = "Interface\\AddOns\\ObsidianUI\\Media\\ring_glow", w = 256, h = 256, potW = 256, potH = 256 },
   slot = { file = "Interface\\AddOns\\ObsidianUI\\Media\\slot", w = 128, h = 128, potW = 128, potH = 128 },
   stone_tile = { file = "Interface\\AddOns\\ObsidianUI\\Media\\stone_tile", w = 256, h = 256, potW = 256, potH = 256 },

@@ -52,3 +52,9 @@ def test_sort_plate_is_drawn():
     before = np.asarray(base()).astype(int)
     x0, y0, x1, y1 = ia.SORT_BOX
     assert np.abs(out[y0:y1, x0:x1] - before[y0:y1, x0:x1]).mean() > 5
+
+
+# In-game: the button plate showed a seam (cut across two plates of the moved row).
+def test_button_plate_is_cut_from_a_single_plate():
+    x0, _, x1, _ = ia.PLATE_TEX_SRC
+    assert any(px == x0 and px + ia.PLATE_W == x1 for px in ia.PLATES_X)

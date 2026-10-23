@@ -38,10 +38,10 @@ Data.MINIMAP = { w = 1008, h = 1012, map = { x = 86, y = 88, w = 837, h = 836 },
 -- Inventory window. Spec 4.10.
 Data.INV = { w = 690, h = 1334,
   title = { x = 187, y = 31, w = 315, h = 39 },
-  model = { x = 168, y = 95, w = 350, h = 448 },
+  model = { x = 168, y = 95, w = 350, h = 488 },
   -- Equipment frames and the tab row are redrawn by tools/inventory_art.py.
   equipCols = { 96.5, 591.5 }, equipTop = 104, equipPitch = 70.75, equipSize = 65,
-  weapons = { 197.5, 309.5, 421.5 }, weaponY = 549, weaponSize = 69, weaponInset = 2,
+  weapons = { 197.5, 309.5, 421.5 }, weaponY = 589, weaponSize = 69, weaponInset = 2,
   tabs = { 42, 151, 260, 369, 478 }, tabY = 705, tabW = 95, tabH = 34,
   sort = { x = 589, y = 705, w = 34, h = 34 },
   gridCols = { 44, 116, 189, 261, 333, 405, 478, 550 }, gridRows = { 761, 841, 918, 995, 1072, 1149 },

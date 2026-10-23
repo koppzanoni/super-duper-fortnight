@@ -48,14 +48,13 @@ function Widgets.Panel(f)
   edge(f, 2, { 0, 0, 0, 0.6 }, "BORDER", 2)
 end
 
--- Button: the stone tab plate (nine-sliced where the client supports it), gold text,
--- warm glow on hover, text sinks while pressed.
+-- Button: the stone tab plate (exported at about the buttons' shape), gold text, warm glow
+-- on hover, text sinks while pressed.
 function Widgets.Button(parent, label, onClick)
   local b = CreateFrame("Button", nil, parent)
   local plate = b:CreateTexture(nil, "BACKGROUND")
   plate:SetAllPoints(b)
   plate:SetTexture(M.plate.file)
-  if plate.SetTextureSliceMargins then pcall(plate.SetTextureSliceMargins, plate, 10, 10, 10, 10) end
   local glow = b:CreateTexture(nil, "HIGHLIGHT")
   glow:SetPoint("TOPLEFT", 3, -3)
   glow:SetPoint("BOTTOMRIGHT", -3, 3)
