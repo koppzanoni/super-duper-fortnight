@@ -356,3 +356,51 @@ def test_relic_slot_uses_the_relic_picture(lua, ns):
     assert "Relic" in str(ranged.icon.file)
     ranged.handlers.OnEnter(ranged)
     assert lua.globals().TIP == "Relic"
+
+
+# In game SetInventoryItem hides the tooltip when the slot is empty, so the slot name was set
+# on a hidden tooltip: the owner must be set again first (like ItemUtil.DisplayEquipSlotTooltip).
+def test_empty_slot_tooltip_survives_set_inventory_item_hiding_it(lua, ns):
+    boot(lua, ns, pre="""
+      TIP, OWNED, SHOWN = nil, false, false
+      GameTooltip = setmetatable({}, { __index = function() return function() end end })
+      GameTooltip.SetOwner = function() OWNED = true end
+      GameTooltip.SetInventoryItem = function() OWNED = false; SHOWN = false; return false end
+      GameTooltip.SetText = function(_, t) if OWNED then TIP = t end end
+      GameTooltip.Show = function() SHOWN = OWNED end
+      function GetInventorySlotInfo() return 6, "EMPTY" end
+      ItemUtil = { GetEmptyEquipSlotTooltip = function(slot) return "SLOT" .. slot end }
+    """)
+    b = [b for b in ns.Inventory.slotButtons.values() if b.slotName == "WaistSlot"][0]
+    b.handlers.OnEnter(b)
+    g = lua.globals()
+    assert g.TIP == "SLOT6" and g.SHOWN
+
+
+# WoW Forever binds the character key to ToggleWoWHackCharacterUI (its own character window).
+# Whenever that window shows, it is hidden and the unified window toggles instead.
+def test_forever_character_window_is_replaced_by_the_unified_window(lua, ns):
+    boot(lua, ns, pre="""
+      WoWHackCharacterUI = CreateFrame()
+      WoWHackCharacterUI.shown = false
+      WoWHackCharacterUI.Hide = function(self) self.shown = false end
+      WoWHackCharacterUI.IsShown = function(self) return self.shown end
+      function ToggleWoWHackCharacterUI()
+        WoWHackCharacterUI.shown = not WoWHackCharacterUI.shown
+        if WoWHackCharacterUI.shown and WoWHackCharacterUI.hooks.OnShow then WoWHackCharacterUI.hooks.OnShow(WoWHackCharacterUI) end
+      end
+    """)
+    toggles = {"n": 0}
+    ns.Inventory.Toggle = lambda: toggles.__setitem__("n", toggles["n"] + 1)
+    g = lua.globals()
+    g.ToggleWoWHackCharacterUI()
+    assert toggles["n"] == 1 and not g.WoWHackCharacterUI.shown
+    g.STUB_TIME = 200
+    g.ToggleWoWHackCharacterUI()
+    assert toggles["n"] == 2 and not g.WoWHackCharacterUI.shown
+    # Same press also clicking our key button toggles only once.
+    g.STUB_TIME = 300
+    b = ns.Inventory.toggleButton
+    b.handlers.OnClick(b, "LeftButton", True)
+    g.ToggleWoWHackCharacterUI()
+    assert toggles["n"] == 3

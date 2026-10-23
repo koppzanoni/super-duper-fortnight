@@ -137,7 +137,14 @@ local function slotButton(slotName)
   b:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     if not GameTooltip:SetInventoryItem("player", self.slotID) then
-      GameTooltip:SetText(isRelic(self) and RELICSLOT or _G[slotName:upper()] or slotName)
+      -- The game hides the tooltip when the slot is empty: take it again, then name the slot.
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      local text = isRelic(self) and RELICSLOT
+      if not text and type(ItemUtil) == "table" and type(ItemUtil.GetEmptyEquipSlotTooltip) == "function" then
+        local ok, t = pcall(ItemUtil.GetEmptyEquipSlotTooltip, self.slotID)
+        if ok and type(t) == "string" then text = t end
+      end
+      GameTooltip:SetText(text or _G[slotName:upper()] or slotName)
     end
     GameTooltip:Show()
   end)
@@ -395,12 +402,13 @@ end
 local toggleButton = CreateFrame("Button", "ObsidianUIInventoryToggle", UIParent)
 toggleButton:RegisterForClicks("AnyUp", "AnyDown")
 local lastToggle = -1
-toggleButton:SetScript("OnClick", function()
+local function toggleOncePerPress()
   local now = GetTime()
   if now - lastToggle < 0.3 then return end
   lastToggle = now
   Inventory.Toggle()
-end)
+end
+toggleButton:SetScript("OnClick", toggleOncePerPress)
 Inventory.toggleButton = toggleButton
 local bindingOwner = CreateFrame("Frame")
 local function bindCharacterKeys()
@@ -414,6 +422,29 @@ local function bindCharacterKeys()
 end
 ns.On("PLAYER_LOGIN", bindCharacterKeys)
 ns.On("UPDATE_BINDINGS", bindCharacterKeys)
+
+-- WoW Forever binds the character key (and the character menu button) to its own character
+-- window, ToggleWoWHackCharacterUI. Whenever that window shows, it is hidden again and this
+-- window toggles instead (once per press, shared with the key button above). The window may
+-- be created late, so it is looked for again each time the game toggles it.
+local function replaceForeverWindow(win)
+  if InCombatLockdown() and win:IsProtected() then return end
+  win:Hide()
+  toggleOncePerPress()
+end
+local watchedForever = false
+local function watchForeverWindow()
+  local win = rawget(_G, "WoWHackCharacterUI")
+  if watchedForever or type(win) ~= "table" or type(win.HookScript) ~= "function" then return end
+  watchedForever = true
+  win:HookScript("OnShow", replaceForeverWindow)
+  if win:IsShown() then replaceForeverWindow(win) end
+end
+if type(rawget(_G, "ToggleWoWHackCharacterUI")) == "function" then
+  hooksecurefunc("ToggleWoWHackCharacterUI", watchForeverWindow)
+end
+ns.On("PLAYER_LOGIN", watchForeverWindow)
+ns.On("ADDON_LOADED", watchForeverWindow)
 
 -- Once in the world, check the character key really clicks our button; if not, say in chat
 -- what holds it (so it can be fixed without the player typing anything).
