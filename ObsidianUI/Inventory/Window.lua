@@ -97,11 +97,25 @@ local function qualityColor(q)
   return 0.54, 0.43, 0.23
 end
 
+local RELIC_TEXTURE = "Interface\\Paperdoll\\UI-PaperDoll-Slot-Relic"
+
+-- checkRelic: the slot becomes a relic slot for classes that have one (like the default sheet).
+local function slotInfo(slotName)
+  if type(C_PaperDollInfo) == "table" and type(C_PaperDollInfo.GetInventorySlotInfo) == "function" then
+    return pcall(C_PaperDollInfo.GetInventorySlotInfo, slotName)
+  end
+  return pcall(GetInventorySlotInfo, slotName)
+end
+
+local function isRelic(b)
+  return b.checkRelic == true and type(UnitHasRelicSlot) == "function" and UnitHasRelicSlot("player") == true
+end
+
 local function slotButton(slotName)
-  local ok, slotID, emptyTexture = pcall(GetInventorySlotInfo, slotName)
+  local ok, slotID, emptyTexture, checkRelic = slotInfo(slotName)
   if not ok or not slotID then return nil end
   local b = CreateFrame("Button", nil, frame)
-  b.slotID, b.slotName, b.emptyTexture = slotID, slotName, emptyTexture
+  b.slotID, b.slotName, b.emptyTexture, b.checkRelic = slotID, slotName, emptyTexture, checkRelic
   b.icon = b:CreateTexture(nil, "ARTWORK")
   b.icon:SetAllPoints(b)
   b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
@@ -122,7 +136,9 @@ local function slotButton(slotName)
   b:SetScript("OnReceiveDrag", function(self) PickupInventoryItem(self.slotID) end)
   b:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    if not GameTooltip:SetInventoryItem("player", self.slotID) then GameTooltip:SetText(_G[slotName:upper()] or slotName) end
+    if not GameTooltip:SetInventoryItem("player", self.slotID) then
+      GameTooltip:SetText(isRelic(self) and RELICSLOT or _G[slotName:upper()] or slotName)
+    end
     GameTooltip:Show()
   end)
   b:SetScript("OnLeave", GameTooltip_Hide)
@@ -148,8 +164,9 @@ local function updateEquipment()
   for _, b in ipairs(slotButtons) do
     -- Empty slots show the game's empty-slot picture, dimmed (like the default sheet).
     local tex = GetInventoryItemTexture("player", b.slotID)
-    b.icon:SetTexture(tex or b.emptyTexture)
-    b.icon:SetShown((tex or b.emptyTexture) ~= nil)
+    local empty = isRelic(b) and RELIC_TEXTURE or b.emptyTexture
+    b.icon:SetTexture(tex or empty)
+    b.icon:SetShown((tex or empty) ~= nil)
     if tex then b.icon:SetVertexColor(1, 1, 1) else b.icon:SetVertexColor(0.55, 0.55, 0.55) end
     b.border:SetShown(tex ~= nil)
     if tex then b.border:SetVertexColor(qualityColor(GetInventoryItemQuality("player", b.slotID))) end

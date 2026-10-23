@@ -301,3 +301,36 @@ def test_hovering_an_empty_equipment_slot_names_it(lua, ns):
     ranged = [b for b in ns.Inventory.slotButtons.values() if b.slotName == "RangedSlot"][0]
     ranged.handlers.OnEnter(ranged)
     assert lua.globals().TIP == "Relic"
+
+
+# The ranged slot is a relic slot for some classes: same picture and name as the default sheet.
+def test_relic_slot_uses_the_relic_picture(lua, ns):
+    boot(lua, ns, pre="""
+      C_PaperDollInfo = { GetInventorySlotInfo = function(name)
+        return 18, "EMPTY:" .. name, name == "RangedSlot"
+      end }
+      function GetInventorySlotInfo(name) return 18, "EMPTY:" .. name end
+      function UnitHasRelicSlot() return true end
+      function GetInventoryItemTexture() return nil end
+      RELICSLOT = "Relic"
+      TIP = nil
+      GameTooltip = setmetatable({}, { __index = function() return function() end end })
+      GameTooltip.SetInventoryItem = function() return false end
+      GameTooltip.SetText = function(_, t) TIP = t end
+      local cf = CreateFrame
+      function CreateFrame(...)
+        local f = cf(...)
+        local ct = f.CreateTexture
+        f.CreateTexture = function(self, ...)
+          local t = ct(self, ...)
+          t.SetTexture = function(tt, file) tt.file = file end
+          return t
+        end
+        return f
+      end
+    """)
+    ns.Inventory.Open()
+    ranged = [b for b in ns.Inventory.slotButtons.values() if b.slotName == "RangedSlot"][0]
+    assert "Relic" in str(ranged.icon.file)
+    ranged.handlers.OnEnter(ranged)
+    assert lua.globals().TIP == "Relic"
