@@ -16,10 +16,10 @@ Data.HUD = {
 }
 
 -- Vertical bars. Spec 4.5.
--- Built from the main bar's art by tools/vbar_art.py (rotated): same frame, same slots.
-Data.VBAR1 = { w = 134, h = 944, cols = { 44 }, slot = { w = 61, h = 56 },
-  rows = { 48, 120, 192, 264, 336, 408, 480, 552, 624, 696, 768, 840 } }
-Data.VBAR2 = { w = 233, h = 944, cols = { 42, 143 }, slot = { w = 61, h = 56 }, rows = Data.VBAR1.rows }
+-- Built from the Meshy vertical bar art by tools/vbar_art.py (12 rows; one or two columns).
+Data.VBAR1 = { w = 114, h = 1002, cols = { 29 }, slot = { w = 56, h = 59 },
+  rows = { 38, 118, 198, 277, 356, 434, 514, 592, 670, 749, 826, 904 } }
+Data.VBAR2 = { w = 188, h = 1002, cols = { 29, 102 }, slot = { w = 56, h = 59 }, rows = Data.VBAR1.rows }
 
 -- Unit frames. Spec 4.6 and 7.1.
 -- Portrait ring opening is x 104-407, y 68-377; the portrait tucks 4px under the ring.

@@ -223,9 +223,9 @@ def export_all(out_dir=MEDIA):
             for piece, piece_img in inventory_art.pieces(img, original).items():
                 save(piece, piece_img)
         save(name, defringe(fit(img, max_side)))
-    hud = Image.open(ART / "hud_bottom.png").convert("RGBA")
-    save("vbar1", vbar_art.build(hud, 1))
-    save("vbar2", vbar_art.build(hud, 2))
+    vbar = Image.open(ART / vbar_art.SOURCE).convert("RGBA")
+    save("vbar1", defringe(vbar_art.build(vbar, 1)))
+    save("vbar2", defringe(vbar_art.build(vbar, 2)))
     for name, fn in PROCEDURAL.items():
         save(name, fn())
     # Orb liquid: flipbook sheets saved as they are (frames must stay exactly 128 px).

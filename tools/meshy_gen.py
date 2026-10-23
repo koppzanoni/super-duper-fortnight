@@ -191,6 +191,31 @@ PIECES["minimap_thin_b"] = MM_THIN
 for _n in ("unit_small","focus_frame","castbar","gem_socket","gem_lit","minimap_thin","minimap_thin_b"):
     REFS_OVERRIDE[_n] = REFS_MIN
 
+# Vertical action bars, redesign: two styles x one/two columns. The slots must be evenly spaced
+# identical squares so the buttons can be laid over them.
+VB_SLOTS = {
+    1: "exactly ONE single column of exactly 12 identical empty square slots stacked top to bottom, evenly spaced (NOT a grid, only one slot wide)",
+    2: "exactly TWO side by side columns of exactly 12 identical empty square slots each (24 slots), evenly spaced in a regular grid",
+}
+VB_STYLE = {
+    "ornate": "Its top and bottom ends are carved end caps with the same organic sculpted dark stone curves and small aged bronze crest as the "
+              "3x3 menu panels and orb frames of the attached HUD, so it clearly belongs to the same set; the long sides are slim carved stone rails "
+              "with a thin bronze trim line. Ornaments only at the ends and kept small, no gargoyles, no roots.",
+    "slim": "A slim, clean carved dark stone frame with a thin aged bronze inner trim around the slots, like the frame of the action bar of the attached HUD; "
+            "only tiny bronze corner fittings at the top and bottom ends, no crests, no gargoyles, no roots.",
+}
+for _style, _desc in VB_STYLE.items():
+    for _cols, _slots in VB_SLOTS.items():
+        _p = ("9:16",
+              "Generate ONLY one tall, NARROW VERTICAL action bar frame for the right edge of the screen, matching exactly the materials and colors "
+              "of the attached bottom HUD (carved dark grey stone, blackened iron, aged bronze trim). It holds " + _slots + ". "
+              + _desc + " The frame spans most of the image height and is only as wide as it needs to be, centered horizontally; "
+              "everything else is flat magenta background. Slots are empty dark recesses with thin bronze edges, no icons.")
+        for _suffix in ("", "_b"):
+            _n = f"vbar_{_style}{_cols}{_suffix}"
+            PIECES[_n] = _p
+            REFS_OVERRIDE[_n] = ["art/processed/hud_bottom.png", "art/processed/side_panel.png", "art/processed/action_bar.png"]
+
 PIECES["connector"] = ("16:9",
     "The FIRST attached image shows part of a game HUD: on the left a 3x3 menu panel, on the right the start of an action bar, and a wide empty magenta GAP between them. "
     "Redraw the image keeping the left panel and the right action bar exactly as they are, and fill the gap with a natural, seamless continuation of the low carved dark stone backing that connects them: "
