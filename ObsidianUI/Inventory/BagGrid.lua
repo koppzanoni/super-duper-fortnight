@@ -298,6 +298,34 @@ local function place(region, x, y, w, h)
   region:SetSize(rw, rh)
 end
 
+-- The scroll bar sits on the rail painted in the window art: the arrow buttons keep only a
+-- hover glow over the painted arrows, the thumb is the painted one (erased from the art).
+local bar = scroll.ScrollBar
+if bar then
+  for _, b in ipairs({ bar.ScrollUpButton, bar.ScrollDownButton }) do
+    for _, get in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture" }) do
+      local t = b and b[get] and b[get](b)
+      if t then t:SetAlpha(0) end
+    end
+    if b then b:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD") end
+  end
+  local thumb = bar.GetThumbTexture and bar:GetThumbTexture()
+  if thumb and M.scroll_thumb then
+    thumb:SetTexture(M.scroll_thumb.file)
+    thumb:SetTexCoord(0, M.scroll_thumb.w / M.scroll_thumb.potW, 0, M.scroll_thumb.h / M.scroll_thumb.potH)
+  end
+end
+local function placeScrollBar()
+  if not bar then return end
+  local SC = S.scroll
+  place(bar, SC.track.x, SC.track.y, SC.track.w, SC.track.h)
+  if bar.ScrollUpButton then place(bar.ScrollUpButton, SC.up.x, SC.up.y, SC.up.w, SC.up.h) end
+  if bar.ScrollDownButton then place(bar.ScrollDownButton, SC.down.x, SC.down.y, SC.down.w, SC.down.h) end
+  local thumb = bar.GetThumbTexture and bar:GetThumbTexture()
+  local fw, fh = frame:GetSize()
+  if thumb then thumb:SetSize(SC.track.w * fw / S.w, SC.thumbH * fh / S.h) end
+end
+
 Inventory.onLayout = function()
   unit = frame:GetWidth() / S.w
   for i, t in ipairs(tabs) do place(t, S.tabs[i], S.tabY, S.tabW, S.tabH) end
@@ -306,6 +334,7 @@ Inventory.onLayout = function()
   Inventory.PlaceInWing(search, SR.x, SR.y, SR.w, SR.h)
   for i, b in ipairs(footerBags) do place(b, S.bags[i], S.bagY, S.bagW, S.bagH) end
   place(gold, S.gold.x, S.gold.y, S.gold.w, S.gold.h)
+  placeScrollBar()
 end
 Inventory.onOpen = function()
   setTab(activeTab)

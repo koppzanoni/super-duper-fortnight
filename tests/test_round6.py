@@ -441,3 +441,47 @@ def test_equipment_slots_glow_on_hover(lua, ns):
     hl = lua.globals().HIGHLIGHTS
     assert len(hl) >= len(list(ns.Inventory.slotButtons.values()))
     assert hl[1] == "Interface\\Buttons\\ButtonHilight-Square|ADD"
+
+
+# The bag scroll bar sits on the rail painted in the window art; its own art is hidden.
+def test_bag_scroll_bar_sits_on_the_painted_rail(lua, ns):
+    boot(lua, ns, pre="""
+      local cf = CreateFrame
+      function CreateFrame(kind, name, parent, template)
+        local f = cf(kind, name, parent, template)
+        if template == "UIPanelScrollFrameTemplate" then
+          local function part()
+            local p = cf()
+            p.points = {}
+            p.SetPoint = function(self, ...) self.points[#self.points + 1] = { ... } end
+            p.ClearAllPoints = function(self) self.points = {} end
+            p.SetSize = function(self, w, h) self.w, self.h = w, h end
+            p.tex = { SetAlpha = function(t, a) t.alpha = a end }
+            p.GetNormalTexture = function(self) return self.tex end
+            p.GetPushedTexture = function(self) return self.tex end
+            p.GetDisabledTexture = function(self) return self.tex end
+            p.SetHighlightTexture = function(self, t) self.hl = t end
+            return p
+          end
+          f.ScrollBar = part()
+          f.ScrollBar.ScrollUpButton = part()
+          f.ScrollBar.ScrollDownButton = part()
+          local thumb = { SetTexture = function(t, file) t.file = file end, SetTexCoord = function() end,
+            SetSize = function(t, w, h) t.w, t.h = w, h end }
+          f.ScrollBar.GetThumbTexture = function() return thumb end
+          BAG_SCROLL = f
+        end
+        return f
+      end
+    """)
+    ns.Inventory.Layout()
+    g = lua.globals()
+    bar = g.BAG_SCROLL.ScrollBar
+    S = ns.Data.INV.scroll
+    ux, uy = 1920 / ns.Data.INV.w, 1080 / ns.Data.INV.h
+    assert bar.points[1][4] == S.track.x * ux and bar.points[1][5] == -S.track.y * uy
+    assert abs(bar.w - S.track.w * ux) < 1e-6
+    up = bar.ScrollUpButton
+    assert up.points[1][4] == S.up.x * ux and up.tex.alpha == 0
+    assert bar.ScrollDownButton.points[1][5] == -S.down.y * uy
+    assert "scroll_thumb" in bar.GetThumbTexture().file

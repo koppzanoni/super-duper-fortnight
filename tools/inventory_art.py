@@ -37,6 +37,15 @@ GRID_CLEAR = (36, 750, 614, 1216)
 GRID_SLOT_SRC = (42, 757, 107, 827)
 GRID_STONE_DARKEN = 0.55
 
+# Bag scroll bar painted on the right of the grid: the real scroll bar is placed on it (the
+# rects are in Data.INV.scroll). The painted thumb is erased with the empty groove below it
+# and becomes the thumb texture, shortened keeping its rounded ends.
+SCROLL_UP = (629, 750, 652, 772)
+SCROLL_DOWN = (629, 1199, 652, 1221)
+SCROLL_TRACK = (634, 774, 647, 1197)
+SCROLL_THUMB = (635, 776, 646, 924)
+SCROLL_THUMB_SIZE = (11, 64)
+
 # Extra textures cut from the reworked art for the addon's own panels and buttons.
 STONE_TILE = (200, 150, 456, 406)  # plain stone of the model panel, 256x256
 # One plate of the reworked row (they moved), without the rail under it.
@@ -93,14 +102,21 @@ def rework(img):
     img.paste(img.crop((wx0, wy0 - WEAPON_STONE_DY, wx1, wy1 - WEAPON_STONE_DY)), (wx0, wy0))
     for cx in WEAPON_CX:
         img.paste(frame, (round(cx - FRAME_SIZE / 2), WEAPON_BOTTOM - FRAME_SIZE))
+
+    gx0, _, gx1, _ = SCROLL_TRACK
+    _, ty0, _, ty1 = SCROLL_THUMB
+    top, bottom = ty0 - 2, ty1 + 2
+    below = bottom + 6
+    img.paste(img.crop((gx0, below, gx1, below + bottom - top)), (gx0, top))
     return img
 
 
 def pieces(reworked, original):
     """Textures for the addon's own widgets (from the reworked art, the bag slot from the original)."""
     plate = nine_slice(reworked.crop(PLATE_TEX_SRC), PLATE_SIZE[0], PLATE_SIZE[1], 8)
+    thumb = nine_slice(original.convert("RGBA").crop(SCROLL_THUMB), *SCROLL_THUMB_SIZE, 5)
     return {"stone_tile": reworked.crop(STONE_TILE), "plate": plate, "inventory_wing": wing(reworked),
-            "bag_slot": original.convert("RGBA").crop(GRID_SLOT_SRC)}
+            "bag_slot": original.convert("RGBA").crop(GRID_SLOT_SRC), "scroll_thumb": thumb}
 
 
 # Stats wing: a narrow panel docked left of the window, built from the window's own frame (the

@@ -50,6 +50,9 @@ Data.INV = { w = 690, h = 1334,
   sort = { x = 589, y = 705, w = 34, h = 34 },
   gridCols = { 44, 116, 189, 261, 333, 405, 478, 550 }, gridRows = { 761, 841, 918, 995, 1072, 1149 },
   gridSlot = 59, gridPitchY = 77.6,
+  -- Bag scroll bar on the rail painted in the art (tools/inventory_art.py SCROLL_*).
+  scroll = { up = { x = 629, y = 750, w = 23, h = 22 }, down = { x = 629, y = 1199, w = 23, h = 22 },
+    track = { x = 634, y = 774, w = 13, h = 423 }, thumbH = 64 },
   -- Each item button's own slot frame (texture bag_slot), relative to the button.
   gridFrame = { dx = -2, dy = -4, w = 65, h = 70 },
   bags = { 42, 119, 196, 273, 350 }, bagY = 1234, bagW = 64, bagH = 66,

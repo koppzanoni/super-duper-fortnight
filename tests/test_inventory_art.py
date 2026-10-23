@@ -93,3 +93,30 @@ def test_bag_slot_texture_and_its_placement():
     gx, gy = S.gridCols[1], S.gridRows[1]
     assert (S.gridFrame.dx, S.gridFrame.dy) == (x0 - gx, y0 - gy)
     assert (S.gridFrame.w, S.gridFrame.h) == (x1 - x0, y1 - y0)
+
+
+# The art paints its own scroll bar; the real one sits on it (in game there were two, one
+# over the other). The painted thumb is erased (the real thumb moves) and becomes a texture.
+def test_scroll_bar_rects_match_the_painted_rail():
+    S = data()
+    sc = S.scroll
+    for key, box in (("up", ia.SCROLL_UP), ("down", ia.SCROLL_DOWN), ("track", ia.SCROLL_TRACK)):
+        r = sc[key]
+        assert (r.x, r.y, r.x + r.w, r.y + r.h) == box
+
+
+def test_painted_thumb_is_erased():
+    orig = np.asarray(base().convert("L"), dtype=float)
+    new = np.asarray(ia.rework(base()).convert("L"), dtype=float)
+    x0, y0, x1, y1 = ia.SCROLL_THUMB
+    # The thumb's bright rim is gone: the area now looks like the empty groove.
+    assert new[y0:y1, x0:x1].max() < orig[y0:y1, x0:x1].max() - 40
+    gx0, gy0, gx1, gy1 = ia.SCROLL_TRACK
+    groove = new[y1 + 20:gy1 - 20, gx0:gx1].mean()
+    assert abs(new[y0:y1, x0:x1].mean() - groove) < 8
+
+
+def test_scroll_thumb_piece():
+    reworked = ia.rework(base())
+    thumb = ia.pieces(reworked, base())["scroll_thumb"]
+    assert thumb.size == ia.SCROLL_THUMB_SIZE
