@@ -66,6 +66,11 @@ local function layout()
     if bar.Icon then
       hooksecurefunc(bar.Icon, "Hide", function(icon) icon:Show() end)
       hooksecurefunc(bar.Icon, "SetShown", function(icon, shown) if not shown then icon:Show() end end)
+      -- round, like the frame's socket
+      local mask = bar:CreateMaskTexture()
+      mask:SetTexture(M.mask_circle.file, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+      mask:SetAllPoints(bar.Icon)
+      bar.Icon:AddMaskTexture(mask)
     end
   end
   -- The StatusBar itself fills exactly the groove; the frame art sits around it. Pinned:

@@ -27,7 +27,7 @@ ART_SOURCES = {
     "hud_bar": ("hud_bottom.png", (662, 0, 1346, 381), None),
     "hud_connector": ("hud_connector.png", None, None),
     "unit_frame": ("unit_frame.png", None, None),
-    "castbar": ("castbar.png", None, None),
+    "castbar": ("castbar_b.png", None, None),
     "gem_on": ("gem_lit.png", None, 128),
     "gem_off": ("gem_socket.png", None, 128),
     "minimap_ring": ("minimap_thin.png", None, None),

@@ -4,7 +4,7 @@ ns.MediaManifest = {
   aura_border = { file = "Interface\\AddOns\\ObsidianUI\\Media\\aura_border", w = 64, h = 64, potW = 64, potH = 64 },
   bag_slot = { file = "Interface\\AddOns\\ObsidianUI\\Media\\bag_slot", w = 65, h = 70, potW = 128, potH = 128 },
   bar_fill = { file = "Interface\\AddOns\\ObsidianUI\\Media\\bar_fill", w = 256, h = 32, potW = 256, potH = 32 },
-  castbar = { file = "Interface\\AddOns\\ObsidianUI\\Media\\castbar", w = 1320, h = 176, potW = 2048, potH = 256 },
+  castbar = { file = "Interface\\AddOns\\ObsidianUI\\Media\\castbar", w = 1270, h = 248, potW = 2048, potH = 256 },
   fluid_a = { file = "Interface\\AddOns\\ObsidianUI\\Media\\fluid_a", w = 1024, h = 1024, potW = 1024, potH = 1024 },
   fluid_b = { file = "Interface\\AddOns\\ObsidianUI\\Media\\fluid_b", w = 1024, h = 1024, potW = 1024, potH = 1024 },
   fluid_c = { file = "Interface\\AddOns\\ObsidianUI\\Media\\fluid_c", w = 1024, h = 1024, potW = 1024, potH = 1024 },

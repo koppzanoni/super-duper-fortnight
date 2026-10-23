@@ -33,3 +33,27 @@ def test_spec_matches_the_art():
     x, y, w, h = portrait
     p = s.portrait
     assert p.x <= x - 2 and p.y <= y - 2 and p.x + p.w >= x + w + 2 and p.y + p.h >= y + h + 2
+
+
+def castbar_spec():
+    rt = new_runtime()
+    return load_addon_file(rt, "Core/Data.lua", rt.table()).Data.CASTBAR
+
+
+# The player cast bar in the same style: a round icon socket and a thin progress groove.
+def test_castbar_spec_matches_the_art():
+    s = castbar_spec()
+    assert (s.w, s.h) == unit_art.castbar().size
+    icon, groove = unit_art.holes(np.asarray(unit_art.castbar_open()))
+    x, y, w, h = groove
+    assert (s.bar.x, s.bar.y, s.bar.w, s.bar.h) == (x, y, w, h)
+    x, y, w, h = icon
+    i = s.icon
+    assert x <= i.x and y <= i.y and i.x + i.w <= x + w and i.y + i.h <= y + h  # inside the ring
+    assert i.w >= w - 4 and i.h >= h - 4
+
+
+def test_castbar_groove_is_thin_and_backed():
+    icon, groove = unit_art.holes(np.asarray(unit_art.castbar_open()))
+    assert groove[2] / groove[3] > 10  # a thin bar, not a unit frame groove
+    assert unit_art.holes(np.asarray(unit_art.castbar())) == [icon]  # the groove has its dark backing

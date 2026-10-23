@@ -331,3 +331,12 @@ def test_castbar_keeps_its_size_and_text_after_blizzard_set_look(lua, ns):
     f.SetLook(f, "CLASSIC")
     assert (g.BAR_W, g.BAR_H) == ours
     assert g.TEXT_POINT == "CENTER"
+
+
+# The new cast bar art has a round icon socket: the spell icon is masked to a circle.
+def test_castbar_icon_is_round(lua, ns):
+    boot(lua, ns, pre=CASTBAR_PRE + """
+      MASKS = {}
+      PlayerCastingBarFrame.Icon.AddMaskTexture = function(_, m) table.insert(MASKS, m) end
+    """)
+    assert len(lua.globals().MASKS) == 1
