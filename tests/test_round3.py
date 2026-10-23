@@ -162,10 +162,16 @@ def test_extra_action_bars_are_hidden(lua, ns):
 
 
 # In-game: the target frame art was cut at the bottom; its spec must match the exported art.
-def test_target_frame_spec_matches_exported_art(lua, ns):
+# The user then replaced the old unit frames: every one uses the chosen party frame B art.
+def test_unit_frames_use_the_party_frame_art(lua, ns):
     boot(lua, ns)
-    m = ns.MediaManifest.target_frame
-    assert (ns.Data.TARGET.w, ns.Data.TARGET.h) == (m.w, m.h)
+    m = ns.MediaManifest.unit_frame
+    assert (ns.Data.UNIT.w, ns.Data.UNIT.h) == (m.w, m.h)
+    same = lua.eval("rawequal")
+    for kind in ("large", "small", "tiny"):
+        k = ns.UnitFrames.KINDS[kind]
+        assert k.tex == "unit_frame" and same(k.spec, ns.Data.UNIT), kind
+    assert ns.MediaManifest.target_frame is None  # the old art is gone
 
 
 # In-game: the menu panel buttons did nothing.

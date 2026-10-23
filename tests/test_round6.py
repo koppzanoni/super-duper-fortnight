@@ -224,16 +224,6 @@ def test_reputation_and_currency_click_the_blizzard_tabs(lua, ns):
         assert same(b.attrs.clickbutton, tab)
 
 
-# In-game: the target frame was too big and its portrait smaller than the ring opening.
-def test_target_frame_smaller_and_portrait_fills_the_ring():
-    rt = new_runtime()
-    D = load_addon_file(rt, "Core/Data.lua", rt.table()).Data
-    p = D.TARGET.portrait
-    hole = (104, 407, 68, 377)  # opening of the portrait ring in target_frame art
-    assert p.x <= hole[0] - 3 and p.x + p.w >= hole[1] + 4
-    assert p.y <= hole[2] - 3 and p.y + p.h >= hole[3] + 4
-
-
 def test_target_frame_width_reduced(lua, ns):
     boot(lua, ns)
     assert ns.UnitFrames.KINDS.large.width <= 0.37
@@ -265,16 +255,6 @@ def test_character_key_toggles_once_per_press(lua, ns):
     lua.globals().STUB_TIME = 200
     b.handlers.OnClick(b, "LeftButton", True)
     assert toggles["n"] == 2
-
-
-# In-game: the small frames' portraits left a dark band in their ring too.
-def test_small_and_focus_portraits_fill_their_rings():
-    rt = new_runtime()
-    D = load_addon_file(rt, "Core/Data.lua", rt.table()).Data
-    for spec, hole in ((D.UNIT_SMALL, (66, 417, 66, 425)), (D.FOCUS, (60, 419, 58, 425))):
-        p = spec.portrait
-        assert p.x <= hole[0] - 3 and p.x + p.w >= hole[1] + 4
-        assert p.y <= hole[2] - 3 and p.y + p.h >= hole[3] + 4
 
 
 # The HUD bag panel shows the same bags as the inventory footer (no reagent bag slot).
@@ -600,3 +580,24 @@ def test_reputation_and_currency_lend_the_real_character_tabs(lua, ns):
     g.CharacterFrame.hooks.OnHide(g.CharacterFrame)
     for key, tab, _ in pairs_:
         assert same(tab.parent, ns.Inventory[key]) and tab.alpha == 0
+
+
+# With the new unit frame art, the target's debuffs sit under the frame (not on its bottom
+# edge) and the target's cast bar under the debuffs.
+def test_target_debuffs_and_castbar_sit_under_the_frame(lua, ns):
+    boot(lua, ns, pre="""
+      local cf = CreateFrame
+      function CreateFrame(...)
+        local f = cf(...)
+        f.SetPoint = function(self, p, rel, rp, x, y) self.point = { p, rel, rp, x, y } end
+        return f
+      end
+      TargetFrameSpellBar = CreateFrame()
+    """)
+    t = ns.UnitFrames.frames.target
+    D = ns.Data.UNIT
+    below = t.GetHeight(t) * (D.h - D.health.y - D.health.h) / D.h  # health bottom to frame bottom
+    b = ns.UnitFrames.debuffs[1]
+    assert b.point[1] == "TOPLEFT" and -b.point[5] >= below
+    bar = lua.globals().TargetFrameSpellBar
+    assert -bar.point[5] >= below + t.GetHeight(t) * 0.22  # the debuff row

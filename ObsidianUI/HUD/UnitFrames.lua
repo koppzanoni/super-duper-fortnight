@@ -6,9 +6,9 @@ local UnitFrames = { frames = {} }
 ns.UnitFrames = UnitFrames
 
 local KINDS = {
-  large = { spec = ns.Data.TARGET, tex = "target_frame", width = 0.29 },
-  small = { spec = ns.Data.FOCUS, tex = "focus_frame", width = 0.16 },
-  tiny = { spec = ns.Data.UNIT_SMALL, tex = "unit_small", width = 0.14 },
+  large = { spec = ns.Data.UNIT, tex = "unit_frame", width = 0.29 },
+  small = { spec = ns.Data.UNIT, tex = "unit_frame", width = 0.16 },
+  tiny = { spec = ns.Data.UNIT, tex = "unit_frame", width = 0.14 },
 }
 UnitFrames.KINDS = KINDS
 local CLASS_RING = { elite = { 0.64, 0.21, 0.93 }, worldboss = { 0.64, 0.21, 0.93 },
@@ -144,6 +144,14 @@ UnitFrames.Update = updateAll
 
 -- Debuffs the player applied on the target, in a row right under the target bars.
 local debuffs = {}
+UnitFrames.debuffs = debuffs
+
+-- Height from the bottom of a frame's health bar to the bottom of its art.
+local function belowHealth(f)
+  local spec = KINDS[f.kind].spec
+  return f:GetHeight() * (spec.h - spec.health.y - spec.health.h) / spec.h
+end
+local DEBUFF_SIZE = 0.22 -- of the target frame's height
 local function debuffButton(parent, i)
   local b = CreateFrame("Frame", nil, parent)
   b.icon = b:CreateTexture(nil, "ARTWORK")
@@ -164,13 +172,13 @@ end
 local function updateTargetDebuffs()
   local target = UnitFrames.frames.target
   if not target then return end
-  local size = target:GetHeight() * 0.22
+  local size = target:GetHeight() * DEBUFF_SIZE
   local list = ns.Data.UnitAuraList("target", "HARMFUL|PLAYER", 8)
   for i = 1, 8 do
     local b = debuffs[i] or debuffButton(target, i)
     b:SetSize(size, size)
     b:ClearAllPoints()
-    b:SetPoint("TOPLEFT", target.health, "BOTTOMLEFT", (i - 1) * (size + 3), -target:GetHeight() * 0.2)
+    b:SetPoint("TOPLEFT", target.health, "BOTTOMLEFT", (i - 1) * (size + 3), -belowHealth(target) - 3)
     local aura = list[i]
     if aura then
       b.icon:SetTexture(aura.icon)
@@ -198,7 +206,9 @@ local castbars = {}
 local function placeCastbar(bar, f)
   bar.obApplying = true
   bar:ClearAllPoints()
-  bar:SetPoint("TOPLEFT", f.health, "BOTTOMLEFT", 0, -f:GetHeight() * (f.kind == "large" and 0.46 or 0.30))
+  -- the target's debuffs come first, right under the frame
+  local debuffRow = f.kind == "large" and f:GetHeight() * DEBUFF_SIZE + 6 or 0
+  bar:SetPoint("TOPLEFT", f.health, "BOTTOMLEFT", 0, -belowHealth(f) - 4 - debuffRow)
   bar:SetSize(f.health:GetWidth(), math.max(8, f:GetHeight() * 0.08))
   bar.obApplying = false
 end
@@ -239,7 +249,7 @@ local function layout()
   local tot, pet = UnitFrames.frames.targettarget, UnitFrames.frames.pet
   for _, f in pairs(UnitFrames.frames) do f:Resize(H) end
   target:ClearAllPoints(); target:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0.012 * W, -0.02 * H)
-  focus:ClearAllPoints(); focus:SetPoint("TOPLEFT", target, "BOTTOMLEFT", 20 * s, -34 * s)
+  focus:ClearAllPoints(); focus:SetPoint("TOPLEFT", target, "BOTTOMLEFT", 20 * s, -48 * s)
   tot:ClearAllPoints(); tot:SetPoint("TOPLEFT", target, "TOPRIGHT", 8 * s, -18 * s)
   pet:ClearAllPoints(); pet:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0.012 * W, (ns.HUD.h or 0) + 6 * s)
   adoptCastbar("targetcastbar", target)
