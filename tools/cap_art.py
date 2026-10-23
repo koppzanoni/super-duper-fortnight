@@ -3,7 +3,9 @@ backing in place of the gargoyle by the orb, and small folded wings beside the 3
 
 The right half of the original orb ring (with its top and bottom crests, which hide the seam)
 and the original block of the 9 menu slots are pasted back over the Meshy image, so the orb and
-the menu buttons stay exactly where the addon places them. The orb opening is always cut out.
+the menu buttons stay exactly where the addon places them. The orb opening is always cut out, and
+the two bottom corner slots (whose edge the old sculpture covered) are copies of the clean
+bottom middle slot, so no wing lies over a slot.
 Used by export_textures.py for the "hud_cap" texture.
 
 Usage: python tools/cap_art.py   (keys the Meshy image into art/processed/cap_wing.png)
@@ -27,6 +29,9 @@ CRESTS = [(168, 0, 218, 30), (165, 335, 222, 381)]  # top and bottom crests (x0,
 # The 3x3 menu slots with the iron grid between them (x0, y0, x1, y1).
 SLOTS = (418, 132, 594, 314)
 EDGE_MARGIN = 2  # empty columns Meshy left at the screen edge
+# The bottom middle slot with its bronze frame (x0, y0, x1, y1), copied one slot pitch left and right.
+CLEAN_SLOT = (478, 254, 535, 310)
+CLEAN_COPIES = (-59, 59)
 
 
 def keep_original_mask():
@@ -53,6 +58,9 @@ def build(cap, wing_path=WING):
     keep, opening = keep_original_mask()
     w[opening] = 0
     out = np.where(keep[..., None], o, w)
+    x0, y0, x1, y1 = CLEAN_SLOT
+    for dx in CLEAN_COPIES:
+        out[y0:y1, x0 + dx:x1 + dx] = out[y0:y1, x0:x1]
     return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), "RGBA")
 
 

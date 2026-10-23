@@ -35,7 +35,11 @@ def test_orb_opening_stays_empty():
 def test_menu_slots_and_right_ring_are_untouched():
     a, o = built(), np.asarray(cap()).astype(int)
     x0, y0, x1, y1 = cap_art.SLOTS
-    assert (a[y0:y1, x0:x1] == o[y0:y1, x0:x1]).all()
+    same = a[y0:y1, x0:x1] == o[y0:y1, x0:x1]
+    cx0, cy0, cx1, cy1 = cap_art.CLEAN_SLOT
+    for dx in cap_art.CLEAN_COPIES:  # the cleaned bottom corner slots, see below
+        same[cy0 - y0:cy1 - y0, cx0 + dx - x0:cx1 + dx - x0] = True
+    assert same.all()
     ys, xs = np.mgrid[0:381, 0:656]
     ring = (np.hypot(xs - cap_art.CX, ys - cap_art.CY) <= cap_art.RING) & (xs >= cap_art.CX)
     assert (a[ring] == o[ring]).all()
@@ -61,3 +65,13 @@ def test_gargoyle_is_gone():
     a, o = built(), np.asarray(cap()).astype(int)
     left = (slice(40, 340), slice(0, 60))
     assert np.abs(a[left][..., :3] - o[left][..., :3]).mean() > 15
+
+
+# In game the user wanted the panel's wings off the menu slots: the sculpture covered the outer
+# edge of the two bottom corner slots. They are copies of the clean bottom middle slot.
+def test_bottom_corner_slots_are_clean():
+    a = built()
+    x0, y0, x1, y1 = cap_art.CLEAN_SLOT
+    middle = a[y0:y1, x0:x1]
+    for dx in (-59, 59):
+        assert (a[y0:y1, x0 + dx:x1 + dx] == middle).all()
