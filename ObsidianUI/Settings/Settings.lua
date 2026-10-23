@@ -5,7 +5,8 @@ local category
 
 local function register()
   if not (Settings and Settings.RegisterVerticalLayoutCategory) then return end
-  category = Settings.RegisterVerticalLayoutCategory("ObsidianUI")
+  local layout
+  category, layout = Settings.RegisterVerticalLayoutCategory("ObsidianUI")
 
   local function checkbox(key, label, default, onChange, tooltip)
     local setting = Settings.RegisterAddOnSetting(category, "ObsidianUI_" .. key, key, ns.db, "boolean", label, default)
@@ -28,6 +29,11 @@ local function register()
   checkbox("connectBar", "Ligar a barra de ações às laterais (pedra)", false, relayoutHUD,
     "Desligado, a barra de ações fica solta no meio, sem a faixa de pedra até os orbes.")
   checkbox("showHotkeys", "Mostrar teclas de atalho nos botões", true, function() ns.ActionBars.UpdateBindings() end)
+  if CreateSettingsButtonInitializer and layout then
+    layout:AddInitializer(CreateSettingsButtonInitializer("Teclas de atalho da barra", "Definir teclas",
+      function() ns.KeybindMode.Start() end,
+      "Feche esta janela, passe o mouse num botão da barra de ações e aperte a tecla. Backspace limpa, Esc sai.", true))
+  end
   checkbox("orbText", "Mostrar números nos orbes", true, function() ns.Orbs.ApplyTextVisibility() end)
 
   local scale = Settings.RegisterAddOnSetting(category, "ObsidianUI_scale", "scale", ns.db, "number", "Escala do HUD", 1.0)

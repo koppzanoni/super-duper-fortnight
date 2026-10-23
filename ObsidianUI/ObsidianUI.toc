@@ -20,6 +20,7 @@ HUD\XPBar.lua
 HUD\Orbs.lua
 HUD\ActionBars.lua
 HUD\VerticalBars.lua
+HUD\KeybindMode.lua
 Settings\Settings.lua
 HUD\MenuPanels.lua
 HUD\SpecialBars.lua

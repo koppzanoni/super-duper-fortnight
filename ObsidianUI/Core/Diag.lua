@@ -84,10 +84,12 @@ SlashCmdList.OBSIDIANUI = function(msg)
     ns.db.modelDistance, ns.db.modelHeight = tonumber(dist), tonumber(height)
     if ns.Inventory and ns.Inventory.RefreshModel then ns.Inventory.RefreshModel() end
     out("modelo:", dist, height)
+  elseif msg == "atalhos" then
+    ns.KeybindMode.Start()
   elseif msg == "reset" then
     ns.ResetPositions()
     out("posições restauradas.")
   else
-    out("comandos: /obui diag, /obui config, /obui reset, /obui modelo")
+    out("comandos: /obui diag, /obui config, /obui atalhos, /obui reset, /obui modelo")
   end
 end
