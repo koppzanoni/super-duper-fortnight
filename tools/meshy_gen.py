@@ -398,6 +398,19 @@ for name, desc in FREE.items():
         REFS_OVERRIDE[f"{name}_{v}"] = ["art/blank_magenta.png"]
         NO_ISOLATE.add(f"{name}_{v}")
 
+# Player cast bar matching the chosen unit frame (party frame B); the reference is that frame
+# alone on magenta, for style only.
+PIECES["castbar_free"] = ("16:9",
+    "A beautiful, high quality player CAST BAR frame for a World of Warcraft UI addon, shown above the action bars while casting a spell: "
+    "a long thin horizontal bar frame about 9 times wider than tall, with a small ROUND socket at its left end for the spell icon "
+    "(the inside of the socket is flat solid magenta #FF00FF) and one long empty groove for the cast progress (flat solid magenta #FF00FF). "
+    "Use the attached image ONLY as the art style guide, not its shape: the same aged bronze with celtic knotwork, the same rim and "
+    "dark iron, the same small dragon ornament curling around the round socket. "
+    "Put the frame on flat solid pure magenta (#FF00FF), the whole background evenly flat magenta with no scene, no floor, no gradient, "
+    "no shadow. Front view, flat, centered. No text, no numbers, no icons.")
+REFS_OVERRIDE["castbar_free"] = ["art/castbar_style_ref.png"]
+NO_ISOLATE.add("castbar_free")
+
 # Extra style references (besides the main HUD image) for pieces that must match the already generated parts
 EXTRA_REFS = {
     "base_plate": ["art/processed/orb_frame.png", "art/processed/side_panel.png", "art/processed/action_bar.png"],
