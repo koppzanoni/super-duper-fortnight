@@ -273,6 +273,131 @@ REFS_OVERRIDE["connector"] = ["art/gap_ref.png", "art/processed/hud_bottom.png"]
 PIECES["connector_b"] = PIECES["connector"]
 REFS_OVERRIDE["connector_b"] = REFS_OVERRIDE["connector"]
 
+# Whole-screen concept for approval before any piece is redrawn: the inventory window and the
+# complete bottom HUD redesigned together, on the game scene (not an isolated asset).
+PIECES["concept_full"] = ("16:9",
+    "The first attached image is a screenshot of our current game UI: an inventory window (attributes column on the left, "
+    "character model with 8 equipment slots on each side and 3 weapon slots below, then a bag grid of 8 columns with "
+    "filter tabs, a search box, Reputation and Currency buttons and the gold amount) and, at the bottom of the screen, the HUD "
+    "(red health orb on the left, blue mana orb on the right, each embraced by a dragon wing, a 3x3 grid of menu slots beside "
+    "each orb, and a central action bar of 2 rows of 18 slots with an experience bar under it). "
+    "Redesign BOTH the inventory window and the complete bottom HUD as one cohesive, much more beautiful Path of Exile 2 style "
+    "interface: same layout, same number of slots and the same elements in the same places, but refined art: carved dark "
+    "stone, blackened iron, thin aged bronze trim, elegant gothic filigree, clean readable panels, consistent borders, "
+    "no stretched or mismatched pieces. Keep the orbs filled with red and blue liquid. Show the full 16:9 game screen with the "
+    "dark fantasy scene behind, like a polished game screenshot. No text other than the existing labels. "
+    "Use the second attached image as the art style guide (materials, colors, lighting, level of detail).")
+REFS_OVERRIDE["concept_full"] = ["art/concept_ref.png", "Meshy_AI_Dark Fantasy MMORPG HUD.png"]
+# Second try: the screenshot reference made Meshy copy the current UI, so only the style image
+# goes along and the layout is described in words, asking for a fresh design.
+PIECES["concept_bold"] = ("16:9",
+    "Design a brand new, striking dark fantasy game UI in the style of Path of Exile 2, shown as a full 16:9 game screenshot "
+    "with a dark gothic graveyard scene behind. Do NOT copy the attached image's layout: it is ONLY a guide for materials and colors "
+    "(carved dark stone, blackened iron, aged bronze, deep shadows). Invent new silhouettes and ornaments. "
+    "Contents: (1) An open INVENTORY window on the right half of the screen, grand and ornate, shaped like a carved stone reliquary "
+    "or gothic altar with a pointed arch crown, chains or spikes on the corners: an attributes column at its left, in the center "
+    "the character standing inside an arched alcove with 8 equipment slots down each side and 3 weapon slots below, under it a "
+    "bag grid of 8 columns by 6 rows of item slots with a row of filter tabs above, and a footer with 5 bag slots and the gold amount. "
+    "(2) The BOTTOM HUD across the full screen width, with a completely new shape: a big red health orb in the bottom left and a big "
+    "blue mana orb in the bottom right, each held by a dramatic sculpture (dragon claws, bone wings or a demon skull), "
+    "a 3x3 grid of small menu slots next to each orb, and in the center an action bar of 2 rows of 18 square slots with a thin "
+    "experience bar below. Slots show skill icons. Rich, detailed, cohesive, premium AAA quality. Minimal text, no watermark.")
+REFS_OVERRIDE["concept_bold"] = ["Meshy_AI_Dark Fantasy MMORPG HUD.png"]
+NO_ISOLATE = {"concept_full", "concept_bold"}
+
+# Approved redesign (concept_bold): the orb caps at our real layout. The first reference is the
+# current cap (orb ring, 3x3 panel, stone to the screen edge) for geometry; the second is the
+# concept's orb for style. Both are drawn as the LEFT cap; the mana one is mirrored in game.
+CAP_KEEP = (
+    "The FIRST attached image is the left end of our game HUD on magenta: a round orb ring, a 3x3 grid of square menu slots on its right, "
+    "and dark stone filling the area out to the left image edge. Redraw this whole piece in the art style of the SECOND attached image, "
+    "keeping the exact geometry of the first: the round opening of the orb ring at exactly the same position and size, the 9 square slots "
+    "at exactly the same positions and sizes, the same overall outline and the same bottom edge. "
+    "The round opening of the ring stays completely EMPTY flat solid magenta (#FF00FF): nothing is drawn inside it, no liquid, no glass, no claws, no wings. "
+    "The slots are empty dark recesses, no icons. The stone backing still fills all the space out to the left image edge with a straight vertical edge. "
+    "Material: carved dark stone, blackened iron, thin aged bronze trim with fine runes on the ring, like the second image. ")
+PIECES["cap_claws"] = ("16:9", CAP_KEEP +
+    "Ornament: huge dark bone-and-iron CLAWS grip the orb ring FROM ABOVE ONLY, the long curved talons wrapping over the top and the upper left "
+    "of the ring like a monster's hand holding it, ending on the outer rim. There are NO claws, fingers or talons at the bottom of the ring: the "
+    "lower half of the ring is clean. Everything that is not part of the HUD is flat solid magenta (#FF00FF).")
+REFS_OVERRIDE["cap_claws"] = ["art/cap_ref3.png", "art/concept_orb_health.png"]
+PIECES["cap_dragon"] = ("16:9", CAP_KEEP +
+    "Ornament: a dark stone and iron DRAGON coils around the OUTSIDE of the orb ring: its horned head rests on the top of the ring, "
+    "its bat wing spreads along the left side behind the ring, its tail and claws curl around the outer rim at the bottom. The dragon never "
+    "enters the round opening. Everything that is not part of the HUD is flat solid magenta (#FF00FF).")
+REFS_OVERRIDE["cap_dragon"] = ["art/cap_ref3.png", "art/concept_orb_mana.png"]
+NO_ISOLATE |= {"cap_claws", "cap_dragon"}
+
+# Enemy nameplates and party frames, one per theme ("classic" = current art, "reliquary" = the
+# approved concept_bold redesign). Bar grooves and the portrait opening are left magenta: the
+# addon draws the bars and the portrait inside them.
+NAMEPLATE = (
+    "Generate ONLY one enemy NAMEPLATE health bar frame for a dark fantasy game, seen flat from the front: a long thin horizontal "
+    "frame about 8 times wider than tall, with a long empty groove for the health bar inside it (the groove is flat solid magenta #FF00FF), "
+    "a small ornament at each end and a small socket on the left end for a level number. Elegant and readable at small size. "
+    "Everything that is not part of the frame is flat solid magenta (#FF00FF). No text, no numbers. ")
+PARTY = (
+    "Generate ONLY one PARTY MEMBER unit frame for a dark fantasy game, seen flat from the front: a compact horizontal frame about "
+    "3 times wider than tall, with a round portrait ring on the left (the inside of the ring is flat solid magenta #FF00FF) and on its "
+    "right two stacked empty bar grooves, a thicker one for health and a thinner one for mana (both grooves flat solid magenta #FF00FF), "
+    "with a narrow plate above them for the name. Everything that is not part of the frame is flat solid magenta (#FF00FF). "
+    "No text, no numbers, no portrait. ")
+CLASSIC = ("Match EXACTLY the art style of the attached images (our current HUD): carved dark grey stone, blackened iron, "
+           "thin aged bronze trim, small gothic filigree, same colors and lighting.")
+RELIQUARY = ("Match EXACTLY the art style of the attached images (our new HUD): carved dark stone, blackened iron, aged bronze "
+             "trim with fine runes, spikes and small bone claws, gothic reliquary look, same colors and lighting.")
+PIECES["nameplate_classic"] = ("16:9", NAMEPLATE + CLASSIC)
+PIECES["nameplate_reliquary"] = ("16:9", NAMEPLATE + RELIQUARY)
+PIECES["party_classic"] = ("16:9", PARTY + CLASSIC)
+PIECES["party_reliquary"] = ("16:9", PARTY + RELIQUARY)
+REFS_OVERRIDE["nameplate_classic"] = ["art/processed/target_frame.png", "art/processed/hud_bottom.png"]
+REFS_OVERRIDE["party_classic"] = REFS_OVERRIDE["nameplate_classic"]
+REFS_OVERRIDE["nameplate_reliquary"] = ["art/concept_inventory.png", "art/meshy/cap_claws.png"]
+REFS_OVERRIDE["party_reliquary"] = REFS_OVERRIDE["nameplate_reliquary"]
+NO_ISOLATE |= {"nameplate_classic", "nameplate_reliquary", "party_classic", "party_reliquary"}
+
+# Second try from scratch (the user rejected the first four): one style reference only, so
+# Meshy invents the shape instead of copying our frames.
+NAMEPLATE2 = (
+    "Design from scratch ONE enemy NAMEPLATE for a dark fantasy action RPG like Path of Exile 2: the small health bar that floats above "
+    "an enemy's head. It is a very THIN, LONG horizontal bar frame, about 10 times wider than tall, with NO portrait and NO ring: "
+    "a slim frame around one long empty health groove (the groove is flat solid magenta #FF00FF), a tiny diamond socket at the left end "
+    "for the level, and small pointed ornaments at both ends. Sleek, minimal and readable at small size. Centered, flat front view. ")
+PARTY2 = (
+    "Design from scratch ONE PARTY MEMBER frame for a dark fantasy action RPG like Path of Exile 2, meant to be stacked 4 in a column "
+    "at the top left of the screen: compact, about 4 times wider than tall, clearly different from a big target frame. A small "
+    "portrait socket on the left (a rounded square or shield shape, its inside flat solid magenta #FF00FF), and on the right one "
+    "health bar groove and a thin mana groove just below it (both flat solid magenta #FF00FF), with a thin strip above for the name. "
+    "Clean and elegant, with small ornaments only. Centered, flat front view. ")
+TAIL = "Everything that is not part of the frame is flat solid pure magenta (#FF00FF), evenly flat with no gradient. No text, no numbers, no icons. "
+CLASSIC2 = ("Use the attached image ONLY as the art style guide (not its shapes): carved dark grey stone, blackened iron, thin aged bronze trim, "
+            "small gothic filigree.")
+RELIQUARY2 = ("Use the attached image ONLY as the art style guide (not its shapes): carved dark stone, blackened iron, aged bronze trim "
+              "with fine runes, small spikes and bone claws, gothic reliquary look.")
+for kind, base in (("nameplate", NAMEPLATE2), ("party", PARTY2)):
+    PIECES[kind + "2_classic"] = ("16:9", base + TAIL + CLASSIC2)
+    PIECES[kind + "2_reliquary"] = ("16:9", base + TAIL + RELIQUARY2)
+    REFS_OVERRIDE[kind + "2_classic"] = ["Meshy_AI_Dark Fantasy MMORPG HUD.png"]
+    REFS_OVERRIDE[kind + "2_reliquary"] = ["art/meshy/concept_bold.png"]
+    NO_ISOLATE |= {kind + "2_classic", kind + "2_reliquary"}
+
+# Third try, from scratch with no art direction (the user asked for a completely new design
+# "for World of Warcraft"): the only reference is a blank magenta canvas for the background.
+FREE_TAIL = (" The attached image is only the background color: put the frame on that flat solid pure magenta (#FF00FF), "
+             "the whole background evenly flat magenta with no scene, no floor, no gradient, no shadow. "
+             "Front view, flat, centered. No text, no numbers, no icons, no portrait.")
+FREE = {
+    "nameplate_free": "A beautiful, high quality enemy nameplate health bar frame for a World of Warcraft UI addon: the bar shown above an enemy's head. "
+                      "The empty area where the health fills is flat solid magenta (#FF00FF).",
+    "party_free": "A beautiful, high quality party member unit frame for a World of Warcraft UI addon, shown stacked at the top left of the screen: "
+                  "room for a portrait, the name, a health bar and a mana bar. The portrait area and the bar areas are flat solid magenta (#FF00FF).",
+}
+for name, desc in FREE.items():
+    for v in ("a", "b"):
+        PIECES[f"{name}_{v}"] = ("16:9", desc + FREE_TAIL)
+        REFS_OVERRIDE[f"{name}_{v}"] = ["art/blank_magenta.png"]
+        NO_ISOLATE.add(f"{name}_{v}")
+
 # Extra style references (besides the main HUD image) for pieces that must match the already generated parts
 EXTRA_REFS = {
     "base_plate": ["art/processed/orb_frame.png", "art/processed/side_panel.png", "art/processed/action_bar.png"],
@@ -288,7 +413,7 @@ def run(name, ref_uri):
     aspect, desc = PIECES[name]
     body = {
         "ai_model": MODEL,
-        "prompt": STYLE + desc + ISOLATE,
+        "prompt": desc if name in NO_ISOLATE else STYLE + desc + ISOLATE,
         "reference_image_urls": [data_uri(ROOT / p) for p in REFS_OVERRIDE[name]] if name in REFS_OVERRIDE
                                 else [ref_uri] + [data_uri(ROOT / p) for p in EXTRA_REFS.get(name, [])],
         "aspect_ratio": aspect,
