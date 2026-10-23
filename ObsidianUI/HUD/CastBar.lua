@@ -16,11 +16,17 @@ end
 
 local function castbar() return ns.Resolve.First(ns.Data.FRAME_CANDIDATES.castbar) end
 
+-- Blizzard's frame art plus its cast effects (finish/interrupt sparkles, glows) that would
+-- draw over our fill.
+local HIDDEN_REGIONS = { "Border", "BorderShield", "Background", "TextBorder", "Flash", "Spark",
+  "InterruptGlow", "Flakes01", "Flakes02", "Flakes03", "Sparkles01", "Sparkles02", "Shine",
+  "ChargeFlash", "StandardGlow", "CraftGlow", "ChannelShadow", "BaseGlow", "WispGlow", "EnergyGlow" }
+
 local function reskin(bar)
   bar:SetStatusBarTexture(M.bar_fill.file)
   local interrupted = bar.barType == "interrupted" or bar.barType == "uninterruptable"
   if interrupted then bar:SetStatusBarColor(0.77, 0.15, 0.11) else bar:SetStatusBarColor(1.0, 0.75, 0.30) end
-  for _, key in ipairs({ "Border", "BorderShield", "Background", "TextBorder", "Flash", "Spark" }) do
+  for _, key in ipairs(HIDDEN_REGIONS) do
     local region = bar[key]
     if region and region.SetAlpha then region:SetAlpha(0) end
   end
@@ -41,6 +47,12 @@ local function layout()
     ns.Media.Apply(t, "castbar")
     bar:HookScript("OnEvent", reskin)
     bar:HookScript("OnShow", reskin)
+    -- The icon sits in our frame's socket: Blizzard hides it on some casts (after an
+    -- interrupt, for one), so it is shown again right away.
+    if bar.Icon then
+      hooksecurefunc(bar.Icon, "Hide", function(icon) icon:Show() end)
+      hooksecurefunc(bar.Icon, "SetShown", function(icon, shown) if not shown then icon:Show() end end)
+    end
     hooksecurefunc(bar, "SetPoint", function(self)
       if self.obApplying or InCombatLockdown() then return end
       layout()

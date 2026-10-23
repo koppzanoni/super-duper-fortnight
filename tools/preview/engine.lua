@@ -234,6 +234,27 @@ function CreateFrame(ftype, name, parent, template)
     local bg = f:CreateTexture(nil, "BACKGROUND"); bg:SetAllPoints(f); bg:SetColorTexture(0.25, 0.05, 0.03, 0.95)
     f.SetText = function(self, t) self.label:SetText(t) end
   end
+  if template and template:find("BackdropTemplate") then
+    -- Flat fill plus four 1px edges, like a WHITE8X8 backdrop with edgeSize 1.
+    f.SetBackdrop = function(self)
+      if self.bdBg then return end
+      self.bdBg = self:CreateTexture(nil, "BACKGROUND"); self.bdBg:SetAllPoints(self)
+      self.bdEdges = {}
+      for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+        local t = self:CreateTexture(nil, "BORDER")
+        if side == "TOP" or side == "BOTTOM" then
+          t:SetPoint(side .. "LEFT", self, side .. "LEFT"); t:SetPoint(side .. "RIGHT", self, side .. "RIGHT"); t:SetHeight(1)
+        else
+          t:SetPoint("TOP" .. side, self, "TOP" .. side); t:SetPoint("BOTTOM" .. side, self, "BOTTOM" .. side); t:SetWidth(1)
+        end
+        self.bdEdges[#self.bdEdges + 1] = t
+      end
+    end
+    f.SetBackdropColor = function(self, r, g, b, a) if self.bdBg then self.bdBg:SetColorTexture(r, g, b, a) end end
+    f.SetBackdropBorderColor = function(self, r, g, b, a)
+      for _, t in ipairs(self.bdEdges or {}) do t:SetColorTexture(r, g, b, a) end
+    end
+  end
   if ftype == "StatusBar" then f.min, f.max, f.value = 0, 1, 0 end
   return f
 end

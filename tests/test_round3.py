@@ -207,3 +207,39 @@ def test_chat_pushed_off_hud_when_edit_mode_moves_it_back(lua, ns):
     moves = g.CHAT_MOVES
     g.ChatFrame1.SetPoint(g.ChatFrame1, "BOTTOMLEFT", None, "BOTTOMLEFT", 32, 40)  # Edit Mode
     assert g.CHAT_MOVES == moves + 2  # Blizzard's move, then ours
+
+
+# In-game: after cancelling and recasting, the cast bar lost its icon and showed Blizzard's
+# interrupt sparkles over our fill.
+CASTBAR_PRE = """
+  ALPHAS = {}
+  local function region(name)
+    local r = { shown = true }
+    r.SetAlpha = function(_, a) ALPHAS[name] = a end
+    r.Show = function(self) self.shown = true end
+    r.Hide = function(self) self.shown = false end
+    r.SetShown = function(self, v) self.shown = v and true or false end
+    return setmetatable(r, { __index = function() return function() end end })
+  end
+  PlayerCastingBarFrame = CreateFrame()
+  PlayerCastingBarFrame.Icon = region("Icon")
+  for _, k in ipairs({ "Flakes01", "Flakes02", "Flakes03", "Sparkles01", "InterruptGlow", "Shine" }) do
+    PlayerCastingBarFrame[k] = region(k)
+  end
+"""
+
+
+def test_castbar_icon_stays_after_blizzard_hides_it(lua, ns):
+    boot(lua, ns, pre=CASTBAR_PRE)
+    icon = lua.globals().PlayerCastingBarFrame.Icon
+    icon.Hide(icon)
+    assert icon.shown is True
+    icon.SetShown(icon, False)
+    assert icon.shown is True
+
+
+def test_castbar_hides_blizzard_cast_effects(lua, ns):
+    boot(lua, ns, pre=CASTBAR_PRE)
+    alphas = lua.globals().ALPHAS
+    for k in ("Flakes01", "Flakes02", "Flakes03", "Sparkles01", "InterruptGlow", "Shine"):
+        assert alphas[k] == 0, k

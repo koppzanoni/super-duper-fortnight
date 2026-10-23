@@ -114,3 +114,16 @@ TargetFrameSpellBar.Text:SetPoint("CENTER")
 function UnitAffectingCombat(u) return u == "player" end
 function IsResting() return false end
 function UnitIsGroupLeader(u) return u == "player" end
+-- Character stats for the inventory's stats panel (base, effective).
+local STATS = { 41, 88, 72, 38, 45 }
+function UnitStat(_, i) return STATS[i] - 6, STATS[i] end
+function UnitArmor() return 1450, 1612 end
+function UnitAttackPower() return 210, 24, 0 end
+function GetCritChance() return 12.4 end
+function GetDodgeChance() return 9.8 end
+function GetParryChance() return 0 end
+function GetBlockChance() return 0 end
+function GetHaste() return 0 end
+function GetMasteryEffect() return 0 end
+function GetSpellBonusDamage() return 0 end
+function GetSpellCritChance() return 0 end

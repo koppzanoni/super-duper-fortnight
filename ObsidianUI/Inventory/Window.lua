@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -- Unified inventory window: 3D player model, 8+8 equipment slots, 3 square weapon slots,
--- collapsible stats column. The bag grid is added by BagGrid.lua into Inventory.gridArea (spec 4.10).
+-- stats panel. The bag grid is added by BagGrid.lua into Inventory.gridArea (spec 4.10).
 local S = ns.Data.INV
 local M = ns.MediaManifest
 local Inventory = {}
@@ -128,51 +128,82 @@ local function updateEquipment()
   end
 end
 
--- Collapsible stats column.
+-- Stats panel, docked left of the window and open with it: sections of label/value rows,
+-- then the Reputation and Currency buttons.
+local W = ns.Widgets
+local PANEL_W, PAD, ROW_H, HEADER_H, BUTTON_H = 200, 12, 16, 24, 22
 local stats = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-stats:SetWidth(180)
-stats:SetPoint("TOPRIGHT", frame, "TOPLEFT", -4, -40)
-stats:SetPoint("BOTTOMRIGHT", frame, "BOTTOMLEFT", -4, 40)
-if stats.SetBackdrop then
-  stats:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-  stats:SetBackdropColor(0.086, 0.09, 0.106, 0.95)
-  stats:SetBackdropBorderColor(0.54, 0.43, 0.23)
-end
-stats:Hide()
-local statsText = stats:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-statsText:SetPoint("TOPLEFT", 10, -10)
-statsText:SetPoint("RIGHT", -10, 0)
-statsText:SetJustifyH("LEFT")
-statsText:SetSpacing(4)
+W.Panel(stats)
+stats:SetWidth(PANEL_W)
+stats:SetPoint("TOPRIGHT", frame, "TOPLEFT", -6, -40)
+Inventory.statsPanel = stats
 
-local STAT_NAMES = { "Força", "Agilidade", "Vigor", "Intelecto", "Espírito" }
+local statsTitle = stats:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+statsTitle:SetPoint("TOP", 0, -PAD)
+statsTitle:SetText("ATRIBUTOS")
+statsTitle:SetTextColor(W.GOLD[1], W.GOLD[2], W.GOLD[3])
+
+local lines = {}
+local function line(i)
+  if lines[i] then return lines[i] end
+  local l = {}
+  l.label = stats:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  l.label:SetJustifyH("LEFT")
+  l.value = stats:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  l.value:SetJustifyH("RIGHT")
+  l.divider = stats:CreateTexture(nil, "ARTWORK")
+  l.divider:SetHeight(1)
+  l.divider:SetColorTexture(W.BRONZE[1], W.BRONZE[2], W.BRONZE[3], 0.6)
+  lines[i] = l
+  return l
+end
+
+Inventory.repButton = W.Button(stats, "Reputação", function() ToggleCharacter("ReputationFrame") end)
+Inventory.tokenButton = W.Button(stats, "Moedas", function() ToggleCharacter("TokenFrame") end)
+
 local function updateStats()
-  local lines = {}
-  for i = 1, 5 do
-    local ok, value = pcall(UnitStat, "player", i)
-    if ok and value then lines[#lines + 1] = STAT_NAMES[i] .. ": |cffffffff" .. value .. "|r" end
+  local rows = ns.Stats.Rows(ns.Stats.GameAPI())
+  local y = PAD + 18
+  for i, r in ipairs(rows) do
+    local l = line(i)
+    l.label:ClearAllPoints()
+    l.value:ClearAllPoints()
+    l.divider:ClearAllPoints()
+    if r.header then
+      l.label:SetPoint("TOPLEFT", PAD, -(y + 6))
+      l.label:SetText(r.header)
+      l.label:SetTextColor(W.GOLD[1], W.GOLD[2], W.GOLD[3])
+      l.value:SetText("")
+      l.divider:SetPoint("TOPLEFT", PAD, -(y + 20))
+      l.divider:SetPoint("TOPRIGHT", -PAD, -(y + 20))
+      l.divider:Show()
+      y = y + HEADER_H
+    else
+      l.label:SetPoint("TOPLEFT", PAD, -y)
+      l.label:SetText(r.label)
+      l.label:SetTextColor(W.TEXT[1], W.TEXT[2], W.TEXT[3])
+      l.value:SetPoint("TOPRIGHT", -PAD, -y)
+      l.value:SetText(r.value)
+      l.divider:Hide()
+      y = y + ROW_H
+    end
+    l.label:Show()
+    l.value:Show()
   end
-  local okA, _, armor = pcall(UnitArmor, "player")
-  if okA and armor then lines[#lines + 1] = "Armadura: |cffffffff" .. armor .. "|r" end
-  if GetCritChance then lines[#lines + 1] = string.format("Crítico: |cffffffff%.1f%%|r", GetCritChance()) end
-  if GetHaste then lines[#lines + 1] = string.format("Aceleração: |cffffffff%.1f%%|r", GetHaste()) end
-  if GetMasteryEffect then lines[#lines + 1] = string.format("Maestria: |cffffffff%.1f%%|r", (GetMasteryEffect())) end
-  statsText:SetText(table.concat(lines, "\n"))
-end
+  for i = #rows + 1, #lines do
+    lines[i].label:Hide(); lines[i].value:Hide(); lines[i].divider:Hide()
+  end
 
-local function smallButton(label, onClick)
-  local b = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-  b:SetText(label)
-  b:SetSize(70, 20)
-  b:SetScript("OnClick", onClick)
-  return b
+  local bw = (PANEL_W - 2 * PAD - 6) / 2
+  local rep, token = Inventory.repButton, Inventory.tokenButton
+  rep:ClearAllPoints()
+  rep:SetPoint("TOPLEFT", PAD, -(y + 10))
+  rep:SetSize(bw, BUTTON_H)
+  token:ClearAllPoints()
+  token:SetPoint("LEFT", rep, "RIGHT", 6, 0)
+  token:SetSize(bw, BUTTON_H)
+  stats:SetHeight(y + 10 + BUTTON_H + PAD)
 end
-local statsButton = smallButton("Atributos", function() stats:SetShown(not stats:IsShown()); updateStats() end)
-local repButton = smallButton("Reputação", function() ToggleCharacter("ReputationFrame") end)
-local tokenButton = smallButton("Moedas", function() ToggleCharacter("TokenFrame") end)
-statsButton:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 8, 2)
-repButton:SetPoint("LEFT", statsButton, "RIGHT", 4, 0)
-tokenButton:SetPoint("LEFT", repButton, "RIGHT", 4, 0)
 
 -- Area the bag grid fills (8 columns x 6 visible rows).
 Inventory.gridArea = CreateFrame("Frame", nil, frame)
@@ -226,6 +257,8 @@ function Inventory.Open()
     Inventory.Layout()
     frame:Show()
     updateEquipment()
+    updateStats()
+    stats:Show()
     if Inventory.onOpen then Inventory.onOpen() end
   end)
 end
@@ -240,7 +273,12 @@ end
 
 ns.On("PLAYER_EQUIPMENT_CHANGED", function() if frame:IsShown() then updateEquipment(); model:SetUnit("player") end end)
 ns.On("UNIT_MODEL_CHANGED", function(_, unit) if unit == "player" and frame:IsShown() then model:SetUnit("player") end end)
-ns.On("UNIT_STATS", function(_, unit) if unit == "player" and stats:IsShown() then updateStats() end end)
+for _, ev in ipairs({ "UNIT_STATS", "UNIT_ATTACK_POWER", "UNIT_RESISTANCES" }) do
+  ns.On(ev, function(_, unit) if unit == "player" and frame:IsShown() then updateStats() end end)
+end
+for _, ev in ipairs({ "PLAYER_EQUIPMENT_CHANGED", "COMBAT_RATING_UPDATE", "PLAYER_DAMAGE_DONE_MODS" }) do
+  ns.On(ev, function() if frame:IsShown() then updateStats() end end)
+end
 
 -- C opens the unified window instead of the default character sheet (other tabs stay Blizzard's).
 hooksecurefunc("ToggleCharacter", function(tab)
