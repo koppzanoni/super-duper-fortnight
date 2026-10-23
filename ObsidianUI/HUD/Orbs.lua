@@ -14,6 +14,8 @@ ns.Orbs = {}
 local FRAMES = 64
 local SPARKS = 6
 local WAVE_SPEED = 0.025
+local SHIELD = { 0.45, 0.85, 1.0 } -- energy shield blue
+local SHIELD_WISP = 0.7
 
 local function clamp(v) return math.min(1, v) end
 
@@ -86,7 +88,7 @@ local function makeOrb(x)
   -- Above the liquid: surface, rim shadow and glass.
   local top = CreateFrame("Frame", nil, well)
   top:SetAllPoints(well)
-  top:SetFrameLevel(clip:GetFrameLevel() + 1)
+  top:SetFrameLevel(clip:GetFrameLevel() + 3) -- the health orb's shield sits in between
 
   -- Wavy surface anchored to the top of the fill: follows the value without any math. A thin
   -- glow added on the liquid (a solid band looked like a stripe of paint).
@@ -117,7 +119,8 @@ local function makeOrb(x)
   val:SetPoint("TOP", pct, "BOTTOM", 0, -1)
 
   local orb = { well = well, bar = bar, fill = fill, clip = clip, wisp = wisp, wisp2 = wisp2, core = core,
-    sparks = sparks, depth = depth, rim = rim, wave = wave, glass = glass, pct = pct, val = val, t = 0, waveOffset = 0 }
+    sparks = sparks, depth = depth, rim = rim, wave = wave, glass = glass, pct = pct, val = val, t = 0, waveOffset = 0,
+    masked = masked, wispPair = wispPair }
 
   table.insert(HUD.onResize, function(u)
     wave:SetHeight(math.max(2, 5 * u))
@@ -128,6 +131,10 @@ local function makeOrb(x)
     end
     core:SetSize(w * 0.6, w * 0.6)
     for _, s in ipairs(sparks) do s:SetSize(8 * u, 8 * u) end
+    if orb.shield then
+      for i = 1, 2 do orb.shield.wisp[i]:SetSize(w * 1.08, w * 1.08) end
+      orb.shield.edge:SetWidth(math.max(1, 3 * u))
+    end
   end)
 
   -- One wisp layer at flipbook position f (frames, may be fractional), crossfaded.
@@ -159,6 +166,7 @@ local function makeOrb(x)
         s:SetPoint("CENTER", self.well, "BOTTOMLEFT", s.obX * w + math.sin(t * 2 + s.obPhase) * 3, rise * h)
       end
     end
+    if self.shield then showFrame(self.shield.wisp, (f + FRAMES / 4) % FRAMES, SHIELD_WISP, -t * st.spin) end
     self.waveOffset = (self.waveOffset + elapsed * WAVE_SPEED) % 1
     self.wave:SetTexCoord(self.waveOffset, self.waveOffset + 1, 0, 1)
   end
@@ -216,7 +224,46 @@ local function curve()
   return CurveConstants and CurveConstants.ScaleTo100
 end
 
+-- PoE2-style energy shield on the health orb: the player's absorbs as a blue crescent filling
+-- the orb from the right (absorb / max health of its width), swirling like the liquid.
+local function makeShield(orb)
+  local bar = CreateFrame("StatusBar", nil, orb.well)
+  bar:SetAllPoints(orb.well)
+  bar:SetFrameLevel(orb.clip:GetFrameLevel() + 1)
+  bar:SetOrientation("HORIZONTAL")
+  bar:SetReverseFill(true)
+  bar:SetStatusBarTexture(M.liquid.file)
+  bar:SetStatusBarColor(SHIELD[1] * 0.45, SHIELD[2] * 0.45, SHIELD[3] * 0.45, 0.85)
+  local fill = orb.masked(bar:GetStatusBarTexture())
+  local clip = CreateFrame("Frame", nil, bar)
+  clip:SetFrameLevel(bar:GetFrameLevel() + 1)
+  clip:SetPoint("TOPLEFT", fill, "TOPLEFT")
+  clip:SetPoint("BOTTOMLEFT", fill, "BOTTOMLEFT")
+  clip:SetPoint("TOPRIGHT", orb.well, "TOPRIGHT")
+  clip:SetPoint("BOTTOMRIGHT", orb.well, "BOTTOMRIGHT")
+  clip:SetClipsChildren(true)
+  local wisp = {}
+  for i = 1, 2 do
+    local t = orb.masked(clip:CreateTexture(nil, "ARTWORK", nil, 1))
+    t:SetPoint("CENTER", orb.well, "CENTER")
+    t:SetBlendMode("ADD")
+    t:SetTexture(M.fluid_a.file)
+    t:SetVertexColor(SHIELD[1], SHIELD[2], SHIELD[3])
+    wisp[i] = t
+  end
+  -- Bright line where the shield meets the life.
+  local edge = orb.masked(clip:CreateTexture(nil, "ARTWORK", nil, 2))
+  edge:SetPoint("TOPLEFT", clip, "TOPLEFT")
+  edge:SetPoint("BOTTOMLEFT", clip, "BOTTOMLEFT")
+  edge:SetColorTexture(1, 1, 1, 1)
+  edge:SetBlendMode("ADD")
+  edge:SetVertexColor(SHIELD[1], SHIELD[2], SHIELD[3], 0.8)
+  orb.shield = { bar = bar, fill = fill, clip = clip, wisp = wisp, edge = edge }
+  bar:Hide()
+end
+
 local health = makeOrb(D.orb.x)
+makeShield(health)
 local power = makeOrb(ns.Layout.MirrorX(D.width, D.orb.x, D.orb.w))
 ns.Orbs.health, ns.Orbs.power = health, power
 health:SetPalette(Data.OrbPalette("HEALTH"))
@@ -235,6 +282,18 @@ local function updateHealth()
   health.bar:SetMinMaxValues(0, max)
   health.bar:SetValue(cur)
   setTexts(health, cur, max, UnitHealthPercent and function() return UnitHealthPercent("player", true, curve()) end)
+end
+
+-- Absorbs may be secret values: the StatusBar takes them as they are; only the show/hide test
+-- compares, in pcall (shown when it cannot tell).
+local function updateShield()
+  local bar = health.shield.bar
+  if not UnitGetTotalAbsorbs then bar:Hide(); return end
+  local absorb = UnitGetTotalAbsorbs("player")
+  bar:SetMinMaxValues(0, UnitHealthMax("player"))
+  bar:SetValue(absorb or 0)
+  local ok, has = pcall(function() return absorb > 0 end)
+  bar:SetShown(not ok or has)
 end
 
 local function updatePower()
@@ -267,11 +326,13 @@ end
 ns.On("PLAYER_ENTERING_WORLD", function()
   ns.Orbs.SetStyle(ns.db and ns.db.orbStyle)
   updateHealth()
+  updateShield()
   updatePowerColor()
   ns.Orbs.ApplyTextVisibility()
 end)
 ns.On("UNIT_HEALTH", forPlayer(updateHealth))
-ns.On("UNIT_MAXHEALTH", forPlayer(updateHealth))
+ns.On("UNIT_MAXHEALTH", forPlayer(function() updateHealth(); updateShield() end))
+ns.On("UNIT_ABSORB_AMOUNT_CHANGED", forPlayer(updateShield))
 ns.On("UNIT_POWER_FREQUENT", forPlayer(updatePower))
 ns.On("UNIT_MAXPOWER", forPlayer(updatePower))
 ns.On("UNIT_DISPLAYPOWER", forPlayer(updatePowerColor))

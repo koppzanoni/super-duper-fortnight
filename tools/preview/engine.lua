@@ -74,6 +74,7 @@ function Region:Rect(depth)
     local lo, hi = bar.min or 0, bar.max or 1
     local f = (hi > lo) and math.max(0, math.min(1, ((bar.value or 0) - lo) / (hi - lo))) or 0
     if bar.orientation == "VERTICAL" then return { br[1], br[2], br[3], br[4] * f } end
+    if bar.reverse then return { br[1] + br[3] * (1 - f), br[2], br[3] * f, br[4] } end
     return { br[1], br[2], br[3] * f, br[4] }
   end
   if self.all then return self.all:Rect(depth) end
@@ -204,6 +205,7 @@ function Region:SetJustifyH(j) self.justify = j end
 function Region:SetMinMaxValues(a, b) self.min, self.max = a, b end
 function Region:SetValue(v) self.value = v end
 function Region:SetOrientation(o) self.orientation = o end
+function Region:SetReverseFill(r) self.reverse = r end
 function Region:GetStatusBarTexture()
   if not self.barTex then
     self.barTex = self:CreateTexture(nil, "ARTWORK")

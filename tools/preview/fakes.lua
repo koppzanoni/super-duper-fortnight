@@ -7,6 +7,7 @@ local HP = { player = { 28400, 39500 }, target = { 412000, 606000 }, focus = { 8
   targettarget = { 28400, 39500 } }
 function UnitHealth(u) return (HP[u] or { 1, 1 })[1] end
 function UnitHealthMax(u) return (HP[u] or { 1, 1 })[2] end
+function UnitGetTotalAbsorbs(u) if u == "player" then return 9000 end return 0 end -- a shield up
 function UnitHealthPercent(u) local h = HP[u] or { 1, 1 }; return h[1] / h[2] * 100 end
 function UnitPowerType(u) if u == "pet" then return 2, "FOCUS" end return 0, "MANA" end
 local PW = { player = { 11000, 20000 }, target = { 45, 100 }, focus = { 16000, 20000 }, pet = { 60, 100 },
