@@ -329,9 +329,18 @@ end
 -- The keys bound to the character sheet (C) toggle this window instead, through an override
 -- binding. The default sheet is never touched from here: hiding it from addon code tainted
 -- Blizzard's panel manager and then no menu button could open its window.
+-- Registered for both edges (the key may send a click on press, release or both); one toggle
+-- per press.
 local toggleButton = CreateFrame("Button", "ObsidianUIInventoryToggle", UIParent)
-toggleButton:RegisterForClicks("AnyUp")
-toggleButton:SetScript("OnClick", function() Inventory.Toggle() end)
+toggleButton:RegisterForClicks("AnyUp", "AnyDown")
+local lastToggle = -1
+toggleButton:SetScript("OnClick", function()
+  local now = GetTime()
+  if now - lastToggle < 0.3 then return end
+  lastToggle = now
+  Inventory.Toggle()
+end)
+Inventory.toggleButton = toggleButton
 local bindingOwner = CreateFrame("Frame")
 local function bindCharacterKeys()
   ns.RunOutOfCombat(function()

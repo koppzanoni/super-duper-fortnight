@@ -200,3 +200,46 @@ def test_reputation_and_currency_click_the_blizzard_tabs(lua, ns):
         assert b.template == "SecureActionButtonTemplate"
         assert b.attrs.type == "click"
         assert same(b.attrs.clickbutton, tab)
+
+
+# In-game: the target frame was too big and its portrait smaller than the ring opening.
+def test_target_frame_smaller_and_portrait_fills_the_ring():
+    rt = new_runtime()
+    D = load_addon_file(rt, "Core/Data.lua", rt.table()).Data
+    p = D.TARGET.portrait
+    hole = (104, 407, 68, 377)  # opening of the portrait ring in target_frame art
+    assert p.x <= hole[0] - 3 and p.x + p.w >= hole[1] + 4
+    assert p.y <= hole[2] - 3 and p.y + p.h >= hole[3] + 4
+
+
+def test_target_frame_width_reduced(lua, ns):
+    boot(lua, ns)
+    assert ns.UnitFrames.KINDS.large.width <= 0.37
+
+
+# In-game: the map stayed offset inside the ring. Anchored with zero offsets to a frame placed
+# on the ring opening, so the Minimap's own scale cannot shift or shrink it.
+def test_minimap_anchored_without_offsets(lua, ns):
+    boot(lua, ns, pre="""
+      MAP_POINTS = {}
+      Minimap = CreateFrame()
+      Minimap.SetPoint = function(_, p, rel, rp, x, y) MAP_POINTS[#MAP_POINTS + 1] = { p, x or 0, y or 0 } end
+      Minimap.ClearAllPoints = function() end
+    """)
+    pts = lua.globals().MAP_POINTS
+    last = [pts[len(pts) - 1], pts[len(pts)]]
+    assert [(q[1], q[2], q[3]) for q in last] == [("TOPLEFT", 0, 0), ("BOTTOMRIGHT", 0, 0)]
+
+
+# The C key's click button toggles once even when the key sends both a down and an up click.
+def test_character_key_toggles_once_per_press(lua, ns):
+    boot(lua, ns)
+    toggles = {"n": 0}
+    ns.Inventory.Toggle = lambda: toggles.__setitem__("n", toggles["n"] + 1)
+    b = ns.Inventory.toggleButton
+    b.handlers.OnClick(b, "LeftButton", True)
+    b.handlers.OnClick(b, "LeftButton", False)
+    assert toggles["n"] == 1
+    lua.globals().STUB_TIME = 200
+    b.handlers.OnClick(b, "LeftButton", True)
+    assert toggles["n"] == 2

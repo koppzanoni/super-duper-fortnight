@@ -6,10 +6,11 @@ local UnitFrames = { frames = {} }
 ns.UnitFrames = UnitFrames
 
 local KINDS = {
-  large = { spec = ns.Data.TARGET, tex = "target_frame", width = 0.46 },
+  large = { spec = ns.Data.TARGET, tex = "target_frame", width = 0.36 },
   small = { spec = ns.Data.FOCUS, tex = "focus_frame", width = 0.20 },
   tiny = { spec = ns.Data.UNIT_SMALL, tex = "unit_small", width = 0.17 },
 }
+UnitFrames.KINDS = KINDS
 local CLASS_RING = { elite = { 0.64, 0.21, 0.93 }, worldboss = { 0.64, 0.21, 0.93 },
   rare = { 0.75, 0.75, 0.75 }, rareelite = { 0.75, 0.75, 0.75 } }
 local CLASS_LABEL = { elite = "Elite", worldboss = "Chefe", rare = "Raro", rareelite = "Raro Elite" }

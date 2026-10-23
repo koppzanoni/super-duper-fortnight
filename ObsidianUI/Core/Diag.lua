@@ -41,6 +41,14 @@ local function run()
   local version, build, date, interface = GetBuildInfo()
   out("build", version, build, date, "interface", interface)
   frameCandidates()
+  local keys = { GetBindingKey("TOGGLECHARACTER0") }
+  for _, key in ipairs(keys) do
+    out("tecla", key, "->", GetBindingAction(key, true) or "?")
+  end
+  if #keys == 0 then out("TOGGLECHARACTER0 sem tecla") end
+  if Minimap and Minimap.GetScale then
+    out("minimap escala", Minimap:GetScale(), Minimap:GetEffectiveScale(), "tamanho", Minimap:GetSize())
+  end
   secretInfo("UnitHealth", UnitHealth("player"))
   secretInfo("UnitPower combo", UnitPower("player", Enum.PowerType.ComboPoints))
   showTextures()

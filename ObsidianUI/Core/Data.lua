@@ -21,7 +21,8 @@ Data.VBAR1 = { w = 156, h = 1279, cols = { 38 }, slot = { w = 78, h = 75 },
 Data.VBAR2 = { w = 256, h = 1279, cols = { 38, 138 }, slot = { w = 78, h = 75 }, rows = Data.VBAR1.rows }
 
 -- Unit frames. Spec 4.6 and 7.1.
-Data.TARGET = { w = 1298, h = 458, portrait = { x = 104, y = 72, w = 296, h = 302 },
+-- Portrait ring opening is x 104-407, y 68-377; the portrait tucks 4px under the ring.
+Data.TARGET = { w = 1298, h = 458, portrait = { x = 100, y = 64, w = 312, h = 318 },
   name = { x = 490, y = 105, w = 580, h = 80 }, health = { x = 456, y = 202, w = 784, h = 55 },
   power = { x = 461, y = 272, w = 543, h = 24 } }
 Data.UNIT_SMALL = { w = 1274, h = 494, portrait = { x = 67, y = 66, w = 351, h = 360 },
