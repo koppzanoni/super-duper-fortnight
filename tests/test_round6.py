@@ -510,3 +510,26 @@ def test_character_key_opens_the_unified_window_instead_of_the_sheet(lua, ns):
     g.STUB_TIME = 200
     g.ToggleCharacter("ReputationFrame")
     assert toggles["n"] == 1 and g.SHEET == 1
+
+
+# Pressing the character key reports in chat what it is bound to, which routes ran and which
+# windows appeared (three fixes failed in game without this).
+def test_character_key_report(lua, ns):
+    boot(lua, ns, pre="""
+      PRINTED = {}
+      function print(...) PRINTED[#PRINTED + 1] = table.concat({ ... }, " ") end
+      function GetBindingAction(key, override) if override then return "CLICK X" end return "TOGGLECHARACTER0" end
+      SHEET = CreateFrame()
+      SHEET.GetName = function() return "CharacterFrame" end
+      SHEET.IsForbidden = function() return false end
+      SHEET.IsVisible = function() return SHEET_SHOWN end
+      SHEET.GetParent = function() return UIParent end
+      SHEET_SHOWN = false
+      function EnumerateFrames(f) if f == nil then return SHEET end return nil end
+    """)
+    line = ns.Inventory.ReportCharacterKey("C", lua.eval("{}"))
+    assert "CharacterFrame" not in line
+    lua.execute("SHEET_SHOWN = true")
+    line = ns.Inventory.ReportCharacterKey("C", lua.eval("{}"))
+    assert "C -> CLICK X" in line and "normal: TOGGLECHARACTER0" in line and "apareceu: CharacterFrame" in line
+    assert "diagnóstico C" in lua.eval("PRINTED[#PRINTED]")

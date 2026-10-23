@@ -410,7 +410,10 @@ local function toggleOncePerPress()
   lastToggle = now
   Inventory.Toggle()
 end
-toggleButton:SetScript("OnClick", toggleOncePerPress)
+-- What each route did, for the character key report below.
+local keyTrace = { click = 0, toggleCharacter = 0, forever = 0 }
+Inventory.keyTrace = keyTrace
+toggleButton:SetScript("OnClick", function() keyTrace.click = keyTrace.click + 1; toggleOncePerPress() end)
 Inventory.toggleButton = toggleButton
 local bindingOwner = CreateFrame("Frame")
 local function bindCharacterKeys()
@@ -460,6 +463,7 @@ end
 -- After the game's toggle: if no Forever window was found, name in chat the character
 -- windows that are open, once, so the next fix knows what to hide.
 local function afterForeverToggle()
+  keyTrace.forever = keyTrace.forever + 1
   if watchForeverWindows() or reported then return end
   local names = {}
   local f = type(EnumerateFrames) == "function" and EnumerateFrames()
@@ -499,6 +503,7 @@ local function claimCharacterPage()
   if not characterHooked and type(rawget(_G, "ToggleCharacter")) == "function" then
     characterHooked = true
     hooksecurefunc("ToggleCharacter", function(tab)
+      keyTrace.toggleCharacter = keyTrace.toggleCharacter + 1
       if tab == "PaperDollFrame" then toggleOncePerPress() end
     end)
   end
@@ -506,6 +511,68 @@ end
 claimCharacterPage()
 ns.On("PLAYER_LOGIN", claimCharacterPage)
 ns.On("ADDON_LOADED", claimCharacterPage)
+
+-- Character key report: the first times the character key (or C) is pressed, say in chat what
+-- the key is bound to, which of our routes ran and which windows appeared, so the next fix
+-- is based on facts. The keyboard is only listened to (every key goes on to the game).
+local REPORTS = 3
+local reports = 0
+local reporter = CreateFrame("Frame", nil, UIParent)
+reporter:SetAllPoints(UIParent)
+Inventory.keyReporter = reporter
+
+local function visibleNamedFrames()
+  local list = {}
+  if type(EnumerateFrames) ~= "function" then return list end
+  local f = EnumerateFrames()
+  while f do
+    if not f:IsForbidden() and f:IsVisible() then
+      local name = f:GetName()
+      if type(name) == "string" and f:GetParent() == UIParent then list[name] = true end
+    end
+    f = EnumerateFrames(f)
+  end
+  return list
+end
+
+local function isCharacterKey(key)
+  if key == "C" then return true end
+  for _, k in ipairs({ GetBindingKey("TOGGLECHARACTER0") }) do
+    if k == key then return true end
+  end
+  return false
+end
+
+function Inventory.ReportCharacterKey(key, before)
+  local now = visibleNamedFrames()
+  local appeared = {}
+  for name in pairs(now) do
+    if not before[name] then appeared[#appeared + 1] = name end
+  end
+  table.sort(appeared)
+  local page = rawget(_G, "PaperDollFrame")
+  local line = string.format("tecla %s -> %s | normal: %s | cliques: %d, ToggleCharacter: %d, Forever: %d"
+    .. " | página oculta: %s | apareceu: %s",
+    tostring(key), tostring(GetBindingAction(key, true)), tostring(GetBindingAction(key, false)),
+    keyTrace.click, keyTrace.toggleCharacter, keyTrace.forever,
+    tostring(type(page) == "table" and page.hidden), #appeared > 0 and table.concat(appeared, ", ") or "nada")
+  print("|cffe8c46aObsidianUI|r diagnóstico C: " .. line)
+  return line
+end
+
+reporter:SetScript("OnKeyDown", function(self, key)
+  if not InCombatLockdown() then self:SetPropagateKeyboardInput(true) end
+  if not isCharacterKey(key) then return end
+  reports = reports + 1
+  if reports >= REPORTS and not InCombatLockdown() then self:EnableKeyboard(false) end
+  local before = visibleNamedFrames()
+  C_Timer.After(0.3, function() Inventory.ReportCharacterKey(key, before) end)
+end)
+ns.On("PLAYER_LOGIN", function()
+  if InCombatLockdown() then return end
+  reporter:EnableKeyboard(true)
+  reporter:SetPropagateKeyboardInput(true)
+end)
 
 -- Once in the world, check the character key really clicks our button; if not, say in chat
 -- what holds it (so it can be fixed without the player typing anything).
