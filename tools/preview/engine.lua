@@ -224,6 +224,8 @@ function CreateFrame(ftype, name, parent, template)
   local f = newRegion("frame", parent or UIParent)
   f.ftype, f.name, f.template = ftype, name, template
   if name then _G[name] = f end
+  -- The game clips a scroll frame's content to its own rect.
+  if ftype == "ScrollFrame" then f.clips = true end
   if template and template:find("ActionBarButtonTemplate") then
     f.icon = f:CreateTexture(nil, "ARTWORK"); f.icon:SetAllPoints(f)
     f.HotKey = f:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
