@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image
 
 import inventory_art
+import orb_fluid
 import vbar_art
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -94,17 +95,6 @@ def liquid(size=256):
     light = 0.10 * np.exp(-((x - 0.36) ** 2 + (y - 0.32) ** 2) / 0.03)
     v = np.clip(vertical * sphere + light, 0.5, 1.0) * 255
     a = np.dstack([v, v, v, np.full_like(v, 255)]).astype(np.uint8)
-    return Image.fromarray(a, "RGBA")
-
-
-def swirl(size=256):
-    # Tileable soft noise from a sum of periodic waves.
-    y, x = np.mgrid[0:size, 0:size] / size * 2 * math.pi
-    v = (np.sin(x * 2 + np.sin(y * 3) * 1.5) + np.sin(y * 2 + np.sin(x * 4)) + np.sin((x + y) * 3)) / 3
-    v = (v - v.min()) / (v.max() - v.min())
-    a = np.zeros((size, size, 4), np.uint8)
-    a[..., :3] = 255
-    a[..., 3] = (v * 255).astype(np.uint8)
     return Image.fromarray(a, "RGBA")
 
 
@@ -194,7 +184,6 @@ PROCEDURAL = {
     "vignette": vignette,
     "mask_circle": mask_circle,
     "liquid": liquid,
-    "swirl": swirl,
     "wave": wave,
     "bar_fill": bar_fill,
     "aura_border": aura_border,
@@ -239,6 +228,11 @@ def export_all(out_dir=MEDIA):
     save("vbar2", vbar_art.build(hud, 2))
     for name, fn in PROCEDURAL.items():
         save(name, fn())
+    # Orb liquid: flipbook sheets saved as they are (frames must stay exactly 128 px).
+    for style in orb_fluid.STYLES:
+        save(f"fluid_{style}", orb_fluid.sheet(style))
+    save("orb_glass", orb_fluid.glass())
+    save("orb_spark", orb_fluid.spark())
 
     write_manifest(entries, out_dir / "manifest.lua")
     return entries

@@ -1,4 +1,4 @@
-"""Looping fluid flipbooks for the HUD orbs (spike for the orb redesign).
+"""Looping fluid flipbooks for the HUD orbs, plus the orb glass and spark textures.
 
 Each style is a grayscale sheet of FRAMES frames (GRID x GRID cells of SIZE px): the bright
 wisps of the liquid. In game the body is a dark tinted sphere and the wisps are added on top,
@@ -49,7 +49,7 @@ STYLES = {
     # octaves: fine detail; base: glow left between wisps.
     "a": dict(twist=2.2, warp=1.3, scale=1.3, sharp=6.0, drift=0.35, octaves=3, base=0.0, gamma=1.0),
     "b": dict(twist=2.8, warp=1.5, scale=1.6, sharp=4.5, drift=0.45, octaves=3, base=0.08, gamma=1.1),
-    "c": dict(twist=0.9, warp=1.0, scale=0.9, sharp=2.2, drift=0.25, octaves=2, base=0.0, gamma=2.4),
+    "c": dict(twist=0.9, warp=1.0, scale=0.9, sharp=3.5, drift=0.25, octaves=2, base=0.0, gamma=3.0),
 }
 
 
@@ -101,6 +101,18 @@ def glass(size=256):
     rim = np.clip((r - 0.86) / 0.1, 0, 1) * np.clip((1 - r) / 0.04, 0, 1) * np.clip(y, 0, 1) * 0.35
     alpha = np.clip(crescent * 0.55 + spot + rim, 0, 1)
     alpha[r > 1] = 0
+    a = np.zeros((size, size, 4), np.uint8)
+    a[..., :3] = 255
+    a[..., 3] = (alpha * 255).astype(np.uint8)
+    return Image.fromarray(a, "RGBA")
+
+
+def spark(size=32):
+    """Small soft dot of light (the rising bubbles of the Energia style)."""
+    y, x = np.mgrid[0:size, 0:size]
+    c = (size - 1) / 2
+    d = np.sqrt((x - c) ** 2 + (y - c) ** 2) / c
+    alpha = np.clip(1 - d, 0, 1) ** 2
     a = np.zeros((size, size, 4), np.uint8)
     a[..., :3] = 255
     a[..., 3] = (alpha * 255).astype(np.uint8)

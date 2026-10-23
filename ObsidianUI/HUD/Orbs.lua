@@ -28,14 +28,6 @@ local function makeOrb(x)
   bar:GetStatusBarTexture():AddMaskTexture(mask)
   local fill = bar:GetStatusBarTexture()
 
-  -- Slowly moving texture inside the liquid only.
-  local swirl = bar:CreateTexture(nil, "ARTWORK", nil, 2)
-  swirl:SetTexture(M.swirl.file, "REPEAT", "REPEAT")
-  swirl:SetAllPoints(fill)
-  swirl:SetBlendMode("ADD")
-  swirl:SetAlpha(0.22)
-  swirl:AddMaskTexture(mask)
-
   -- Wavy surface anchored to the top of the fill: follows the value without any math.
   local wave = bar:CreateTexture(nil, "ARTWORK", nil, 3)
   wave:SetTexture(M.wave.file, "REPEAT", "CLAMP")
@@ -61,7 +53,6 @@ local function makeOrb(x)
   well:SetScript("OnUpdate", function(_, elapsed)
     offset = (offset + elapsed * 0.05) % 1
     wave:SetTexCoord(offset, offset + 1, 0, 1)
-    swirl:SetTexCoord(offset * 0.5, offset * 0.5 + 1, offset * 0.3, offset * 0.3 + 1)
   end)
 
   table.insert(HUD.onResize, function(u)
