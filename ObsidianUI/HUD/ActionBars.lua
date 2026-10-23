@@ -35,6 +35,25 @@ local function skin(button)
     hotkey:SetPoint("TOPRIGHT", -2, -2)
     hotkey:SetTextColor(0.91, 0.86, 0.75)
   end
+  local count = button.Count or _G[name .. "Count"]
+  local macroName = button.Name or _G[name .. "Name"]
+  if macroName then macroName:SetAlpha(0) end
+  -- Icon and texts follow the button size: at a small HUD scale the default fonts made the key
+  -- text and the stack count overlap. The icon is square, centered in the (taller) slot.
+  button:HookScript("OnSizeChanged", function(_, w, h)
+    local s = math.min(w, h)
+    if icon then
+      icon:ClearAllPoints()
+      icon:SetPoint("CENTER")
+      icon:SetSize(s, s)
+    end
+    for region, frac in pairs({ [hotkey or false] = 0.30, [count or false] = 0.34 }) do
+      if region then
+        local path, _, flags = region:GetFont()
+        if path then region:SetFont(path, math.max(8, math.floor(s * frac)), flags or "OUTLINE") end
+      end
+    end
+  end)
 end
 
 function ActionBars.CreateButton(parent, name, actionID, binding)

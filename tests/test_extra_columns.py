@@ -138,3 +138,32 @@ def test_main_buttons_stay_contiguous_with_extra_columns(lua, ns):
     extra1 = [b for b in ns.ActionBars.extra.values() if b.obColumn == 1][0]
     assert abs((second_main.obLeft - first_main.obLeft) - 71 * u) < 1.5 * u
     assert abs((first_main.obLeft - extra1.obLeft) - 72 * u) < 1.5 * u
+
+
+# In-game (small HUD): key text and stack count overlapped, icons covered the slot frames.
+SIZE_PRE = """
+  local cf = CreateFrame
+  local function text()
+    local t = setmetatable({}, { __index = function() return function() end end })
+    t.GetFont = function() return "Fonts/ARIALN.TTF", 12, "OUTLINE" end
+    t.SetFont = function(self, _, size) self.size = size end
+    return t
+  end
+  function CreateFrame(...)
+    local f = cf(...)
+    f.HotKey, f.Count, f.Name = text(), text(), text()
+    f.icon = setmetatable({}, { __index = function() return function() end end })
+    f.icon.SetSize = function(self, w, h) self.w, self.h = w, h end
+    return f
+  end
+"""
+
+
+def test_button_text_and_icon_scale_with_the_button(lua, ns):
+    boot(lua, ns, pre=SIZE_PRE)
+    b = ns.ActionBars.buttons[1]
+    b.hooks.OnSizeChanged(b, 26, 28)
+    assert b.HotKey.size <= 9 and b.Count.size <= 10
+    assert b.icon.w == 26 and b.icon.h == 26          # square, inside the slot
+    b.hooks.OnSizeChanged(b, 56, 61)
+    assert b.HotKey.size >= 14
