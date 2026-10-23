@@ -37,7 +37,7 @@ def last_point(lua, name):
 def test_vehicle_leave_clears_castbar(lua, ns):
     boot(lua, ns, pre='RecordingFrame("MainMenuBarVehicleLeaveButton")')
     _, x, _ = last_point(lua, "MainMenuBarVehicleLeaveButton")
-    assert x >= 0.47 * 1080 / 2
+    assert x >= ns.CastBar.HalfWidth()
 
 
 # 4. Stance (left) and pet (right) bars start outside the widest gem row.

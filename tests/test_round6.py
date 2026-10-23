@@ -536,3 +536,12 @@ def test_addon_registers_no_title_changed_event():
     from conftest import ROOT
     for f in (ROOT / "ObsidianUI").rglob("*.lua"):
         assert "PLAYER_TITLE_CHANGED" not in f.read_text(encoding="utf-8"), f
+
+
+# In game the user found the unit frames and the cast bar too big: about 20% smaller.
+def test_unit_frames_and_castbar_about_20_percent_smaller(lua, ns):
+    boot(lua, ns)
+    K = ns.UnitFrames.KINDS
+    assert K.large.width <= 0.29 and K.small.width <= 0.16 and K.tiny.width <= 0.14
+    H = lua.eval("select(2, UIParent:GetSize())")
+    assert ns.CastBar.HalfWidth() <= 0.38 * H / 2
