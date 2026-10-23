@@ -12,6 +12,7 @@ ns.MediaManifest = {
   hud_connector = { file = "Interface\\AddOns\\ObsidianUI\\Media\\hud_connector", w = 333, h = 381, potW = 512, potH = 512 },
   icon_sort = { file = "Interface\\AddOns\\ObsidianUI\\Media\\icon_sort", w = 64, h = 64, potW = 64, potH = 64 },
   inventory = { file = "Interface\\AddOns\\ObsidianUI\\Media\\inventory", w = 690, h = 1334, potW = 1024, potH = 2048 },
+  inventory_wing = { file = "Interface\\AddOns\\ObsidianUI\\Media\\inventory_wing", w = 400, h = 1334, potW = 512, potH = 2048 },
   liquid = { file = "Interface\\AddOns\\ObsidianUI\\Media\\liquid", w = 256, h = 256, potW = 256, potH = 256 },
   mask_circle = { file = "Interface\\AddOns\\ObsidianUI\\Media\\mask_circle", w = 256, h = 256, potW = 256, potH = 256 },
   minimap_ring = { file = "Interface\\AddOns\\ObsidianUI\\Media\\minimap_ring", w = 1008, h = 1012, potW = 1024, potH = 1024 },

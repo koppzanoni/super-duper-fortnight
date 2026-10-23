@@ -86,3 +86,17 @@ def test_reputation_and_currency_buttons(lua, ns):
         b.handlers.OnClick(b)
         opened = lua.globals().OPENED
         assert opened[len(opened)] == tab
+
+
+def test_inventory_size_setting_scales_the_window(lua, ns):
+    boot(lua, ns)
+    _, _, _, h1 = ns.Inventory.DefaultPlacement(1920, 1080, 270)
+    ns.db.invScale = 1.2
+    _, _, _, h2 = ns.Inventory.DefaultPlacement(1920, 1080, 270)
+    assert abs(h2 - h1 * 1.2) < 1e-6
+    assert ns.db.invScale == 1.2
+
+
+def test_inventory_size_defaults_to_one(lua, ns):
+    boot(lua, ns)
+    assert ns.db.invScale == 1.0

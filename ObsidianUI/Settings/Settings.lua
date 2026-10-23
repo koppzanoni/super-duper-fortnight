@@ -21,6 +21,15 @@ local function register()
   options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(v) return string.format("%.2f", v) end)
   Settings.CreateSlider(category, scale, options, "Tamanho do HUD inferior.")
 
+  local inv = Settings.RegisterAddOnSetting(category, "ObsidianUI_invScale", "invScale", ns.db, "number",
+    "Tamanho do inventário", 1.0)
+  inv:SetValueChangedCallback(function()
+    if ns.Inventory then ns.RunOutOfCombat(ns.Inventory.Layout) end
+  end)
+  local invOptions = Settings.CreateSliderOptions(0.8, 1.3, 0.05)
+  invOptions:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(v) return string.format("%.2f", v) end)
+  Settings.CreateSlider(category, inv, invOptions, "Acima de 1, a janela pode cobrir parte do HUD.")
+
   Settings.RegisterAddOnCategory(category)
 end
 

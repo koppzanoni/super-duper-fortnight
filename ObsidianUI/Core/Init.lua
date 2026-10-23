@@ -2,7 +2,7 @@ local addonName, ns = ...
 
 ns.name = addonName
 
-local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0 }
+local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0 }
 
 -- Event bus: ns.On(event, fn) calls fn(event, ...) every time the event fires.
 local listeners = {}

@@ -53,6 +53,7 @@ local function ensureButtons()
   end
 end
 
+local SEARCH_ICON = "Interface\\Common\\UI-Searchbox-Icon"
 local QUEST_BANG = "Interface\\ContainerFrame\\UI-Icon-QuestBang"
 local QUEST_BORDER = "Interface\\ContainerFrame\\UI-Icon-QuestBorder"
 
@@ -220,14 +221,29 @@ for i = 1, 5 do
 end
 local gold = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 
--- Search box above the window; sort button in its plate right after the tabs.
-local search = CreateFrame("EditBox", "ObsidianUIBagSearch", frame, "SearchBoxTemplate")
-search:SetSize(110, 20)
-search:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", -30, 2)
+-- Bag search on a stone plate in the stats wing, above its buttons; sort button in its plate
+-- right after the tabs.
+local search = CreateFrame("EditBox", "ObsidianUIBagSearch", Inventory.statsPanel)
 search:SetAutoFocus(false)
+search:SetFontObject("GameFontHighlight")
+search:SetTextColor(0.95, 0.9, 0.8)
+search.plate = search:CreateTexture(nil, "BACKGROUND")
+search.plate:SetAllPoints(search)
+search.plate:SetTexture(M.plate.file)
+search.glass = search:CreateTexture(nil, "ARTWORK")
+search.glass:SetPoint("LEFT", 10, 0)
+search.glass:SetSize(14, 14)
+search.glass:SetTexture(SEARCH_ICON)
+search.glass:SetVertexColor(0.91, 0.77, 0.42)
+search:SetTextInsets(30, 10, 0, 0)
+search.hint = search:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+search.hint:SetPoint("LEFT", 30, 0)
+search.hint:SetText("Buscar...")
+search:SetScript("OnEscapePressed", function(self) self:SetText(""); self:ClearFocus() end)
+search:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
 search:SetScript("OnTextChanged", function(self)
-  if SearchBoxTemplate_OnTextChanged then SearchBoxTemplate_OnTextChanged(self) end
   searchText = self:GetText() or ""
+  self.hint:SetShown(searchText == "")
   if C_Container.SetItemSearch then C_Container.SetItemSearch(searchText) end
   refreshVisuals()
 end)
@@ -275,6 +291,8 @@ Inventory.onLayout = function()
   unit = frame:GetWidth() / S.w
   for i, t in ipairs(tabs) do place(t, S.tabs[i], S.tabY, S.tabW, S.tabH) end
   place(sort, S.sort.x, S.sort.y, S.sort.w, S.sort.h)
+  local SR = S.wing.search
+  Inventory.PlaceInWing(search, SR.x, SR.y, SR.w, SR.h)
   for i, b in ipairs(footerBags) do place(b, S.bags[i], S.bagY, S.bagW, S.bagH) end
   place(gold, S.gold.x, S.gold.y, S.gold.w, S.gold.h)
 end

@@ -142,18 +142,27 @@ local function updateEquipment()
   end
 end
 
--- Stats panel, docked left of the window and open with it: sections of label/value rows,
--- then the Reputation and Currency buttons.
+-- Stats wing: part of the window, on its left (art: tools/inventory_art.py). Its right pillar
+-- hides under the window's left pillar. Everything in it is placed in wing art pixels and
+-- scales with the window: title plate, sections of label/value rows, then (from BagGrid) the
+-- bag search, and the Reputation and Currency buttons at the bottom.
 local W = ns.Widgets
-local PANEL_W, PAD, ROW_H, HEADER_H, BUTTON_H = 200, 12, 16, 24, 22
-local stats = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-W.Panel(stats)
-stats:SetWidth(PANEL_W)
-stats:SetPoint("TOPRIGHT", frame, "TOPLEFT", -6, -40)
+local WG = S.wing
+local stats = CreateFrame("Frame", nil, frame)
+stats:SetFrameLevel(math.max(0, frame:GetFrameLevel() - 1))
+local wingArt = stats:CreateTexture(nil, "BACKGROUND")
+wingArt:SetAllPoints(stats)
 Inventory.statsPanel = stats
 
-local statsTitle = stats:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-statsTitle:SetPoint("TOP", 0, -PAD)
+-- Place a region in the wing by its art pixels.
+local wingUnit = 1
+function Inventory.PlaceInWing(region, x, y, w, h)
+  region:ClearAllPoints()
+  region:SetPoint("TOPLEFT", stats, "TOPLEFT", x * wingUnit, -y * wingUnit)
+  if w then region:SetSize(w * wingUnit, h * wingUnit) end
+end
+
+local statsTitle = stats:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 statsTitle:SetText("ATRIBUTOS")
 statsTitle:SetTextColor(W.GOLD[1], W.GOLD[2], W.GOLD[3])
 
@@ -161,13 +170,12 @@ local lines = {}
 local function line(i)
   if lines[i] then return lines[i] end
   local l = {}
-  l.label = stats:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  l.label = stats:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   l.label:SetJustifyH("LEFT")
-  l.value = stats:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  l.value = stats:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   l.value:SetJustifyH("RIGHT")
   l.divider = stats:CreateTexture(nil, "ARTWORK")
-  l.divider:SetHeight(1)
-  l.divider:SetColorTexture(W.BRONZE[1], W.BRONZE[2], W.BRONZE[3], 0.6)
+  l.divider:SetColorTexture(W.BRONZE[1], W.BRONZE[2], W.BRONZE[3], 0.7)
   lines[i] = l
   return l
 end
@@ -176,30 +184,31 @@ Inventory.repButton = W.Button(stats, "Reputação", function() ToggleCharacter(
 Inventory.tokenButton = W.Button(stats, "Moedas", function() ToggleCharacter("TokenFrame") end)
 
 local function updateStats()
+  local R = WG.rows
   local rows = ns.Stats.Rows(ns.Stats.GameAPI())
-  local y = PAD + 18
+  local y = R.top
   for i, r in ipairs(rows) do
     local l = line(i)
-    l.label:ClearAllPoints()
-    l.value:ClearAllPoints()
-    l.divider:ClearAllPoints()
     if r.header then
-      l.label:SetPoint("TOPLEFT", PAD, -(y + 6))
+      if i > 1 then y = y + R.gap end
+      l.label:SetFontObject("GameFontNormalLarge")
       l.label:SetText(r.header)
       l.label:SetTextColor(W.GOLD[1], W.GOLD[2], W.GOLD[3])
+      Inventory.PlaceInWing(l.label, R.x0, y)
       l.value:SetText("")
-      l.divider:SetPoint("TOPLEFT", PAD, -(y + 20))
-      l.divider:SetPoint("TOPRIGHT", -PAD, -(y + 20))
+      Inventory.PlaceInWing(l.divider, R.x0, y + R.header - 8, R.x1 - R.x0, 2)
       l.divider:Show()
-      y = y + HEADER_H
+      y = y + R.header
     else
-      l.label:SetPoint("TOPLEFT", PAD, -y)
+      l.label:SetFontObject("GameFontHighlight")
       l.label:SetText(r.label)
       l.label:SetTextColor(W.TEXT[1], W.TEXT[2], W.TEXT[3])
-      l.value:SetPoint("TOPRIGHT", -PAD, -y)
+      Inventory.PlaceInWing(l.label, R.x0, y)
       l.value:SetText(r.value)
+      l.value:ClearAllPoints()
+      l.value:SetPoint("TOPRIGHT", stats, "TOPLEFT", R.x1 * wingUnit, -y * wingUnit)
       l.divider:Hide()
-      y = y + ROW_H
+      y = y + R.row
     end
     l.label:Show()
     l.value:Show()
@@ -207,16 +216,22 @@ local function updateStats()
   for i = #rows + 1, #lines do
     lines[i].label:Hide(); lines[i].value:Hide(); lines[i].divider:Hide()
   end
+end
 
-  local bw = (PANEL_W - 2 * PAD - 6) / 2
-  local rep, token = Inventory.repButton, Inventory.tokenButton
-  rep:ClearAllPoints()
-  rep:SetPoint("TOPLEFT", PAD, -(y + 10))
-  rep:SetSize(bw, BUTTON_H)
-  token:ClearAllPoints()
-  token:SetPoint("LEFT", rep, "RIGHT", 6, 0)
-  token:SetSize(bw, BUTTON_H)
-  stats:SetHeight(y + 10 + BUTTON_H + PAD)
+local function layoutWing()
+  wingUnit = frame:GetWidth() / S.w
+  stats:ClearAllPoints()
+  stats:SetPoint("TOPRIGHT", frame, "TOPLEFT", WG.overlap * wingUnit, 0)
+  stats:SetSize(WG.w * wingUnit, frame:GetHeight())
+  -- Keep the wing on screen too when the window is dragged to the left edge.
+  frame:SetClampRectInsets(-(WG.w - WG.overlap) * wingUnit, 0, 0, 0)
+  ns.Media.Apply(wingArt, "inventory_wing")
+  local T = WG.title
+  Inventory.PlaceInWing(statsTitle, T.x, T.y, T.w, T.h)
+  local B = WG.buttons
+  local bw = (B.x1 - B.x0 - B.gap) / 2
+  Inventory.PlaceInWing(Inventory.repButton, B.x0, B.y, bw, B.h)
+  Inventory.PlaceInWing(Inventory.tokenButton, B.x0 + bw + B.gap, B.y, bw, B.h)
 end
 
 -- Area the bag grid fills (8 columns x 6 visible rows).
@@ -225,7 +240,8 @@ Inventory.gridArea = CreateFrame("Frame", nil, frame)
 -- Default spot: above the bottom HUD and left of the minimap, never under either of them.
 -- The window shrinks when a large HUD scale leaves less room.
 function Inventory.DefaultPlacement(W, H, hudH)
-  local h = math.min(0.72 * H, H - hudH - 0.06 * H)
+  local scale = ns.db and ns.db.invScale or 1
+  local h = math.min(0.74 * H, H - hudH - 0.04 * H) * scale
   return "BOTTOMRIGHT", -0.27 * H, hudH + 0.02 * H, h
 end
 
@@ -257,6 +273,7 @@ function Inventory.Layout()
   local cols, rows = S.gridCols, S.gridRows
   rect(Inventory.gridArea, { x = cols[1], y = rows[1], w = cols[#cols] + S.gridSlot - cols[1],
     h = rows[#rows] + S.gridSlot - rows[1] })
+  layoutWing()
   if Inventory.onLayout then Inventory.onLayout() end
 end
 

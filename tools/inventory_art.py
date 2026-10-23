@@ -84,4 +84,51 @@ def rework(img):
 def pieces(reworked):
     """Textures for the addon's own widgets, already power-of-two sized."""
     plate = nine_slice(reworked.crop(PLATE_TEX_SRC), PLATE_SIZE[0], PLATE_SIZE[1], 8)
-    return {"stone_tile": reworked.crop(STONE_TILE), "plate": plate}
+    return {"stone_tile": reworked.crop(STONE_TILE), "plate": plate, "inventory_wing": wing(reworked)}
+
+
+# Stats wing: a narrow panel docked left of the window, built from the window's own frame (the
+# left strip with its corners and pillar + the right strip), stone inside, a title plate on top.
+# Its right pillar hides under the window's left pillar (WING_OVERLAP), so the two read as one.
+WING_W = 400
+WING_STRIP = WING_W // 2
+WING_OVERLAP = 28
+WING_INNER = (28, 88, WING_W - 28, 1306)
+TITLE_SRC = (187, 31, 502, 70)
+WING_TITLE = (40, 33, WING_W - WING_OVERLAP - 40, 70)
+
+
+def wing(reworked):
+    w, h = reworked.size
+    out = Image.new("RGBA", (WING_W, h))
+    out.paste(reworked.crop((0, 0, WING_STRIP, h)), (0, 0))
+    out.paste(reworked.crop((w - (WING_W - WING_STRIP), 0, w, h)), (WING_STRIP, 0))
+
+    stone = reworked.crop(STONE_TILE)
+    x0, y0, x1, y1 = WING_INNER
+    flip_x = False
+    for x in range(x0, x1, stone.width):
+        flip_y = False
+        for y in range(y0, y1, stone.height):
+            tile = stone
+            if flip_x:
+                tile = tile.transpose(Image.FLIP_LEFT_RIGHT)
+            if flip_y:
+                tile = tile.transpose(Image.FLIP_TOP_BOTTOM)
+            out.paste(tile.crop((0, 0, min(stone.width, x1 - x), min(stone.height, y1 - y))), (x, y))
+            flip_y = not flip_y
+        flip_x = not flip_x
+
+    # Soft inner shadow where the stone meets the frame.
+    shadow = Image.new("RGBA", (x1 - x0, y1 - y0), (0, 0, 0, 0))
+    px = shadow.load()
+    for y in range(y1 - y0):
+        for x in range(x1 - x0):
+            d = min(x, y, x1 - x0 - 1 - x, y1 - y0 - 1 - y)
+            if d < 10:
+                px[x, y] = (0, 0, 0, int(150 * (1 - d / 10)))
+    out.alpha_composite(shadow, (x0, y0))
+
+    tx0, ty0, tx1, ty1 = WING_TITLE
+    out.paste(reworked.crop(TITLE_SRC).resize((tx1 - tx0, ty1 - ty0), Image.LANCZOS), (tx0, ty0))
+    return out

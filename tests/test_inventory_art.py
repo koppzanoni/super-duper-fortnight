@@ -58,3 +58,17 @@ def test_sort_plate_is_drawn():
 def test_button_plate_is_cut_from_a_single_plate():
     x0, _, x1, _ = ia.PLATE_TEX_SRC
     assert any(px == x0 and px + ia.PLATE_W == x1 for px in ia.PLATES_X)
+
+
+def test_wing_rects_match_the_wing_art():
+    WG = data().wing
+    assert (WG.w, WG.overlap) == (ia.WING_W, ia.WING_OVERLAP)
+    x0, y0, x1, y1 = ia.WING_TITLE
+    assert (WG.title.x, WG.title.y, WG.title.w, WG.title.h) == (x0, y0, x1 - x0, y1 - y0)
+    # everything visible stays left of the hidden pillar and inside the stone
+    ix0, iy0, ix1, iy1 = ia.WING_INNER
+    for r in (WG.search, WG.buttons):
+        x = r.x if r.x else r.x0
+        assert x >= ix0
+    assert WG.rows.x1 <= ix1 - WG.overlap
+    assert WG.buttons.y + WG.buttons.h <= iy1
