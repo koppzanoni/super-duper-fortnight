@@ -671,3 +671,10 @@ def test_target_name_and_level_fit_the_name_plate(lua, ns):
     plate = t.name.h
     assert 0.45 * plate <= t.name.size <= 0.7 * plate
     assert t.levelText.size <= t.name.size
+
+
+# The user found the new cast bar too long.
+def test_castbar_is_shorter(lua, ns):
+    boot(lua, ns)
+    H = lua.eval("select(2, UIParent:GetSize())")
+    assert ns.CastBar.HalfWidth() <= 0.29 * H / 2

@@ -88,6 +88,9 @@ def build(meshy=MESHY):
 SPLIT, MIDDLE, MIDDLE_TO = 300, (70, 180), 25
 RING_C, RING_R = (170, 123), 122
 RING_SCALE = 0.65
+# The bar was cut square where it met the socket: its left end is the mirrored right end cap
+# (END_CAP columns), tucked OVERLAP px under the socket.
+END_CAP, OVERLAP = 34, 14
 
 
 def castbar_open():
@@ -107,9 +110,11 @@ def castbar_open():
     socket = Image.fromarray(out[:, :SPLIT])
     sw, sh = round(socket.width * RING_SCALE), round(socket.height * RING_SCALE)
     socket = socket.resize((sw, sh), Image.LANCZOS)
-    bar = Image.fromarray(out[:, SPLIT:])
-    img = Image.new("RGBA", (sw + bar.width, out.shape[0]))
-    img.paste(bar, (sw, 0))
+    bar = out[:, SPLIT:].copy()
+    bar[:, :END_CAP] = bar[:, -END_CAP:][:, ::-1]
+    bar = Image.fromarray(bar)
+    img = Image.new("RGBA", (sw - OVERLAP + bar.width, out.shape[0]))
+    img.paste(bar, (sw - OVERLAP, 0))
     img.alpha_composite(socket, (0, (out.shape[0] - sh) // 2))
     return img.crop(img.getchannel("A").point(lambda v: 255 if v > 40 else 0).getbbox())
 
