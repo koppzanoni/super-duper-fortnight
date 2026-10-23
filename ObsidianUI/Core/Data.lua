@@ -82,6 +82,13 @@ end
 -- sheet: flipbook texture; fps: flipbook speed; wisp/wisp2: strength of the wisp layers;
 -- spin/spin2: their turn speed (rad/s); core: pulsing core glow; sparks: rising bubbles;
 -- still: no animation, shows stillFrame.
+-- Orb cap art, per side (the right one is mirrored); over: drawn above the orb liquid.
+Data.CAP_STYLE_ORDER = { "classic", "relic" }
+Data.CAP_STYLES = {
+  classic = { label = "Clássico", left = "hud_cap", right = "hud_cap" },
+  relic = { label = "Relicário", left = "hud_cap_claws", right = "hud_cap_dragon",
+    overLeft = "hud_cap_claws_over", overRight = "hud_cap_dragon_over" },
+}
 Data.ORB_STYLE_ORDER = { "a", "b", "c", "d" }
 Data.ORB_STYLE_LABELS = { a = "Redemoinho", b = "Energia", c = "Névoa", d = "Parado" }
 Data.ORB_STYLES = {

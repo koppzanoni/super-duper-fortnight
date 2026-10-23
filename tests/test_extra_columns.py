@@ -14,6 +14,23 @@ def boot(lua, ns, pre="", db=None):
     return ns
 
 
+# Frames and their textures remember whether they are shown.
+SHOWN_PRE = """
+  local cf = CreateFrame
+  local function track(o)
+    o.Show = function(self) self.shown = true end
+    o.Hide = function(self) self.shown = false end
+    o.SetShown = function(self, v) self.shown = v and true or false end
+    return o
+  end
+  function CreateFrame(...)
+    local f = track(cf(...))
+    f.CreateTexture = function() return track(cf()) end
+    return f
+  end
+"""
+
+
 HOTKEY_PRE = """
   local cf = CreateFrame
   function CreateFrame(...)
@@ -262,7 +279,7 @@ def test_action_bar_always_floats_free(lua, ns):
 # backing of the wing is stretched out to the edge, with the panel's bronze trim at the edge.
 def test_orb_panels_reach_the_screen_edges(lua, ns):
     for scale in (0.6, 1.0):
-        boot(lua, ns, db={"scale": scale, "extraCols": 1})
+        boot(lua, ns, pre=SHOWN_PRE, db={"scale": scale, "extraCols": 1})
         W, capX = ns.HUD.W, ns.HUD.capX
         for side, lo, hi in (("left", 0, capX), ("right", W - capX, W)):
             pieces = [p for p in ns.HUD.capFill[side].values() if p.shown]
@@ -270,3 +287,36 @@ def test_orb_panels_reach_the_screen_edges(lua, ns):
             assert spans[0][0] <= lo + 0.01 and spans[-1][1] >= hi - 0.01, (side, scale)
             for (_, a1), (b0, _) in zip(spans, spans[1:]):
                 assert b0 <= a1 + 0.01  # no gap between pieces
+
+
+# The "Relicário" orb caps are an option: bone claws on the health orb, a dragon on the mana orb
+# (mirrored), each with an overlay over its orb. The classic caps stay the default.
+def recorded_caps(lua, ns, style):
+    boot(lua, ns, pre=SHOWN_PRE, db={"capStyle": style} if style else None)
+    seen, name = {}, lua.eval("tostring")  # Lua tables are keyed by their Lua identity
+    apply_range = ns.Media.ApplyRange
+    def recording(tex, key, mirror, *rest):
+        seen[name(tex)] = (key, bool(mirror))
+        return apply_range(tex, key, mirror, *rest)
+    ns.Media.ApplyRange = recording
+    ns.HUD.Layout()
+    return lambda tex: seen[name(tex)]
+
+
+def test_classic_orb_caps_by_default(lua, ns):
+    used = recorded_caps(lua, ns, None)
+    caps, over = ns.HUD.caps, ns.HUD.capOver
+    assert used(caps.left) == ("hud_cap", False) and used(caps.right) == ("hud_cap", True)
+    assert over.left.shown is False and over.right.shown is False
+
+
+def test_relic_orb_caps(lua, ns):
+    used = recorded_caps(lua, ns, "relic")
+    caps, over = ns.HUD.caps, ns.HUD.capOver
+    assert used(caps.left) == ("hud_cap_claws", False)
+    assert used(caps.right) == ("hud_cap_dragon", True)
+    assert used(over.left) == ("hud_cap_claws_over", False) and over.left.shown is True
+    assert used(over.right) == ("hud_cap_dragon_over", True) and over.right.shown is True
+    # the stone out to the screen edges comes from the same art
+    for side, key in (("left", "hud_cap_claws"), ("right", "hud_cap_dragon")):
+        assert all(used(p)[0] == key for p in ns.HUD.capFill[side].values() if p.shown)

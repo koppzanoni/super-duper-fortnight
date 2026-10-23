@@ -12,6 +12,7 @@ from PIL import Image
 import cap_art
 import inventory_art
 import orb_fluid
+import relic_art
 import vbar_art
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -227,6 +228,10 @@ def export_all(out_dir=MEDIA):
     vbar = Image.open(ART / vbar_art.SOURCE).convert("RGBA")
     save("vbar1", defringe(vbar_art.build(vbar, 1)))
     save("vbar2", defringe(vbar_art.build(vbar, 2)))
+    # "Relicário" HUD style: a frame and an over-the-orb overlay per cap.
+    for cap in relic_art.CAPS:
+        save(f"hud_cap_{cap}", defringe(relic_art.frame(cap)))
+        save(f"hud_cap_{cap}_over", defringe(relic_art.overlay(cap)))
     for name, fn in PROCEDURAL.items():
         save(name, fn())
     # Orb liquid: flipbook sheets saved as they are (frames must stay exactly 128 px).

@@ -3,7 +3,7 @@ local addonName, ns = ...
 ns.name = addonName
 
 local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, extraCols = 0, showHotkeys = true,
-  orbText = true, orbStyle = "a" }
+  orbText = true, orbStyle = "a", capStyle = "classic" }
 
 -- Event bus: ns.On(event, fn) calls fn(event, ...) every time the event fires.
 local listeners = {}

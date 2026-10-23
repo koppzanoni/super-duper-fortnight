@@ -47,6 +47,15 @@ local function register()
   Settings.CreateDropdown(category, orbStyle, orbStyleOptions,
     "Como o líquido dos orbes de vida e recurso se mexe. D fica parado.")
 
+  local capStyle = Settings.RegisterAddOnSetting(category, "ObsidianUI_capStyle", "capStyle", ns.db, "string",
+    "Moldura dos orbes", "classic")
+  capStyle:SetValueChangedCallback(function() ns.RunOutOfCombat(ns.HUD.Layout) end)
+  Settings.CreateDropdown(category, capStyle, function()
+    local container = Settings.CreateControlTextContainer()
+    for _, key in ipairs(ns.Data.CAP_STYLE_ORDER) do container:Add(key, ns.Data.CAP_STYLES[key].label) end
+    return container:GetData()
+  end, "Clássico: asas de dragão. Relicário: garras de osso na vida e um dragão na mana.")
+
   local scale = Settings.RegisterAddOnSetting(category, "ObsidianUI_scale", "scale", ns.db, "number", "Escala do HUD", 1.0)
   scale:SetValueChangedCallback(function() ns.RunOutOfCombat(ns.HUD.Layout) end)
   local options = Settings.CreateSliderOptions(0.6, 1.4, 0.05)

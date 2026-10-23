@@ -31,6 +31,9 @@ local function newTex()
 end
 
 local capL, capR = newTex(), newTex()
+HUD.caps = { left = capL, right = capR }
+-- Parts of a cap's ornament that lie over the orb (Relicário style), above the liquid.
+HUD.capOver = { left = HUD.over:CreateTexture(nil, "BACKGROUND"), right = HUD.over:CreateTexture(nil, "BACKGROUND") }
 local outerL, innerL, outerR, innerR = newTex(), newTex(), newTex(), newTex()
 local slices = { left = {}, right = {} }
 -- Between a cap and the screen edge: the plain stone just inside the panel's trim (cap art
@@ -104,8 +107,19 @@ function HUD.Layout()
   HUD.capX = W / 2 - barW - HUD.extraW - capW
   put(capL, HUD.capX, capW)
   put(capR, W / 2 + barW + HUD.extraW, capW)
-  ns.Media.Apply(capL, "hud_cap")
-  ns.Media.Apply(capR, "hud_cap", true)
+  local style = ns.Data.CAP_STYLES[ns.db and ns.db.capStyle] or ns.Data.CAP_STYLES.classic
+  ns.Media.Apply(capL, style.left)
+  ns.Media.Apply(capR, style.right, true)
+  for _, side in ipairs({ "left", "right" }) do
+    local t, key = HUD.capOver[side], side == "left" and style.overLeft or style.overRight
+    if key then
+      put(t, side == "left" and HUD.capX or W / 2 + barW + HUD.extraW, capW)
+      ns.Media.Apply(t, key, side == "right")
+      t:Show()
+    else
+      t:Hide()
+    end
+  end
   for _, side in ipairs({ "left", "right" }) do
     local list, n = HUD.capFill[side], 0
     local function piece(x, w, x0, x1)
@@ -118,7 +132,7 @@ function HUD.Layout()
       local mirror = side == "right"
       put(t, mirror and W - x - w or x, w)
       t.obLeft, t.obWidth = mirror and W - x - w or x, w
-      ns.Media.ApplyRange(t, "hud_cap", mirror, x0 / CAP_W, x1 / CAP_W)
+      ns.Media.ApplyRange(t, style[side], mirror, x0 / CAP_W, x1 / CAP_W)
       t:Show()
     end
     if HUD.capX > 0 then
