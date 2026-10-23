@@ -11,8 +11,6 @@ local KINDS = {
   tiny = { spec = ns.Data.UNIT, tex = "unit_frame", width = 0.14 },
 }
 UnitFrames.KINDS = KINDS
-local CLASS_RING = { elite = { 0.64, 0.21, 0.93 }, worldboss = { 0.64, 0.21, 0.93 },
-  rare = { 0.75, 0.75, 0.75 }, rareelite = { 0.75, 0.75, 0.75 } }
 local CLASS_LABEL = { elite = "Elite", worldboss = "Chefe", rare = "Raro", rareelite = "Raro Elite" }
 
 local function statusBar(parent)
@@ -49,11 +47,6 @@ function UnitFrames.Create(unit, kind)
   f.art:SetAllPoints(f)
   ns.Media.Apply(f.art, k.tex)
 
-  f.ring = f:CreateTexture(nil, "OVERLAY")
-  f.ring:SetTexture(M.ring_glow.file)
-  f.ring:SetBlendMode("ADD")
-  f.ring:Hide()
-
   f.health = statusBar(f)
   f.health:SetFrameLevel(f:GetFrameLevel() + 2)
   f.health:SetStatusBarColor(0.78, 0.16, 0.12)
@@ -73,8 +66,6 @@ function UnitFrames.Create(unit, kind)
     self:SetSize(w, h)
     setRect(self.portrait, self, k.spec, k.spec.portrait, w, h)
     self.portraitMask:SetAllPoints(self.portrait)
-    self.ring:SetPoint("TOPLEFT", self.portrait, "TOPLEFT", -3, 3)
-    self.ring:SetPoint("BOTTOMRIGHT", self.portrait, "BOTTOMRIGHT", 3, -3)
     setRect(self.health, self, k.spec, k.spec.health, w, h)
     setRect(self.power, self, k.spec, k.spec.power, w, h)
     setRect(self.name, self, k.spec, k.spec.name, w, h)
@@ -133,8 +124,6 @@ local function updateAll(f)
     local level = UnitLevel(unit)
     local label = CLASS_LABEL[class]
     f.name:SetText(name .. "  |cffb9ad95Nv " .. (level and level > 0 and level or "??") .. (label and (" · " .. label) or "") .. "|r")
-    local ring = CLASS_RING[class]
-    if ring then f.ring:SetVertexColor(ring[1], ring[2], ring[3]); f.ring:Show() else f.ring:Hide() end
   else
     f.name:SetText(f.unit == "focus" and ("Foco: " .. name) or name)
   end
@@ -249,9 +238,11 @@ local function layout()
   local tot, pet = UnitFrames.frames.targettarget, UnitFrames.frames.pet
   for _, f in pairs(UnitFrames.frames) do f:Resize(H) end
   target:ClearAllPoints(); target:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0.012 * W, -0.02 * H)
-  focus:ClearAllPoints(); focus:SetPoint("TOPLEFT", target, "BOTTOMLEFT", 20 * s, -48 * s)
-  tot:ClearAllPoints(); tot:SetPoint("TOPLEFT", target, "TOPRIGHT", 8 * s, -18 * s)
-  pet:ClearAllPoints(); pet:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0.012 * W, (ns.HUD.h or 0) + 6 * s)
+  -- Lined up: focus under the target on the same left edge, target-of-target beside it at mid
+  -- height, pet on the same left edge above the orb cap's crest.
+  focus:ClearAllPoints(); focus:SetPoint("TOPLEFT", target, "BOTTOMLEFT", 0, -48 * s)
+  tot:ClearAllPoints(); tot:SetPoint("LEFT", target, "RIGHT", 8 * s, 0)
+  pet:ClearAllPoints(); pet:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0.012 * W, (ns.HUD.h or 0) + 24 * s)
   adoptCastbar("targetcastbar", target)
   adoptCastbar("focuscastbar", focus)
 end

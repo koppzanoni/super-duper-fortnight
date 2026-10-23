@@ -601,3 +601,32 @@ def test_target_debuffs_and_castbar_sit_under_the_frame(lua, ns):
     assert b.point[1] == "TOPLEFT" and -b.point[5] >= below
     bar = lua.globals().TargetFrameSpellBar
     assert -bar.point[5] >= below + t.GetHeight(t) * 0.22  # the debuff row
+
+
+POINTS_PRE = """
+  local cf = CreateFrame
+  function CreateFrame(...)
+    local f = cf(...)
+    f.SetPoint = function(self, p, rel, rp, x, y) self.point = { p, rel, rp, x, y } end
+    return f
+  end
+"""
+
+
+# In the preview the user found the unit frames off-center and the purple glow around an
+# elite's portrait ugly: no glow, the frames lined up with each other.
+def test_elite_target_has_no_glow_ring(lua, ns):
+    boot(lua, ns, pre='function UnitClassification() return "elite" end function UnitExists() return true end')
+    lua.execute('STUB_FIRE("PLAYER_TARGET_CHANGED")')
+    assert lua.eval("rawget")(ns.UnitFrames.frames.target, "ring") is None  # stubs invent missing fields
+
+
+def test_unit_frames_line_up(lua, ns):
+    boot(lua, ns, pre=POINTS_PRE)
+    same = lua.eval("rawequal")
+    F = ns.UnitFrames.frames
+    focus, tot, pet = F.focus.point, F.targettarget.point, F.pet.point
+    assert (focus[1], focus[3], focus[4]) == ("TOPLEFT", "BOTTOMLEFT", 0) and same(focus[2], F.target)
+    assert (tot[1], tot[3], tot[5]) == ("LEFT", "RIGHT", 0) and same(tot[2], F.target)
+    s = 1080 / 900
+    assert pet[1] == "BOTTOMLEFT" and pet[5] >= ns.HUD.h + 20 * s  # clear of the orb cap's crest
