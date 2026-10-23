@@ -9,6 +9,16 @@ ns.ActionBars = ActionBars
 
 local bindingOwner = CreateFrame("Frame")
 
+-- Our key text on the button. Blizzard's UpdateHotkeys finds no binding for our buttons and
+-- blanks and hides it, so this runs after it too. Optional (setting "showHotkeys").
+local function showHotkey(b)
+  local hotkey = b.HotKey or _G[b:GetName() .. "HotKey"]
+  if not hotkey then return end
+  local text = b.obHotkey or ""
+  hotkey:SetText(text)
+  hotkey:SetShown(text ~= "" and not (ns.db and ns.db.showHotkeys == false))
+end
+
 local function skin(button)
   local name = button:GetName()
   local icon = button.icon or _G[name .. "Icon"]
@@ -46,13 +56,7 @@ function ActionBars.CreateButton(parent, name, actionID, binding)
     end
   end)
   skin(b)
-  -- Blizzard's UpdateHotkeys does not know our bindings and blanks the text: put ours back.
-  if type(b.UpdateHotkeys) == "function" then
-    hooksecurefunc(b, "UpdateHotkeys", function(self)
-      local hotkey = self.HotKey or _G[self:GetName() .. "HotKey"]
-      if hotkey and self.obHotkey then hotkey:SetText(self.obHotkey) end
-    end)
-  end
+  if type(b.UpdateHotkeys) == "function" then hooksecurefunc(b, "UpdateHotkeys", showHotkey) end
   ActionBars.buttons[#ActionBars.buttons + 1] = b
   return b
 end
@@ -81,6 +85,39 @@ for r = 1, 2 do
   end
 end
 
+-- Extra columns, in the HUD space a smaller HUD frees (setting "extraCols"): the game's action
+-- bars 6 and 7. Column k holds rows 1-2 on each side; left uses buttons k, right 6 + k. Each
+-- column lives in its own holder, hidden when unused, so Blizzard's grid can't show its buttons.
+ActionBars.extra = {}
+local holders = {}
+for k = 1, ns.Layout.MAX_EXTRA do
+  holders[k] = CreateFrame("Frame", nil, header)
+  holders[k]:SetAllPoints(header)
+  holders[k]:Hide()
+  for r = 1, 2 do
+    local bar = r == 1 and 5 or 6
+    for _, index in ipairs({ k, ns.Layout.MAX_EXTRA + k }) do
+      local b = ActionBars.CreateButton(holders[k], "ObsidianUIExtra" .. bar .. "Button" .. index,
+        (r == 1 and 144 or 156) + index, "MULTIACTIONBAR" .. bar .. "BUTTON" .. index)
+      local x = D.barCols[1] - k * ns.Layout.EXTRA_PITCH
+      if index > ns.Layout.MAX_EXTRA then x = ns.Layout.MirrorX(D.width, x, D.barSlot.w) end
+      HUD.Place(b, x, D.barRows[r], D.barSlot.w, D.barSlot.h, true)
+      b.obEnabled, b.obColumn = false, k
+      ActionBars.extra[#ActionBars.extra + 1] = b
+    end
+  end
+end
+
+function ActionBars.RefreshExtras()
+  ns.RunOutOfCombat(function()
+    local n = HUD.extra or 0
+    for k, holder in ipairs(holders) do holder:SetShown(k <= n) end
+    for _, b in ipairs(ActionBars.extra) do b.obEnabled = b.obColumn <= n end
+    ActionBars.UpdateBindings()
+  end)
+end
+table.insert(HUD.onResize, ActionBars.RefreshExtras)
+
 -- Route the standard key bindings (1-0, -, =, multibar bindings) to our buttons.
 function ActionBars.UpdateBindings()
   ns.RunOutOfCombat(function()
@@ -93,8 +130,7 @@ function ActionBars.UpdateBindings()
         end
       end
       b.obHotkey = key1 and GetBindingText(key1, true) or ""
-      local hotkey = b.HotKey or _G[b:GetName() .. "HotKey"]
-      if hotkey then hotkey:SetText(b.obHotkey) end
+      showHotkey(b)
     end
   end)
 end

@@ -118,11 +118,20 @@ local function updatePowerColor()
   updatePower()
 end
 
+-- Numbers on the orbs (setting "orbText").
+function ns.Orbs.ApplyTextVisibility()
+  local on = not (ns.db and ns.db.orbText == false)
+  for _, orb in ipairs({ health, power }) do
+    orb.pct:SetShown(on)
+    orb.val:SetShown(on)
+  end
+end
+
 local function forPlayer(fn)
   return function(_, unit) if unit == "player" then fn() end end
 end
 
-ns.On("PLAYER_ENTERING_WORLD", function() updateHealth(); updatePowerColor() end)
+ns.On("PLAYER_ENTERING_WORLD", function() updateHealth(); updatePowerColor(); ns.Orbs.ApplyTextVisibility() end)
 ns.On("UNIT_HEALTH", forPlayer(updateHealth))
 ns.On("UNIT_MAXHEALTH", forPlayer(updateHealth))
 ns.On("UNIT_POWER_FREQUENT", forPlayer(updatePower))

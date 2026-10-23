@@ -1,7 +1,8 @@
 """Render an offline preview of ObsidianUI by running the real addon code in a WoW layout simulator.
 
 Usage: python tools/preview_render.py OUT_DIR [--scene path.jpg]
-Writes OUT_DIR/preview_hud.png (vertical bars on) and OUT_DIR/preview_inventory.png (inventory open).
+Writes OUT_DIR/preview_hud.png (vertical bars on), OUT_DIR/preview_inventory.png (inventory open) and
+OUT_DIR/preview_extra.png (smaller HUD with 3 extra action columns).
 Icons and portraits come from the reference art (the game provides real ones).
 """
 import argparse
@@ -79,7 +80,7 @@ def toc_files():
     return out
 
 
-def run_addon(vbars=True, inventory=False):
+def run_addon(vbars=True, inventory=False, db=None):
     rt = lua_runtime()
     ns = rt.table()
     loader = rt.eval("function(src, name) return assert(loadstring(src, name)) end")
@@ -87,6 +88,8 @@ def run_addon(vbars=True, inventory=False):
         loader(p.read_text(encoding="utf-8"), "@" + p.name)("ObsidianUI", ns)
     rt.execute('PREVIEW_FIRE("ADDON_LOADED", "ObsidianUI")')
     ns.db.vbar1, ns.db.vbar2 = vbars, vbars
+    for k, v in (db or {}).items():
+        ns.db[k] = v
     rt.execute("PREVIEW_FILL_AURAS({5, 2})")
     for ev in ("PLAYER_LOGIN", "PLAYER_ENTERING_WORLD", "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED"):
         rt.execute(f'PREVIEW_FIRE("{ev}")')
@@ -263,6 +266,7 @@ def main():
     scene = scene_image(pathlib.Path(args.scene))
     print(render(run_addon(vbars=True), scene, out / "preview_hud.png"))
     print(render(run_addon(vbars=True, inventory=True), scene, out / "preview_inventory.png"))
+    print(render(run_addon(vbars=False, db={"scale": 0.7, "extraCols": 3}), scene, out / "preview_extra.png"))
 
 
 if __name__ == "__main__":

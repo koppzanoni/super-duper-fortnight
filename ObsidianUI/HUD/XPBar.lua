@@ -16,7 +16,8 @@ rested:SetStatusBarColor(0.0, 0.44, 0.87, 0.6)
 xp:SetFrameLevel(rested:GetFrameLevel() + 1)
 
 table.insert(HUD.onResize, function(u, _, W)
-  local left = ns.Layout.MapX(D.xp.x, W, u)
+  -- The groove runs under the extra columns too.
+  local left = ns.Layout.MapX(D.xp.x, W, u) - (HUD.extraW or 0)
   for _, bar in ipairs({ rested, xp }) do
     bar:ClearAllPoints()
     bar:SetPoint("TOPLEFT", HUD.frame, "TOPLEFT", left, -D.xp.y * u)
