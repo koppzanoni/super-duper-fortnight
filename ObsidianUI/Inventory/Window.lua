@@ -407,9 +407,33 @@ local function bindCharacterKeys()
   ns.RunOutOfCombat(function()
     ClearOverrideBindings(bindingOwner)
     for _, key in ipairs({ GetBindingKey("TOGGLECHARACTER0") }) do
-      SetOverrideBindingClick(bindingOwner, false, key, "ObsidianUIInventoryToggle")
+      -- Priority: it must win over any other override on the same key.
+      SetOverrideBindingClick(bindingOwner, true, key, "ObsidianUIInventoryToggle")
     end
   end)
 end
 ns.On("PLAYER_LOGIN", bindCharacterKeys)
 ns.On("UPDATE_BINDINGS", bindCharacterKeys)
+
+-- Once in the world, check the character key really clicks our button; if not, say in chat
+-- what holds it (so it can be fixed without the player typing anything).
+local checked = false
+ns.On("PLAYER_ENTERING_WORLD", function()
+  if checked then return end
+  checked = true
+  C_Timer.After(2, function()
+    local expected = "CLICK ObsidianUIInventoryToggle:LeftButton"
+    local keys = { GetBindingKey("TOGGLECHARACTER0") }
+    if #keys == 0 then
+      print("|cffe8c46aObsidianUI|r: nenhuma tecla em TOGGLECHARACTER0 (personagem).")
+      return
+    end
+    for _, key in ipairs(keys) do
+      local action = GetBindingAction(key, true)
+      if action ~= expected then
+        print("|cffe8c46aObsidianUI|r: a tecla " .. tostring(key) .. " ainda abre " .. tostring(action)
+          .. " (esperado: inventário do addon). Mande este aviso para ajuste.")
+      end
+    end
+  end)
+end)

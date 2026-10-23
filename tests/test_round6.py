@@ -172,11 +172,33 @@ def test_character_key_opens_the_unified_window(lua, ns):
     boot(lua, ns, pre="""
       OVERRIDES = {}
       function GetBindingKey(b) if b == "TOGGLECHARACTER0" then return "C", "SHIFT-P" end end
-      function SetOverrideBindingClick(_, _, key, button) OVERRIDES[key] = button end
+      PRIORITY = {}
+      function SetOverrideBindingClick(_, prio, key, button) OVERRIDES[key] = button; PRIORITY[key] = prio end
     """)
     o = lua.globals().OVERRIDES
     assert o["C"] == "ObsidianUIInventoryToggle"
     assert o["SHIFT-P"] == "ObsidianUIInventoryToggle"
+    # priority override: wins over other overrides on the same key
+    assert lua.globals().PRIORITY["C"] is True
+
+
+# After login the addon checks the character key really clicks its button, and says in chat
+# what holds the key when it doesn't (nothing for the player to type).
+def test_character_key_check_reports_what_holds_the_key(lua, ns):
+    boot(lua, ns, pre="""
+      PRINTED = {}
+      function print(...)
+        local parts = {}
+        for i = 1, select("#", ...) do parts[i] = tostring((select(i, ...))) end
+        PRINTED[#PRINTED + 1] = table.concat(parts, " ")
+      end
+      function GetBindingKey(b) if b == "TOGGLECHARACTER0" then return "C" end end
+      function GetBindingAction(key, override) return "SOMETHING_ELSE" end
+      C_Timer = { After = function(_, fn) fn() end }
+    """)
+    lua.execute('STUB_FIRE("PLAYER_ENTERING_WORLD")')
+    printed = " ".join(str(v) for v in lua.globals().PRINTED.values())
+    assert "SOMETHING_ELSE" in printed and "C" in printed
 
 
 # Reputation and Currency click Blizzard's own tabs through secure buttons (no taint).
