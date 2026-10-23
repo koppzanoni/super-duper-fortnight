@@ -1,9 +1,9 @@
 local _, ns = ...
 
--- The bottom HUD: cap | free gap | half bar | half bar (mirrored) | free gap | cap (mirrored).
--- Always touches the bottom and both side edges of the screen; the bar floats free in the middle.
--- Each half bar is drawn as its outer part, the optional extra slot columns (copies of one column
--- of the art), and its inner part; the extra columns take their width from the gap.
+-- The bottom HUD: free gap | cap | half bar | half bar (mirrored) | cap (mirrored) | free gap.
+-- Centered at the bottom of the screen; at full size the caps touch the side edges. Each half bar
+-- is drawn as its outer part, the optional extra slot columns (copies of one column of the art),
+-- and its inner part; the extra columns take their width from the gap.
 -- BOTTOM_PAD: transparent rows at the bottom of the HUD art, pushed below the screen edge.
 local HUD = { onResize = {}, BOTTOM_PAD = 19 }
 ns.HUD = HUD
@@ -96,8 +96,9 @@ function HUD.Layout()
     t:SetPoint("BOTTOMLEFT", root, "BOTTOMLEFT", x, 0)
     t:SetSize(w, h)
   end
-  capL:ClearAllPoints(); capL:SetPoint("BOTTOMLEFT", root, "BOTTOMLEFT", 0, 0); capL:SetSize(capW, h)
-  capR:ClearAllPoints(); capR:SetPoint("BOTTOMRIGHT", root, "BOTTOMRIGHT", 0, 0); capR:SetSize(capW, h)
+  HUD.capX = W / 2 - barW - HUD.extraW - capW
+  put(capL, HUD.capX, capW)
+  put(capR, W / 2 + barW + HUD.extraW, capW)
   ns.Media.Apply(capL, "hud_cap")
   ns.Media.Apply(capR, "hud_cap", true)
 

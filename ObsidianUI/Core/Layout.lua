@@ -39,10 +39,11 @@ function Layout.HudSize(screenW, screenH, userScale)
   return h, u, stretch
 end
 
--- Screen x of a left-half texture x (0..1346): the cap is pinned left, the bar is pinned to center.
--- extraW: width of the extra columns; the bar part outside BAR_SPLIT moves out by it.
+-- Screen x of a left-half texture x (0..1346): the bar is pinned to center and the cap touches
+-- the bar's outer end, so a small HUD stays in one piece (the free space goes to the screen edges).
+-- extraW: width of the extra columns; the cap and the bar part outside BAR_SPLIT move out by it.
 function Layout.MapX(x, screenW, u, extraW)
-  if x <= CAP_W then return x * u end
+  if x <= CAP_W then return screenW / 2 - (CAP_W + BAR_W - x) * u - (extraW or 0) end
   local sx = screenW / 2 - (HALF_W - x) * u
   if x < Layout.BAR_SPLIT then sx = sx - (extraW or 0) end
   return sx

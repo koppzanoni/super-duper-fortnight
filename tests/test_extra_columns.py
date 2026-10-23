@@ -61,11 +61,24 @@ def test_mapx_shifts_only_the_bar_part_outside_the_split(pure):
     ns = load_pure(pure, "Core/Layout.lua")
     L = ns.Layout
     W, u, extra = 2000, 0.5, 100
-    assert L.MapX(100, W, u, extra) == L.MapX(100, W, u)                     # cap: pinned left
+    assert L.MapX(100, W, u, extra) == L.MapX(100, W, u) - extra             # cap: moves out with the bar end
     assert L.MapX(L.BAR_SPLIT, W, u, extra) == L.MapX(L.BAR_SPLIT, W, u)     # inner bar: pinned center
     assert L.MapX(680, W, u, extra) == L.MapX(680, W, u) - extra             # outer end: moves out
     assert L.MapX(710, W, u, extra) == L.MapX(710, W, u) - extra             # with the first column's art
     assert L.MapX(782, W, u, extra) == L.MapX(782, W, u)                     # the rest stays
+
+
+# In game, at a small HUD scale the side caps stayed on the screen edges, far from the bar, with
+# a hole in the middle. The caps hug the bar; the free space goes to the screen edges.
+def test_side_caps_hug_the_bar_at_small_scale(lua, ns):
+    boot(lua, ns, db={"scale": 0.6, "extraCols": 2})
+    u, W, extraW = ns.HUD.u, ns.HUD.W, ns.HUD.extraW
+    assert extraW > 0
+    f = lua.eval("CreateFrame('Frame')")
+    ns.HUD.Place(f, 62, 48, 260, 264)  # the health orb
+    assert abs(f.obLeft - (W / 2 - (1340 - 62) * u - extraW)) < 0.01
+    assert abs(ns.HUD.capX - (W / 2 - 1340 * u - extraW)) < 0.01
+    assert ns.HUD.capX > 50  # off the screen edge
 
 
 def enabled_extras(ns):

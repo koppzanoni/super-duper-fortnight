@@ -42,6 +42,14 @@ def test_hud_size_user_scale_never_overflows_width(L):
 
 def test_mapx(L):
     u = 270 / 381
-    assert L.MapX(656, 1920, u) == pytest.approx(464.88, abs=0.01)
+    assert L.MapX(656, 1920, u) == pytest.approx(475.28, abs=0.01)
     assert L.MapX(1346, 1920, u) == pytest.approx(960)
+
+
+# A small HUD keeps its pieces together: the cap's inner edge touches the bar.
+def test_mapx_cap_hugs_the_bar(L):
+    u = 0.5
+    assert L.MapX(0, 1920, u) == pytest.approx(960 - 1340 * u)
+    assert L.MapX(656, 1920, u) == pytest.approx(960 - 684 * u)
+    assert L.MapX(662, 1920, u) == pytest.approx(960 - 684 * u)
 
