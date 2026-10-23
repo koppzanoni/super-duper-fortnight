@@ -20,6 +20,12 @@ local function statusBar(parent)
   return bar
 end
 
+-- Font size follows the frame size (the default fonts ran out of the small name plate).
+local function setFontSize(text, size)
+  local path, _, flags = text:GetFont()
+  if path then text:SetFont(path, math.max(9, math.floor(size + 0.5)), flags) end -- 9: still readable
+end
+
 local function setRect(region, owner, spec, rect, w, h)
   local x, y, rw, rh = ns.Layout.Rect(spec.w, spec.h, w, h, rect.x, rect.y, rect.w, rect.h)
   region:ClearAllPoints()
@@ -56,6 +62,14 @@ function UnitFrames.Create(unit, kind)
   f.name = f.health:CreateFontString(nil, "OVERLAY", kind == "large" and "GameFontNormal" or "GameFontNormalSmall")
   f.name:SetTextColor(0.91, 0.77, 0.42)
   f.name:SetJustifyH("LEFT")
+  f.name:SetWordWrap(false) -- a long name is cut, never wraps out of the plate
+  -- Target: level and classification at the right end of the name plate.
+  if kind == "large" then
+    f.levelText = f.health:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    f.levelText:SetTextColor(0.73, 0.68, 0.58)
+    f.levelText:SetJustifyH("RIGHT")
+    f.levelText:SetWordWrap(false)
+  end
   f.hpText = f.health:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   f.hpText:SetPoint("CENTER", f.health)
   if kind ~= "large" then f.hpText:Hide() end
@@ -68,7 +82,24 @@ function UnitFrames.Create(unit, kind)
     self.portraitMask:SetAllPoints(self.portrait)
     setRect(self.health, self, k.spec, k.spec.health, w, h)
     setRect(self.power, self, k.spec, k.spec.power, w, h)
-    setRect(self.name, self, k.spec, k.spec.name, w, h)
+    local n = k.spec.name
+    local x, y, rw, rh = ns.Layout.Rect(k.spec.w, k.spec.h, w, h, n.x, n.y, n.w, n.h)
+    local pad = rh * 0.25
+    self.name:ClearAllPoints()
+    self.name:SetPoint("TOPLEFT", self, "TOPLEFT", x + pad, y)
+    self.name:SetHeight(rh)
+    setFontSize(self.name, rh * 0.52)
+    if self.levelText then
+      self.levelText:ClearAllPoints()
+      self.levelText:SetPoint("TOPRIGHT", self, "TOPLEFT", x + rw - pad, y)
+      self.levelText:SetHeight(rh)
+      setFontSize(self.levelText, rh * 0.42)
+      self.name:SetPoint("RIGHT", self.levelText, "LEFT", -pad, 0)
+    else
+      self.name:SetWidth(rw - 2 * pad)
+    end
+    local hp = k.spec.health
+    setFontSize(self.hpText, h * hp.h / k.spec.h * 0.62)
   end
 
   f:SetScript("OnEnter", function(self)
@@ -123,7 +154,8 @@ local function updateAll(f)
     local class = UnitClassification(unit)
     local level = UnitLevel(unit)
     local label = CLASS_LABEL[class]
-    f.name:SetText(name .. "  |cffb9ad95Nv " .. (level and level > 0 and level or "??") .. (label and (" · " .. label) or "") .. "|r")
+    f.name:SetText(name)
+    f.levelText:SetText("Nv " .. (level and level > 0 and level or "??") .. (label and (" · " .. label) or ""))
   else
     f.name:SetText(f.unit == "focus" and ("Foco: " .. name) or name)
   end
@@ -198,7 +230,9 @@ local function placeCastbar(bar, f)
   -- the target's debuffs come first, right under the frame
   local debuffRow = f.kind == "large" and f:GetHeight() * DEBUFF_SIZE + 6 or 0
   bar:SetPoint("TOPLEFT", f.health, "BOTTOMLEFT", 0, -belowHealth(f) - 4 - debuffRow)
-  bar:SetSize(f.health:GetWidth(), math.max(8, f:GetHeight() * 0.08))
+  local barH = math.max(10, f:GetHeight() * 0.11)
+  bar:SetSize(f.health:GetWidth(), barH)
+  if bar.Text then setFontSize(bar.Text, barH * 0.85) end
   bar.obApplying = false
 end
 

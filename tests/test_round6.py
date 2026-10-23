@@ -630,3 +630,44 @@ def test_unit_frames_line_up(lua, ns):
     assert (tot[1], tot[3], tot[5]) == ("LEFT", "RIGHT", 0) and same(tot[2], F.target)
     s = 1080 / 900
     assert pet[1] == "BOTTOMLEFT" and pet[5] >= ns.HUD.h + 20 * s  # clear of the orb cap's crest
+
+
+# In the preview the target's name, level and classification ran out of the name plate: the
+# texts follow the frame size, the level sits at the plate's right end, and a long name is cut
+# instead of wrapping.
+FONTS_PRE = """
+  local cf = CreateFrame
+  local function text()
+    local t = cf()
+    t.size = 14
+    t.SetFont = function(self, path, size, flags) self.size = size end
+    t.GetFont = function(self) return "FRIZQT__.TTF", self.size, "" end
+    t.SetWordWrap = function(self, v) self.wrap = v end
+    t.SetJustifyH = function(self, j) self.justify = j end
+    t.SetText = function(self, s) self.text = s end
+    t.SetHeight = function(self, h) self.h = h end
+    t.SetSize = function(self, w, h) self.w, self.h = w, h end
+    return t
+  end
+  function CreateFrame(...)
+    local f = cf(...)
+    f.CreateFontString = function() return text() end
+    return f
+  end
+  function UnitClassification() return "elite" end
+  function UnitLevel() return 62 end
+  function UnitName() return "Ravenfang Alpha" end
+  function UnitExists() return true end
+"""
+
+
+def test_target_name_and_level_fit_the_name_plate(lua, ns):
+    boot(lua, ns, pre=FONTS_PRE)
+    lua.execute('STUB_FIRE("PLAYER_TARGET_CHANGED")')
+    t = ns.UnitFrames.frames.target
+    assert t.name.text == "Ravenfang Alpha"
+    assert "62" in t.levelText.text and "Elite" in t.levelText.text and t.levelText.justify == "RIGHT"
+    assert t.name.wrap is False
+    plate = t.name.h
+    assert 0.45 * plate <= t.name.size <= 0.7 * plate
+    assert t.levelText.size <= t.name.size
