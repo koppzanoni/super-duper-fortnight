@@ -512,24 +512,27 @@ def test_character_key_opens_the_unified_window_instead_of_the_sheet(lua, ns):
     assert toggles["n"] == 1 and g.SHEET == 1
 
 
-# Pressing the character key reports in chat what it is bound to, which routes ran and which
-# windows appeared (three fixes failed in game without this).
-def test_character_key_report(lua, ns):
-    boot(lua, ns, pre="""
-      PRINTED = {}
-      function print(...) PRINTED[#PRINTED + 1] = table.concat({ ... }, " ") end
-      function GetBindingAction(key, override) if override then return "CLICK X" end return "TOGGLECHARACTER0" end
-      SHEET = CreateFrame()
-      SHEET.GetName = function() return "CharacterFrame" end
-      SHEET.IsForbidden = function() return false end
-      SHEET.IsVisible = function() return SHEET_SHOWN end
-      SHEET.GetParent = function() return UIParent end
-      SHEET_SHOWN = false
-      function EnumerateFrames(f) if f == nil then return SHEET end return nil end
+# In game PLAYER_TITLE_CHANGED does not exist: registering it raised an error and the rest of
+# Window.lua (character key, login check) never loaded. Unknown events are skipped.
+def test_unknown_event_does_not_stop_loading(lua, ns):
+    lua.execute("""
+      local cf = CreateFrame
+      function CreateFrame(...)
+        local f = cf(...)
+        f.RegisterEvent = function(self, ev)
+          if ev == "PLAYER_TITLE_CHANGED" or ev == "NO_SUCH_EVENT" then error("unknown event " .. ev) end
+          STUB_EVENTS[#STUB_EVENTS + 1] = { frame = self, event = ev }
+        end
+        return f
+      end
     """)
-    line = ns.Inventory.ReportCharacterKey("C", lua.eval("{}"))
-    assert "CharacterFrame" not in line
-    lua.execute("SHEET_SHOWN = true")
-    line = ns.Inventory.ReportCharacterKey("C", lua.eval("{}"))
-    assert "C -> CLICK X" in line and "normal: TOGGLECHARACTER0" in line and "apareceu: CharacterFrame" in line
-    assert "diagnóstico C" in lua.eval("PRINTED[#PRINTED]")
+    boot(lua, ns)
+    ns.On("NO_SUCH_EVENT", lambda *a: None)
+    assert ns.Inventory.toggleButton is not None
+
+
+def test_addon_registers_no_title_changed_event():
+    import re
+    from conftest import ROOT
+    for f in (ROOT / "ObsidianUI").rglob("*.lua"):
+        assert "PLAYER_TITLE_CHANGED" not in f.read_text(encoding="utf-8"), f

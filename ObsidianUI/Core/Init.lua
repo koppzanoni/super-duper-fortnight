@@ -14,10 +14,12 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
   for i = 1, #list do list[i](event, ...) end
 end)
 
+-- An event this client does not have is skipped: registering it raises an error, and that
+-- stopped the rest of the calling file from loading (the C key code never ran).
 function ns.On(event, fn)
   if not listeners[event] then
     listeners[event] = {}
-    eventFrame:RegisterEvent(event)
+    pcall(eventFrame.RegisterEvent, eventFrame, event)
   end
   table.insert(listeners[event], fn)
 end
