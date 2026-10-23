@@ -78,6 +78,48 @@ function Data.PowerColor(token)
   return c.r, c.g, c.b
 end
 
+-- Orb liquid styles (setting "orbStyle"; spec docs/superpowers/specs/2026-10-22-orbes-liquido-design.md).
+-- sheet: flipbook texture; fps: flipbook speed; wisp/wisp2: strength of the wisp layers;
+-- spin/spin2: their turn speed (rad/s); core: pulsing core glow; sparks: rising bubbles;
+-- still: no animation, shows stillFrame.
+Data.ORB_STYLE_ORDER = { "a", "b", "c", "d" }
+Data.ORB_STYLE_LABELS = { a = "Redemoinho", b = "Energia", c = "Névoa", d = "Parado" }
+Data.ORB_STYLES = {
+  a = { sheet = "fluid_a", fps = 7, wisp = 0.62, wisp2 = 0.22, spin = 0.05, spin2 = -0.03, core = 0, sparks = false },
+  b = { sheet = "fluid_b", fps = 7, wisp = 0.70, wisp2 = 0.30, spin = 0.08, spin2 = -0.045, core = 0.5, sparks = true },
+  c = { sheet = "fluid_c", fps = 7, wisp = 0.55, wisp2 = 0, spin = 0.02, spin2 = 0, core = 0, sparks = false },
+  d = { sheet = "fluid_a", fps = 0, wisp = 0.62, wisp2 = 0.22, spin = 0, spin2 = 0, core = 0, sparks = false,
+    still = true, stillFrame = 21 },
+}
+
+function Data.OrbStyle(key)
+  if Data.ORB_STYLES[key] then return key end
+  return "a"
+end
+
+-- Texture coordinates of flipbook frame i (0-based, wraps) in an 8x8 sheet.
+local FLIP_GRID, FLIP_FRAMES = 8, 64
+function Data.FlipbookCoords(i)
+  i = math.floor(i) % FLIP_FRAMES
+  local col, row = i % FLIP_GRID, math.floor(i / FLIP_GRID)
+  return col / FLIP_GRID, (col + 1) / FLIP_GRID, row / FLIP_GRID, (row + 1) / FLIP_GRID
+end
+
+-- Liquid tones: deep (bottom), body, wisps and surface line. Health and mana are tuned by
+-- hand; other resources are derived from their color.
+local function rgb(r, g, b) return { r / 255, g / 255, b / 255 } end
+local PALETTES = {
+  HEALTH = { deep = rgb(12, 0, 2), body = rgb(62, 2, 7), wisp = rgb(230, 46, 30), line = rgb(255, 150, 110) },
+  MANA = { deep = rgb(0, 3, 16), body = rgb(5, 22, 80), wisp = rgb(44, 130, 245), line = rgb(170, 220, 255) },
+}
+function Data.OrbPalette(token)
+  if PALETTES[token] then return PALETTES[token] end
+  local r, g, b = Data.PowerColor(token)
+  local function scale(k) return { r * k, g * k, b * k } end
+  local function lift(k) return { r + (1 - r) * k, g + (1 - g) * k, b + (1 - b) * k } end
+  return { deep = scale(0.08), body = scale(0.35), wisp = lift(0.10), line = lift(0.55) }
+end
+
 -- Unit frame health: grey when tapped by someone else, class color for players, else reaction.
 local HOSTILE, NEUTRAL, FRIENDLY = { 0.78, 0.16, 0.12 }, { 0.85, 0.70, 0.15 }, { 0.20, 0.62, 0.18 }
 function Data.HealthColor(tapDenied, classColor, reaction)
