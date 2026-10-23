@@ -39,7 +39,8 @@ local slices = { left = {}, right = {} }
 -- Between a cap and the screen edge: the plain stone just inside the panel's trim (cap art
 -- x 10..15, the same from top to bottom) stretched out, and the bronze trim (x 0..10) at the
 -- screen edge.
-local FILL_TRIM, FILL_STONE = 10, 5
+-- Only a narrow gap (in art px) is closed: a small HUD floats with its own trimmed ends.
+local FILL_TRIM, FILL_STONE, FILL_MAX = 10, 5, 60
 HUD.capFill = { left = {}, right = {} }
 
 -- Bar art pieces, as fractions of the half bar texture: outer end | one slot column | inner.
@@ -135,7 +136,7 @@ function HUD.Layout()
       ns.Media.ApplyRange(t, style[side], mirror, x0 / CAP_W, x1 / CAP_W)
       t:Show()
     end
-    if HUD.capX > 0 then
+    if HUD.capX > 0 and HUD.capX <= FILL_MAX * u then
       piece(0, FILL_TRIM * u, 0, FILL_TRIM)
       -- the stone also covers the cap's own trim, which would sit in the middle of it
       piece(FILL_TRIM * u, HUD.capX, FILL_TRIM, FILL_TRIM + FILL_STONE)

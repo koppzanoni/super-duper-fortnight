@@ -278,15 +278,23 @@ def test_action_bar_always_floats_free(lua, ns):
 # In game a strip of the world showed between the orb panels and the screen edges: the stone
 # backing of the wing is stretched out to the edge, with the panel's bronze trim at the edge.
 def test_orb_panels_reach_the_screen_edges(lua, ns):
-    for scale in (0.6, 1.0):
-        boot(lua, ns, pre=SHOWN_PRE, db={"scale": scale, "extraCols": 1})
-        W, capX = ns.HUD.W, ns.HUD.capX
-        for side, lo, hi in (("left", 0, capX), ("right", W - capX, W)):
-            pieces = [p for p in ns.HUD.capFill[side].values() if p.shown]
-            spans = sorted((p.obLeft, p.obLeft + p.obWidth) for p in pieces)
-            assert spans[0][0] <= lo + 0.01 and spans[-1][1] >= hi - 0.01, (side, scale)
-            for (_, a1), (b0, _) in zip(spans, spans[1:]):
-                assert b0 <= a1 + 0.01  # no gap between pieces
+    boot(lua, ns, pre=SHOWN_PRE, db={"scale": 1.0, "extraCols": 1})
+    W, capX = ns.HUD.W, ns.HUD.capX
+    assert capX > 0
+    for side, lo, hi in (("left", 0, capX), ("right", W - capX, W)):
+        pieces = [p for p in ns.HUD.capFill[side].values() if p.shown]
+        spans = sorted((p.obLeft, p.obLeft + p.obWidth) for p in pieces)
+        assert spans[0][0] <= lo + 0.01 and spans[-1][1] >= hi - 0.01, side
+        for (_, a1), (b0, _) in zip(spans, spans[1:]):
+            assert b0 <= a1 + 0.01  # no gap between pieces
+
+
+# The user found the wide stretched stone ugly on a small HUD: only a narrow gap is closed; a
+# small HUD floats with its own trimmed ends.
+def test_small_hud_is_not_stretched_to_the_edges(lua, ns):
+    boot(lua, ns, pre=SHOWN_PRE, db={"scale": 0.7})
+    for side in ("left", "right"):
+        assert not any(p.shown for p in ns.HUD.capFill[side].values())
 
 
 # The "Relicário" orb caps are an option: bone claws on the health orb, a dragon on the mana orb
