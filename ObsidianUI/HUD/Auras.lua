@@ -1,122 +1,120 @@
 local _, ns = ...
 
--- Player buffs (top row) and debuffs (row below), top center of the screen (spec 4.8).
+-- Player buffs (top row) and debuffs (row below), centered at the top of the screen (spec 4.8).
+-- Plain buttons: WoW Forever loads as game type "camelot", where Blizzard's secure aura
+-- header (classic only) does not exist. Being insecure, the rows can re-center in combat too;
+-- right click cancels a buff out of combat.
 local M = ns.MediaManifest
 local BRONZE, RED = { 0.54, 0.43, 0.23 }, { 0.77, 0.15, 0.11 }
-local STEP, WRAP = 30, 16
+local SIZE, STEP, WRAP, ROWS, ROW_STEP = 26, 30, 16, 2, 42
+local Auras = { count = { HELPFUL = 0, HARMFUL = 0 }, rows = {} }
+ns.Auras = Auras
 
-local function header(filter)
-  local h = CreateFrame("Frame", "ObsidianUIAuras" .. filter, UIParent, "SecureAuraHeaderTemplate")
-  h:SetAttribute("unit", "player")
-  h:SetAttribute("filter", filter)
-  h:SetAttribute("template", "ObsidianUIAuraTemplate")
-  h:SetAttribute("point", "TOP")
-  h:SetAttribute("xOffset", STEP)
-  h:SetAttribute("yOffset", 0)
-  h:SetAttribute("wrapAfter", WRAP)
-  h:SetAttribute("wrapYOffset", -42)
-  h:SetAttribute("maxWraps", 2)
-  h:SetAttribute("sortMethod", "TIME")
-  h:SetAttribute("sortDirection", "-")
-  h:SetAttribute("minWidth", 30)
-  h:SetAttribute("minHeight", 30)
-  h.filter = filter
-  h.obCount = 0
-  return h
+-- x of the i-th of n icons in a row centered on the anchor (wrapping after WRAP).
+function Auras.OffsetX(i, n)
+  local col = (i - 1) % WRAP
+  local inRow = math.min(WRAP, n - (i - 1 - col))
+  return ns.Data.AuraRowOffset(inRow, WRAP, STEP) + col * STEP
 end
 
-local buffs = header("HELPFUL")
-local debuffs = header("HARMFUL")
-
-local function style(child, isDebuff)
-  if child.obStyled then return end
-  child.obStyled = true
-  child.icon = child:CreateTexture(nil, "ARTWORK")
-  child.icon:SetAllPoints(child)
-  child.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-  child.border = child:CreateTexture(nil, "OVERLAY")
-  child.border:SetAllPoints(child)
-  child.border:SetTexture(M.aura_border.file)
-  local c = isDebuff and RED or BRONZE
-  child.border:SetVertexColor(c[1], c[2], c[3])
-  child.cd = CreateFrame("Cooldown", nil, child, "CooldownFrameTemplate")
-  child.cd:SetAllPoints(child)
-  child.cd:SetReverse(true)
-  child.count = child:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
-  child.count:SetPoint("BOTTOMRIGHT", 1, 0)
-  child:SetScript("OnEnter", function(self)
+local function makeButton(row)
+  local b = CreateFrame("Button", nil, row)
+  b:SetSize(SIZE, SIZE)
+  b:RegisterForClicks("RightButtonUp")
+  b.icon = b:CreateTexture(nil, "ARTWORK")
+  b.icon:SetAllPoints(b)
+  b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  b.border = b:CreateTexture(nil, "OVERLAY")
+  b.border:SetAllPoints(b)
+  b.border:SetTexture(M.aura_border.file)
+  b.cd = CreateFrame("Cooldown", nil, b, "CooldownFrameTemplate")
+  b.cd:SetAllPoints(b)
+  b.cd:SetReverse(true)
+  b.count = b:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+  b.count:SetPoint("BOTTOMRIGHT", 1, 0)
+  b:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
-    GameTooltip:SetUnitAura("player", self:GetID() > 0 and self:GetID() or self:GetAttribute("index"), self:GetParent().filter)
+    if self.auraInstanceID and GameTooltip.SetUnitBuffByAuraInstanceID and self.filter == "HELPFUL" then
+      GameTooltip:SetUnitBuffByAuraInstanceID("player", self.auraInstanceID, self.filter)
+    elseif self.auraInstanceID and GameTooltip.SetUnitDebuffByAuraInstanceID and self.filter == "HARMFUL" then
+      GameTooltip:SetUnitDebuffByAuraInstanceID("player", self.auraInstanceID, self.filter)
+    else
+      GameTooltip:SetUnitAura("player", self.index, self.filter)
+    end
+    GameTooltip:Show()
   end)
-  child:SetScript("OnLeave", GameTooltip_Hide)
+  b:SetScript("OnLeave", GameTooltip_Hide)
+  b:SetScript("OnClick", function(self)
+    if self.filter == "HELPFUL" and not InCombatLockdown() and CancelUnitBuff then
+      pcall(CancelUnitBuff, "player", self.index, self.filter)
+    end
+  end)
+  return b
 end
 
-local function updateChild(child, filter)
-  local index = child:GetAttribute("index")
-  if not index then return end
-  style(child, filter == "HARMFUL")
-  local aura = C_UnitAuras.GetAuraDataByIndex("player", index, filter)
-  if not aura then return end
-  child.icon:SetTexture(aura.icon)
+
+local function setAura(b, aura, filter, index)
+  b.filter, b.index, b.auraInstanceID = filter, index, aura.auraInstanceID
+  b.icon:SetTexture(aura.icon)
+  local c = filter == "HARMFUL" and RED or BRONZE
   if filter == "HARMFUL" then
-    local ok, r, g, b = pcall(ns.Data.DebuffColor, aura.dispelName)
-    if ok then child.border:SetVertexColor(r, g, b) else child.border:SetVertexColor(RED[1], RED[2], RED[3]) end
+    local ok, r, g, bl = pcall(ns.Data.DebuffColor, aura.dispelName)
+    if ok then c = { r, g, bl } end
   end
-  if not pcall(function() child.count:SetText(aura.applications > 1 and aura.applications or "") end) then
-    child.count:SetText("")
+  b.border:SetVertexColor(c[1], c[2], c[3])
+  if not pcall(function() b.count:SetText(aura.applications > 1 and aura.applications or "") end) then
+    b.count:SetText("")
   end
   local ok = false
-  if C_UnitAuras.GetAuraDuration and child.cd.SetCooldownFromDurationObject then
+  if C_UnitAuras.GetAuraDuration and b.cd.SetCooldownFromDurationObject then
     local dur = C_UnitAuras.GetAuraDuration("player", aura.auraInstanceID)
-    ok = dur ~= nil and pcall(child.cd.SetCooldownFromDurationObject, child.cd, dur)
+    ok = dur ~= nil and pcall(b.cd.SetCooldownFromDurationObject, b.cd, dur)
   end
-  if not ok then
-    if not pcall(function()
-      if aura.duration > 0 then child.cd:SetCooldown(aura.expirationTime - aura.duration, aura.duration) else child.cd:Clear() end
-    end) then child.cd:Clear() end
+  if not ok and not pcall(function()
+    if aura.duration > 0 then b.cd:SetCooldown(aura.expirationTime - aura.duration, aura.duration) else b.cd:Clear() end
+  end) then
+    b.cd:Clear()
   end
 end
 
-local function updateHeader(h)
-  local shown = 0
-  for i = 1, 40 do
-    local child = h:GetAttribute("child" .. i)
-    if not child then break end
-    if child:IsShown() then
-      shown = shown + 1
-      updateChild(child, h.filter)
-    end
+local function update(filter)
+  local row = Auras.rows[filter]
+  local list = ns.Data.UnitAuraList("player", filter, WRAP * ROWS)
+  for i, aura in ipairs(list) do
+    local b = row.buttons[i] or makeButton(row)
+    row.buttons[i] = b
+    b:ClearAllPoints()
+    b:SetPoint("TOP", row, "TOP", Auras.OffsetX(i, #list), -math.floor((i - 1) / WRAP) * ROW_STEP)
+    setAura(b, aura, filter, i)
+    b:Show()
   end
-  h.obCount = shown
-end
-
--- Rows are centered on the screen for the current number of auras. Secure headers cannot
--- move in combat: they keep their spot and re-center when combat ends.
-local function layout()
-  if InCombatLockdown() then return end
-  local _, H = UIParent:GetSize()
-  local scale = H / 900
-  for h, y in pairs({ [buffs] = 0.025, [debuffs] = 0.095 }) do
-    h:SetScale(scale)
-    h:ClearAllPoints()
-    h:SetPoint("TOP", UIParent, "TOP", ns.Data.AuraRowOffset(h.obCount, WRAP, STEP), -y * H / scale)
-  end
+  for i = #list + 1, #row.buttons do row.buttons[i]:Hide() end
+  Auras.count[filter] = #list
 end
 
 local function updateAll()
-  updateHeader(buffs); updateHeader(debuffs)
-  layout()
+  update("HELPFUL")
+  update("HARMFUL")
 end
 
-ns.On("PLAYER_LOGIN", function()
-  ns.RunOutOfCombat(function()
-    buffs:Show(); debuffs:Show()
-    updateAll()
-  end)
-end)
-ns.On("UNIT_AURA", function(_, unit)
-  -- Let SecureAuraHeader reassign child indexes first, then read them.
-  if unit == "player" then C_Timer.After(0, updateAll) end
-end)
-ns.On("PLAYER_REGEN_ENABLED", layout)
-table.insert(ns.HUD.onResize, function() ns.RunOutOfCombat(layout) end)
+for filter, y in pairs({ HELPFUL = 0.025, HARMFUL = 0.095 }) do
+  local row = CreateFrame("Frame", "ObsidianUIAuras" .. filter, UIParent)
+  row:SetSize(1, 1)
+  row.buttons, row.y = {}, y
+  Auras.rows[filter] = row
+end
+
+local function layout()
+  local _, H = UIParent:GetSize()
+  local scale = H / 900
+  for _, row in pairs(Auras.rows) do
+    row:SetScale(scale)
+    row:ClearAllPoints()
+    row:SetPoint("TOP", UIParent, "TOP", 0, -row.y * H / scale)
+  end
+end
+
+ns.On("PLAYER_LOGIN", function() layout(); updateAll() end)
+ns.On("PLAYER_ENTERING_WORLD", updateAll)
+ns.On("UNIT_AURA", function(_, unit) if unit == "player" then updateAll() end end)
+table.insert(ns.HUD.onResize, layout)

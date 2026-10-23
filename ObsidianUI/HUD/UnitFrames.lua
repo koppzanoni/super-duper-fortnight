@@ -164,12 +164,13 @@ local function updateTargetDebuffs()
   local target = UnitFrames.frames.target
   if not target then return end
   local size = target:GetHeight() * 0.22
+  local list = ns.Data.UnitAuraList("target", "HARMFUL|PLAYER", 8)
   for i = 1, 8 do
     local b = debuffs[i] or debuffButton(target, i)
     b:SetSize(size, size)
     b:ClearAllPoints()
     b:SetPoint("TOPLEFT", target.health, "BOTTOMLEFT", (i - 1) * (size + 3), -target:GetHeight() * 0.2)
-    local aura = C_UnitAuras and C_UnitAuras.GetAuraDataByIndex("target", i, "HARMFUL|PLAYER")
+    local aura = list[i]
     if aura then
       b.icon:SetTexture(aura.icon)
       if not pcall(function() b.count:SetText(aura.applications > 1 and aura.applications or "") end) then

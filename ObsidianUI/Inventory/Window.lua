@@ -40,7 +40,11 @@ title:SetScript("OnDragStop", function()
 end)
 local titleText = title:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 titleText:SetAllPoints(title)
-titleText:SetText("PERSONAGEM")
+-- The character's name on the title plate.
+function Inventory.TitleText()
+  return UnitName("player") or "PERSONAGEM"
+end
+titleText:SetText(Inventory.TitleText())
 titleText:SetTextColor(0.91, 0.77, 0.42)
 
 -- 3D model of the player, transparent background, drag to rotate, wheel to zoom.
@@ -49,12 +53,15 @@ model:EnableMouse(true)
 model:EnableMouseWheel(true)
 local zoom, dragging, lastX = 0, false, 0
 -- Camera a bit closer than the default full-body shot, so the character fills the frame.
-local CAMERA_DISTANCE = 0.78
+-- Distance and height can be tuned in game with /obui modelo <distância> <altura>.
 local function refreshModel()
   model:SetUnit("player")
   model:SetPortraitZoom(zoom)
-  if model.SetCamDistanceScale then pcall(model.SetCamDistanceScale, model, CAMERA_DISTANCE) end
+  local db = ns.db or {}
+  if model.SetCamDistanceScale then pcall(model.SetCamDistanceScale, model, db.modelDistance or 0.85) end
+  if model.SetPosition then pcall(model.SetPosition, model, 0, 0, db.modelHeight or 0) end
 end
+Inventory.RefreshModel = refreshModel
 model:SetScript("OnShow", refreshModel)
 model:SetScript("OnMouseDown", function(_, button) if button == "LeftButton" then dragging = true; lastX = GetCursorPosition() end end)
 model:SetScript("OnMouseUp", function() dragging = false end)
@@ -279,6 +286,8 @@ function Inventory.Toggle()
 end
 
 ns.On("PLAYER_EQUIPMENT_CHANGED", function() if frame:IsShown() then updateEquipment(); refreshModel() end end)
+ns.On("PLAYER_LOGIN", function() titleText:SetText(Inventory.TitleText()) end)
+ns.On("UNIT_NAME_UPDATE", function(_, unit) if unit == "player" then titleText:SetText(Inventory.TitleText()) end end)
 ns.On("UNIT_MODEL_CHANGED", function(_, unit) if unit == "player" and frame:IsShown() then refreshModel() end end)
 for _, ev in ipairs({ "UNIT_STATS", "UNIT_ATTACK_POWER", "UNIT_RESISTANCES" }) do
   ns.On(ev, function(_, unit) if unit == "player" and frame:IsShown() then updateStats() end end)

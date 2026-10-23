@@ -1,37 +1,69 @@
 local _, ns = ...
 
--- Small widgets in the addon's look: dark glass, thin bronze edge, gold text.
+-- Small widgets in the inventory's look: the stone of its panels with a bronze edge, and its
+-- stone tab plates as buttons (textures cut from the inventory art by tools/inventory_art.py).
 local Widgets = {}
 ns.Widgets = Widgets
 
-local WHITE = "Interface\\Buttons\\WHITE8X8"
+local M = ns.MediaManifest
 Widgets.BRONZE = { 0.54, 0.43, 0.23 }
 Widgets.BRONZE_LIT = { 0.85, 0.68, 0.35 }
 Widgets.GOLD = { 0.91, 0.77, 0.42 }
 Widgets.TEXT = { 0.73, 0.68, 0.58 }
 
-local function backdrop(f, bg, edge)
-  if not f.SetBackdrop then return end
-  f:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
-  f:SetBackdropColor(bg[1], bg[2], bg[3], bg[4] or 1)
-  f:SetBackdropBorderColor(edge[1], edge[2], edge[3], 1)
+local function edge(f, inset, color, layer, sub)
+  local sides = {}
+  for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+    local t = f:CreateTexture(nil, layer, nil, sub)
+    t:SetColorTexture(color[1], color[2], color[3], color[4] or 1)
+    if side == "TOP" or side == "BOTTOM" then
+      local y = side == "TOP" and -inset or inset
+      t:SetPoint(side .. "LEFT", f, side .. "LEFT", inset, y)
+      t:SetPoint(side .. "RIGHT", f, side .. "RIGHT", -inset, y)
+      t:SetHeight(1)
+    else
+      local x = side == "LEFT" and inset or -inset
+      t:SetPoint("TOP" .. side, f, "TOP" .. side, x, -inset)
+      t:SetPoint("BOTTOM" .. side, f, "BOTTOM" .. side, x, inset)
+      t:SetWidth(1)
+    end
+    sides[#sides + 1] = t
+  end
+  return sides
 end
 
--- Panel background: near-black blue glass with a bronze edge.
+-- Panel: tiled stone, slightly darkened for legible text, a bronze edge with a dark line
+-- inside it (the bevel of the inventory's own panels).
 function Widgets.Panel(f)
-  backdrop(f, { 0.035, 0.04, 0.055, 0.94 }, Widgets.BRONZE)
+  local stone = f:CreateTexture(nil, "BACKGROUND", nil, -8)
+  stone:SetAllPoints(f)
+  stone:SetTexture(M.stone_tile.file, "REPEAT", "REPEAT")
+  stone:SetHorizTile(true)
+  stone:SetVertTile(true)
+  local shade = f:CreateTexture(nil, "BACKGROUND", nil, -7)
+  shade:SetAllPoints(f)
+  shade:SetColorTexture(0, 0, 0, 0.35)
+  edge(f, 0, { 0, 0, 0, 0.9 }, "BORDER", 0)
+  edge(f, 1, Widgets.BRONZE, "BORDER", 1)
+  edge(f, 2, { 0, 0, 0, 0.6 }, "BORDER", 2)
 end
 
+-- Button: the stone tab plate (nine-sliced where the client supports it), gold text,
+-- warm glow on hover, text sinks while pressed.
 function Widgets.Button(parent, label, onClick)
-  local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
-  local rest, hover = { 0.06, 0.065, 0.08, 0.95 }, { 0.11, 0.105, 0.11, 0.95 }
-  backdrop(b, rest, Widgets.BRONZE)
+  local b = CreateFrame("Button", nil, parent)
+  local plate = b:CreateTexture(nil, "BACKGROUND")
+  plate:SetAllPoints(b)
+  plate:SetTexture(M.plate.file)
+  if plate.SetTextureSliceMargins then pcall(plate.SetTextureSliceMargins, plate, 10, 10, 10, 10) end
+  local glow = b:CreateTexture(nil, "HIGHLIGHT")
+  glow:SetPoint("TOPLEFT", 3, -3)
+  glow:SetPoint("BOTTOMRIGHT", -3, 3)
+  glow:SetColorTexture(1, 0.85, 0.5, 0.12)
   b.text = b:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
   b.text:SetPoint("CENTER")
   b.text:SetText(label)
   b.text:SetTextColor(Widgets.GOLD[1], Widgets.GOLD[2], Widgets.GOLD[3])
-  b:SetScript("OnEnter", function(self) backdrop(self, hover, Widgets.BRONZE_LIT) end)
-  b:SetScript("OnLeave", function(self) backdrop(self, rest, Widgets.BRONZE) end)
   b:SetScript("OnMouseDown", function(self) self.text:SetPoint("CENTER", 1, -1) end)
   b:SetScript("OnMouseUp", function(self) self.text:SetPoint("CENTER") end)
   b:SetScript("OnClick", onClick)

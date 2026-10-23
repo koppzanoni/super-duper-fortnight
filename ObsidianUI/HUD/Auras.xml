@@ -1,9 +1,0 @@
-<Ui xmlns="http://www.blizzard.com/wow/ui/">
-  <!-- Child template for the player aura headers: right click cancels a buff. -->
-  <Button name="ObsidianUIAuraTemplate" inherits="SecureActionButtonTemplate" virtual="true">
-    <Size x="26" y="26"/>
-    <Attributes>
-      <Attribute name="type2" value="cancelaura"/>
-    </Attributes>
-  </Button>
-</Ui>

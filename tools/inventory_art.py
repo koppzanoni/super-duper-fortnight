@@ -1,7 +1,7 @@
 """Rework of the inventory art, applied by export_textures.py on art/processed/inventory.png.
 
 - Equipment frames: the 8+8 frames are redrawn bigger (the icons looked tiny next to the
-  weapon slots).
+  weapon slots); the 3 weapon frames shrink to the same size, freeing room for the 3D model.
 - Tab row: the five tab plates move left, all the same plate (the raised "selected" plate is
   gone; the addon marks the active tab), and a square plate for the sort button follows them.
 """
@@ -16,14 +16,24 @@ SORT_BOX = (585, 701, 627, 743)
 CLEAR = (30, 690, 614, 741)  # stone band under the old plates
 STONE_SRC = (31, 690, 74, 741)  # clean stone from the left margin, tiled over CLEAR
 
-# Equipment frames.
+# Equipment frames (the column fits 8 of them between y 102 and 668).
 FRAME_SRC = (65, 106, 127, 168)
-FRAME_SIZE = 68
-FRAME_INSET = 3
+FRAME_SIZE = 69
+FRAME_INSET = 2
 FRAME_CX = (96.5, 591.5)
-FRAME_CY0 = 137
+FRAME_CY0 = 136.5
 FRAME_PITCH = 70.75
 FRAME_ROWS = 8
+
+# Weapon frames: same frame as the equipment, bottoms where the old 100px frames ended.
+WEAPON_CX = (232, 344, 456)
+WEAPON_BOTTOM = 618
+WEAPON_CLEAR = (178, 512, 512, 624)  # the old frames, covered with stone from above
+WEAPON_STONE_DY = 110
+
+# Extra textures cut from the reworked art for the addon's own panels and buttons.
+STONE_TILE = (200, 150, 456, 406)  # plain stone of the model panel, 256x256
+PLATE_SIZE = (128, 64)
 
 
 def nine_slice(src, w, h, margin):
@@ -61,4 +71,15 @@ def rework(img):
         for i in range(FRAME_ROWS):
             cy = FRAME_CY0 + i * FRAME_PITCH
             img.paste(frame, (round(cx - FRAME_SIZE / 2), round(cy - FRAME_SIZE / 2)))
+
+    wx0, wy0, wx1, wy1 = WEAPON_CLEAR
+    img.paste(img.crop((wx0, wy0 - WEAPON_STONE_DY, wx1, wy1 - WEAPON_STONE_DY)), (wx0, wy0))
+    for cx in WEAPON_CX:
+        img.paste(frame, (round(cx - FRAME_SIZE / 2), WEAPON_BOTTOM - FRAME_SIZE))
     return img
+
+
+def pieces(reworked):
+    """Textures for the addon's own widgets, already power-of-two sized."""
+    plate = nine_slice(reworked.crop(PLATE_SRC), PLATE_SIZE[0], PLATE_SIZE[1], 10)
+    return {"stone_tile": reworked.crop(STONE_TILE), "plate": plate}

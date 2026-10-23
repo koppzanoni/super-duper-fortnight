@@ -254,3 +254,13 @@ def test_castbar_stays_put_when_blizzard_moves_it_in_combat(lua, ns):
     f = g.PlayerCastingBarFrame
     f.SetPoint(f, "BOTTOM", None, "BOTTOM", 0, 120)
     assert last_point(lua, "PlayerCastingBarFrame") == ours
+
+
+# In-game: the map did not fill the ring (Blizzard re-anchored Minimap to its old container).
+def test_minimap_keeps_both_corners_on_the_ring_opening(lua, ns):
+    boot(lua, ns, pre='RecordingFrame("Minimap")')
+    g = lua.globals()
+    g.Minimap.SetPoint(g.Minimap, "CENTER", None, "CENTER", 0, 0)
+    calls = g.POINTS.Minimap
+    last_two = [calls[len(calls) - 1][1], calls[len(calls)][1]]
+    assert last_two == ["TOPLEFT", "BOTTOMRIGHT"]

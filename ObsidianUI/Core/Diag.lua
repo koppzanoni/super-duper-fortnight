@@ -66,10 +66,20 @@ SlashCmdList.OBSIDIANUI = function(msg)
     run()
   elseif msg == "config" then
     ns.OpenSettings()
+  elseif msg:match("^modelo") then
+    local dist, height = msg:match("^modelo%s+([%-%d%.]+)%s+([%-%d%.]+)")
+    if not dist then
+      out("uso: /obui modelo <distância> <altura>   ex.: /obui modelo 0.85 -0.1")
+      out("distância menor = mais perto; altura negativa = mais para baixo")
+      return
+    end
+    ns.db.modelDistance, ns.db.modelHeight = tonumber(dist), tonumber(height)
+    if ns.Inventory and ns.Inventory.RefreshModel then ns.Inventory.RefreshModel() end
+    out("modelo:", dist, height)
   elseif msg == "reset" then
     ns.ResetPositions()
     out("posições restauradas.")
   else
-    out("comandos: /obui diag, /obui config, /obui reset")
+    out("comandos: /obui diag, /obui config, /obui reset, /obui modelo")
   end
 end

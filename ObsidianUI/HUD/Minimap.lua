@@ -40,9 +40,15 @@ local function layout()
   ns.Media.Apply(ring, "minimap_ring")
 
   Minimap:SetParent(container)
-  Minimap:ClearAllPoints()
-  Minimap:SetPoint("TOPLEFT", container, "TOPLEFT", S.map.x * u, -S.map.y * u)
-  Minimap:SetSize(S.map.w * u, S.map.h * u)
+  -- Both corners on the ring opening, pinned: Blizzard re-anchors Minimap to its old container,
+  -- and a second anchor shrank and shifted the map inside the ring.
+  local x0, y0 = S.map.x * u, -S.map.y * u
+  local x1, y1 = (S.map.x + S.map.w) * u, -(S.map.y + S.map.h) * u
+  ns.Pin(Minimap, function(map)
+    map:ClearAllPoints()
+    map:SetPoint("TOPLEFT", container, "TOPLEFT", x0, y0)
+    map:SetPoint("BOTTOMRIGHT", container, "TOPLEFT", x1, y1)
+  end)
   Minimap:SetMaskTexture(ns.MediaManifest.mask_circle.file)
   Minimap:SetFrameLevel(container:GetFrameLevel() + 1)
   ringFrame:SetFrameLevel(Minimap:GetFrameLevel() + 5)

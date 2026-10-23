@@ -38,10 +38,10 @@ Data.MINIMAP = { w = 1008, h = 1012, map = { x = 86, y = 88, w = 837, h = 836 },
 -- Inventory window. Spec 4.10.
 Data.INV = { w = 690, h = 1334,
   title = { x = 187, y = 31, w = 315, h = 39 },
-  model = { x = 168, y = 95, w = 350, h = 375 },
+  model = { x = 168, y = 95, w = 350, h = 448 },
   -- Equipment frames and the tab row are redrawn by tools/inventory_art.py.
-  equipCols = { 96.5, 591.5 }, equipTop = 106, equipPitch = 70.75, equipSize = 62,
-  weapons = { 182, 294, 406 }, weaponY = 518, weaponSize = 100, weaponInset = 9,
+  equipCols = { 96.5, 591.5 }, equipTop = 104, equipPitch = 70.75, equipSize = 65,
+  weapons = { 197.5, 309.5, 421.5 }, weaponY = 549, weaponSize = 69, weaponInset = 2,
   tabs = { 42, 151, 260, 369, 478 }, tabY = 705, tabW = 95, tabH = 34,
   sort = { x = 589, y = 705, w = 34, h = 34 },
   gridCols = { 44, 116, 189, 261, 333, 405, 478, 550 }, gridRows = { 761, 841, 918, 995, 1072, 1149 },
@@ -87,6 +87,25 @@ function Data.PlayerStatusIcons(inCombat, resting, leader)
   local list = {}
   if inCombat then list[#list + 1] = "combat" elseif resting then list[#list + 1] = "rest" end
   if leader then list[#list + 1] = "leader" end
+  return list
+end
+
+-- Auras of a unit for one filter, in game order, at most `max`. Counted by hand: in combat,
+-- indexed iteration over GetUnitAuras' list can yield secret indexes.
+function Data.UnitAuraList(unit, filter, max)
+  local list = {}
+  if C_UnitAuras.GetUnitAuras then
+    for _, aura in ipairs(C_UnitAuras.GetUnitAuras(unit, filter) or {}) do
+      list[#list + 1] = aura
+      if #list >= max then break end
+    end
+  else
+    for i = 1, max do
+      local aura = C_UnitAuras.GetAuraDataByIndex(unit, i, filter)
+      if not aura then break end
+      list[i] = aura
+    end
+  end
   return list
 end
 
@@ -140,7 +159,9 @@ Data.MENU_RIGHT = {
   { id = "bag3", label = "Bolsa 3", bag = 3 },
   { id = "bag4", label = "Bolsa 4", bag = 4 },
   { id = "reagent", label = "Bolsa de Reagentes", bag = 5 },
-  { id = "social", label = "Social", candidates = { "FriendsMicroButton", "QuickJoinToastButton" } },
+  -- No social micro button on this client (the chat's social button has no plain icon).
+  { id = "social", label = "Social", candidates = { "FriendsMicroButton", "QuickJoinToastButton" },
+    icon = "Interface\\FriendsFrame\\UI-Toast-FriendOnlineIcon" },
   { id = "lfg", label = "Procurar Grupo", candidates = { "LFDMicroButton", "GroupFinderMicroButton" } },
   { id = "pvp", label = "JxJ", candidates = { "PVPMicroButton", "LFDMicroButton" } },
 }

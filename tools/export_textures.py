@@ -209,6 +209,9 @@ def export_all(out_dir=MEDIA):
             img = img.crop(box)
         if name in REWORK:
             img = REWORK[name](img)
+        if name == "inventory":
+            for piece, piece_img in inventory_art.pieces(img).items():
+                save(piece, piece_img)
         save(name, defringe(fit(img, max_side)))
     for name, fn in PROCEDURAL.items():
         save(name, fn())
