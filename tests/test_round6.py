@@ -545,3 +545,58 @@ def test_unit_frames_and_castbar_about_20_percent_smaller(lua, ns):
     assert K.large.width <= 0.29 and K.small.width <= 0.16 and K.tiny.width <= 0.14
     H = lua.eval("select(2, UIParent:GetSize())")
     assert ns.CastBar.HalfWidth() <= 0.38 * H / 2
+
+
+# In game the Reputation and Currency buttons did nothing: in this client (camelot) the
+# character frame's pages are side tabs, plain Frames named CharacterFrameModeTab2/5 that open
+# their page on mouse up, which a secure click cannot press. While the character frame is
+# closed, the real tab lies invisible over our button (the user clicks Blizzard's own tab, no
+# taint); it goes back home when the frame opens.
+MODE_TABS_PRE = """
+  local function fake()
+    local f = CreateFrame()
+    f.shown, f.alpha, f.points = false, 1, {}
+    f.IsShown = function(self) return self.shown end
+    f.SetParent = function(self, p) self.parent = p end
+    f.GetParent = function(self) return self.parent end
+    f.SetAlpha = function(self, a) self.alpha = a end
+    f.ClearAllPoints = function(self) self.points = {} end
+    f.SetPoint = function(self, ...) table.insert(self.points, { ... }) end
+    f.SetAllPoints = function(self, r) self.points = { { "ALL", r } } end
+    f.GetNumPoints = function(self) return #self.points end
+    f.GetPoint = function(self, i) return unpack(self.points[i]) end
+    return f
+  end
+  CharacterFrame = fake()
+  CharacterFrameModeTabs = fake()
+  for i = 1, 6 do
+    local t = fake()
+    t.parent = CharacterFrameModeTabs
+    t:SetPoint("TOPLEFT", CharacterFrameModeTabs, "TOPLEFT", 0, -i)
+    _G["CharacterFrameModeTab" .. i] = t
+  end
+"""
+
+
+def test_reputation_and_currency_lend_the_real_character_tabs(lua, ns):
+    boot(lua, ns, pre=MODE_TABS_PRE)
+    same = lua.eval("rawequal")
+    g = lua.globals()
+    pairs_ = (("repButton", g.CharacterFrameModeTab2, -2), ("tokenButton", g.CharacterFrameModeTab5, -5))
+    for key, tab, _ in pairs_:
+        b = ns.Inventory[key]
+        assert same(tab.parent, b) and tab.alpha == 0
+        assert tab.points[1][1] == "ALL" and same(tab.points[1][2], b)
+    # The character frame opens: the tabs go home, and Blizzard lays them out as usual.
+    g.CharacterFrame.shown = True
+    g.CharacterFrame.hooks.OnShow(g.CharacterFrame)
+    for key, tab, y in pairs_:
+        assert same(tab.parent, g.CharacterFrameModeTabs) and tab.alpha == 1
+        assert tab.points[1][1] == "TOPLEFT" and tab.points[1][5] == y
+        tab.SetPoint(tab, "TOPLEFT", g.CharacterFrameModeTabs, "TOPLEFT", 0, -9)
+        assert tab.points[2][5] == -9  # not pulled back onto our button
+    # It closes: lent again.
+    g.CharacterFrame.shown = False
+    g.CharacterFrame.hooks.OnHide(g.CharacterFrame)
+    for key, tab, _ in pairs_:
+        assert same(tab.parent, ns.Inventory[key]) and tab.alpha == 0

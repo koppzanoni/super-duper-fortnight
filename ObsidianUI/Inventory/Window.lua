@@ -259,6 +259,67 @@ end
 Inventory.repButton = W.Button(stats, "Reputação", nil, "CharacterFrameTab2")
 Inventory.tokenButton = W.Button(stats, "Moedas", nil, "CharacterFrameTab3")
 
+-- In this client (camelot) the character frame's pages are side tabs: plain Frames that open
+-- their page on mouse up, which a secure click cannot press. While the character frame is
+-- closed, the real tab lies invisible over our button, so the click runs Blizzard's own code
+-- (like the game menu micro button); it goes back home when the frame opens.
+local lent = {}
+local function lendTabs(on)
+  for _, l in ipairs(lent) do
+    local tab = l.tab
+    l.on = on
+    if on then
+      tab:SetParent(l.button)
+      tab:SetFrameStrata(l.button:GetFrameStrata())
+      tab:SetFrameLevel(l.button:GetFrameLevel() + 2)
+      tab:SetAlpha(0)
+      tab:ClearAllPoints()
+      tab:SetAllPoints(l.button)
+    else
+      tab:SetParent(l.home.parent)
+      tab:SetFrameStrata(l.home.strata)
+      tab:SetAlpha(1)
+      tab:ClearAllPoints()
+      for _, pt in ipairs(l.home.points) do tab:SetPoint(unpack(pt)) end
+      l.button:UnlockHighlight()
+    end
+  end
+end
+
+local function lendTab(button, tabName)
+  local tab = rawget(_G, tabName)
+  if type(tab) ~= "table" then return end
+  local home = { parent = tab:GetParent(), strata = tab:GetFrameStrata(), points = {} }
+  for i = 1, tab:GetNumPoints() do home.points[i] = { tab:GetPoint(i) } end
+  local l = { tab = tab, button = button, home = home }
+  lent[#lent + 1] = l
+  -- Blizzard lays the tabs out again on some events: kept on our button while lent.
+  ns.Pin(tab, function(f)
+    if not l.on then return end
+    f:ClearAllPoints()
+    f:SetAllPoints(button)
+  end)
+  -- Our button's hover glow and pressed text, for the invisible tab over it.
+  tab:HookScript("OnEnter", function() if l.on then button:LockHighlight() end end)
+  tab:HookScript("OnLeave", function() button:UnlockHighlight() end)
+  tab:HookScript("OnMouseDown", function() if l.on then button.text:SetPoint("CENTER", 1, -1) end end)
+  tab:HookScript("OnMouseUp", function() button.text:SetPoint("CENTER") end)
+end
+
+local tabsLent = false
+local function lendCharacterTabs()
+  local owner = rawget(_G, "CharacterFrame")
+  if tabsLent or type(owner) ~= "table" or type(rawget(_G, "CharacterFrameModeTab2")) ~= "table" then return end
+  tabsLent = true
+  lendTab(Inventory.repButton, "CharacterFrameModeTab2")
+  lendTab(Inventory.tokenButton, "CharacterFrameModeTab5")
+  owner:HookScript("OnShow", function() lendTabs(false) end)
+  owner:HookScript("OnHide", function() lendTabs(true) end)
+  lendTabs(not owner:IsShown())
+end
+lendCharacterTabs()
+ns.On("PLAYER_LOGIN", lendCharacterTabs)
+
 local function updateStats()
   local R = WG.rows
   local rows = ns.Stats.Rows(ns.Stats.GameAPI())
