@@ -64,7 +64,8 @@ def test_mapx_shifts_only_the_bar_part_outside_the_split(pure):
     assert L.MapX(100, W, u, extra) == L.MapX(100, W, u)                     # cap: pinned left
     assert L.MapX(L.BAR_SPLIT, W, u, extra) == L.MapX(L.BAR_SPLIT, W, u)     # inner bar: pinned center
     assert L.MapX(680, W, u, extra) == L.MapX(680, W, u) - extra             # outer end: moves out
-    assert L.MapX(710, W, u, extra) == L.MapX(710, W, u)                     # first slots stay
+    assert L.MapX(710, W, u, extra) == L.MapX(710, W, u) - extra             # with the first column's art
+    assert L.MapX(782, W, u, extra) == L.MapX(782, W, u)                     # the rest stays
 
 
 def enabled_extras(ns):
@@ -116,3 +117,24 @@ def test_media_apply_range(pure):
     assert list(t.coords.values()) == [0.125, 0.25, 0, 0.5]
     ns.Media.ApplyRange(t, "bar", True, 0.25, 0.5)
     assert list(t.coords.values()) == [0.25, 0.125, 0, 0.5]
+
+
+# In-game: the copied column carried the bar end's bracket and the XP groove's cap, so pieces of
+# them showed between the extra slots. The copy comes from a plain middle column instead.
+def test_extra_column_art_is_copied_from_a_plain_middle_column(pure):
+    ns = load_pure(pure, "Core/Layout.lua")
+    L = ns.Layout
+    assert L.SLICE_SRC >= 845                       # past the first two columns and the groove cap
+    assert L.BAR_SPLIT == 774                       # between columns 1 and 2
+
+
+# The 36 main buttons stay together: the first main column takes the slot next to column 2,
+# the extra columns take the outer slots.
+def test_main_buttons_stay_contiguous_with_extra_columns(lua, ns):
+    boot(lua, ns, db={"extraCols": 2, "scale": 0.6})
+    u = ns.HUD.u
+    first_main = ns.ActionBars.buttons[1]       # row 1, column 1
+    second_main = ns.ActionBars.buttons[2]
+    extra1 = [b for b in ns.ActionBars.extra.values() if b.obColumn == 1][0]
+    assert abs((second_main.obLeft - first_main.obLeft) - 71 * u) < 1.5 * u
+    assert abs((first_main.obLeft - extra1.obLeft) - 72 * u) < 1.5 * u

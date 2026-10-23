@@ -37,7 +37,8 @@ local slices = { left = {}, right = {} }
 
 -- Bar art pieces, as fractions of the half bar texture: outer end | one slot column | inner.
 local SPLIT = (ns.Layout.BAR_SPLIT - (D.half - BAR_W)) / BAR_W
-local SLICE_END = SPLIT + ns.Layout.EXTRA_PITCH / BAR_W
+local SLICE_START = (ns.Layout.SLICE_SRC - (D.half - BAR_W)) / BAR_W
+local SLICE_END = SLICE_START + ns.Layout.EXTRA_PITCH / BAR_W
 
 local function slice(side, i)
   local list = slices[side]
@@ -58,19 +59,23 @@ local placed = {}
 local function applyPlace(p)
   local u, W = HUD.u, HUD.W
   local left
-  local extraW = p.noShift and 0 or (HUD.extraW or 0)
-  if p.x + p.w / 2 <= D.half then
-    left = ns.Layout.MapX(p.x, W, u, extraW)
-  else
-    left = W - ns.Layout.MapX(ns.Layout.MirrorX(D.width, p.x, p.w), W, u, extraW) - p.w * u
+  local function mapX(x)
+    if p.noShift then return ns.Layout.BarX(x, W, u) end
+    return ns.Layout.MapX(x, W, u, HUD.extraW)
   end
+  if p.x + p.w / 2 <= D.half then
+    left = mapX(p.x)
+  else
+    left = W - mapX(ns.Layout.MirrorX(D.width, p.x, p.w)) - p.w * u
+  end
+  p.region.obLeft = left
   p.region:ClearAllPoints()
   p.region:SetPoint("TOPLEFT", root, "TOPLEFT", left, -p.y * u)
   p.region:SetSize(p.w * u, p.h * u)
 end
 
 -- Position a region using the virtual 2692x381 HUD texture coordinates; re-applied on every resize.
--- noShift: the region does not move out with the bar's outer part (the extra columns themselves).
+-- noShift: a bar item that stays put when extra columns open (measured from the screen center).
 function HUD.Place(region, x, y, w, h, noShift)
   local p = { region = region, x = x, y = y, w = w, h = h, noShift = noShift }
   placed[#placed + 1] = p
@@ -132,8 +137,8 @@ function HUD.Layout()
     local l, r = slice("left", k), slice("right", k)
     put(l, W / 2 - innerW - k * pitch, pitch)
     put(r, W / 2 + innerW + (k - 1) * pitch, pitch)
-    ns.Media.ApplyRange(l, "hud_bar", false, SPLIT, SLICE_END)
-    ns.Media.ApplyRange(r, "hud_bar", true, SPLIT, SLICE_END)
+    ns.Media.ApplyRange(l, "hud_bar", false, SLICE_START, SLICE_END)
+    ns.Media.ApplyRange(r, "hud_bar", true, SLICE_START, SLICE_END)
     l:Show(); r:Show()
   end
   for _, side in ipairs({ "left", "right" }) do

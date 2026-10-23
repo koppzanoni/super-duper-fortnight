@@ -7,9 +7,11 @@ ns.Layout = Layout
 -- Bottom HUD texture, left half: cap (orb + menu panel) | tiled connector | half action bar.
 local HUD_H, CAP_W, BAR_W, HALF_W = 381, 656, 684, 1346
 
--- Extra action columns: copies of the bar's first slot column (BAR_SPLIT..+EXTRA_PITCH), inserted
--- at BAR_SPLIT, between the bar's outer end and its slots; only the outer end moves out.
-Layout.BAR_SPLIT, Layout.EXTRA_PITCH, Layout.MAX_EXTRA = 702, 72, 6
+-- Extra action columns: copies of a plain middle column of the bar art (SLICE_SRC..+EXTRA_PITCH:
+-- no bar-end bracket, XP groove without its cap), inserted at BAR_SPLIT between columns 1 and 2.
+-- The outer part (bar end, groove cap, column 1's frame) moves out; the main buttons don't move,
+-- column 1's buttons take the slot next to column 2 (see ActionBars).
+Layout.BAR_SPLIT, Layout.SLICE_SRC, Layout.EXTRA_PITCH, Layout.MAX_EXTRA = 774, 845, 72, 6
 
 -- How many extra columns fit in the connector gap of one side.
 function Layout.MaxExtraColumns(stretch, u)
@@ -44,6 +46,12 @@ function Layout.MapX(x, screenW, u, extraW)
   local sx = screenW / 2 - (HALF_W - x) * u
   if x < Layout.BAR_SPLIT then sx = sx - (extraW or 0) end
   return sx
+end
+
+-- Screen x of a bar texture x measured from the screen center, whatever its value (extra
+-- columns have bar coordinates below the cap's width).
+function Layout.BarX(x, screenW, u)
+  return screenW / 2 - (HALF_W - x) * u
 end
 
 -- Widths of the connector tiles that fill a gap; the last one is cut to fit.

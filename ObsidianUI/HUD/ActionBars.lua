@@ -80,7 +80,8 @@ for r = 1, 2 do
   for c = 1, 18 do
     local entry = ns.Data.ACTION_LAYOUT[r][c]
     local b = ActionBars.CreateButton(header, "ObsidianUIActionButton" .. ((r - 1) * 18 + c), entry.actionID, entry.binding)
-    HUD.Place(b, cols[c], D.barRows[r], D.barSlot.w, D.barSlot.h)
+    -- Column 1 stays next to column 2 when extra columns open between them (its art moves out).
+    HUD.Place(b, cols[c], D.barRows[r], D.barSlot.w, D.barSlot.h, c == 1 or c == 18)
     if r == 1 and c <= 12 then header:SetFrameRef("paged" .. c, b) end
   end
 end
