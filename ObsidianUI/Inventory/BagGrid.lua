@@ -34,6 +34,10 @@ local function newButton(bag, slot)
   b:SetID(slot)
   b.Cooldown = b.Cooldown or _G[name .. "Cooldown"]
   b.IconQuestTexture = b.IconQuestTexture or _G[name .. "IconQuestTexture"]
+  -- The slot frame scrolls with the button (the window art has no slots in the grid area).
+  b.obSlot = b:CreateTexture(nil, "BACKGROUND", nil, -8)
+  b.obSlot:SetTexture(M.bag_slot.file)
+  b.obSlot:SetTexCoord(0, M.bag_slot.w / M.bag_slot.potW, 0, M.bag_slot.h / M.bag_slot.potH)
   b.obBorder = b:CreateTexture(nil, "OVERLAY", nil, 7)
   b.obBorder:SetAllPoints(b)
   b.obBorder:SetTexture(M.aura_border.file)
@@ -99,6 +103,9 @@ local function refreshButton(b, bag, slot)
   setMarkers(b, bag, slot, info)
   b:SetAlpha(filteredOut(info) and 0.25 or 1)
   SetItemButtonTexture(b, info and info.iconFileID or nil)
+  -- Empty slot: no Blizzard "empty" picture over our frame.
+  local icon = b.icon or _G[b:GetName() .. "IconTexture"]
+  if icon and not info then icon:Hide() end
   SetItemButtonCount(b, info and info.stackCount or 0)
   if SetItemButtonDesaturated then SetItemButtonDesaturated(b, info and info.isLocked) end
   local q = info and info.quality
@@ -138,6 +145,10 @@ local function relayout()
       b:ClearAllPoints()
       b:SetPoint("TOPLEFT", child, "TOPLEFT", (col - 1) * pitchX, -(row - 1) * pitchY)
       b:SetSize(size, size)
+      local F = S.gridFrame
+      b.obSlot:ClearAllPoints()
+      b.obSlot:SetPoint("TOPLEFT", b, "TOPLEFT", F.dx * unit, -F.dy * unit)
+      b.obSlot:SetSize(F.w * unit, F.h * unit)
       refreshButton(b, s.bag, s.slot)
       b:Show()
     end

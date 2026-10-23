@@ -228,10 +228,11 @@ def export_all(out_dir=MEDIA):
         img = Image.open(ART / src).convert("RGBA")
         if box:
             img = img.crop(box)
+        original = img
         if name in REWORK:
             img = REWORK[name](img)
         if name == "inventory":
-            for piece, piece_img in inventory_art.pieces(img).items():
+            for piece, piece_img in inventory_art.pieces(img, original).items():
                 save(piece, piece_img)
         save(name, defringe(fit(img, max_side)))
     for name, fn in PROCEDURAL.items():

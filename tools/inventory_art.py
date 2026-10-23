@@ -31,6 +31,12 @@ WEAPON_BOTTOM = 658  # just above the panel's inner bottom (662), level with the
 WEAPON_CLEAR = (178, 512, 512, 660)  # the old frames, covered with plain stone from above
 WEAPON_STONE_DY = 200
 
+# Bag grid: the slot frames are removed (they did not scroll with the items); each item button
+# draws its own frame, cut from the original art. The area keeps a darker stone.
+GRID_CLEAR = (36, 750, 614, 1216)
+GRID_SLOT_SRC = (42, 757, 107, 827)
+GRID_STONE_DARKEN = 0.55
+
 # Extra textures cut from the reworked art for the addon's own panels and buttons.
 STONE_TILE = (200, 150, 456, 406)  # plain stone of the model panel, 256x256
 # One plate of the reworked row (they moved), without the rail under it.
@@ -74,6 +80,15 @@ def rework(img):
             cy = FRAME_CY0 + i * FRAME_PITCH
             img.paste(frame, (round(cx - FRAME_SIZE / 2), round(cy - FRAME_SIZE / 2)))
 
+    gx0, gy0, gx1, gy1 = GRID_CLEAR
+    dark = Image.eval(img.crop(STONE_TILE).convert("RGB"), lambda v: int(v * GRID_STONE_DARKEN)).convert("RGBA")
+    flip = False
+    for y in range(gy0, gy1, dark.height):
+        for x in range(gx0, gx1, dark.width):
+            tile = dark.transpose(Image.FLIP_LEFT_RIGHT) if flip else dark
+            img.paste(tile.crop((0, 0, min(dark.width, gx1 - x), min(dark.height, gy1 - y))), (x, y))
+            flip = not flip
+
     wx0, wy0, wx1, wy1 = WEAPON_CLEAR
     img.paste(img.crop((wx0, wy0 - WEAPON_STONE_DY, wx1, wy1 - WEAPON_STONE_DY)), (wx0, wy0))
     for cx in WEAPON_CX:
@@ -81,10 +96,11 @@ def rework(img):
     return img
 
 
-def pieces(reworked):
-    """Textures for the addon's own widgets, already power-of-two sized."""
+def pieces(reworked, original):
+    """Textures for the addon's own widgets (from the reworked art, the bag slot from the original)."""
     plate = nine_slice(reworked.crop(PLATE_TEX_SRC), PLATE_SIZE[0], PLATE_SIZE[1], 8)
-    return {"stone_tile": reworked.crop(STONE_TILE), "plate": plate, "inventory_wing": wing(reworked)}
+    return {"stone_tile": reworked.crop(STONE_TILE), "plate": plate, "inventory_wing": wing(reworked),
+            "bag_slot": original.convert("RGBA").crop(GRID_SLOT_SRC)}
 
 
 # Stats wing: a narrow panel docked left of the window, built from the window's own frame (the

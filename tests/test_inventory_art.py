@@ -72,3 +72,24 @@ def test_wing_rects_match_the_wing_art():
         assert x >= ix0
     assert WG.rows.x1 <= ix1 - WG.overlap
     assert WG.buttons.y + WG.buttons.h <= iy1
+
+
+# In-game: scrolling moved the items but not the slot frames baked into the art. The grid area
+# is plain stone now; every item button draws its own frame (cut from the original art).
+def test_grid_slot_frames_removed_from_the_art():
+    out = np.asarray(ia.rework(base())).astype(int)
+    x0, y0, x1, y1 = ia.GRID_SLOT_SRC
+    before = np.asarray(base()).astype(int)
+    # the frame's bright bevel (top edge) is gone where the first slot was
+    assert before[y0 + 1, x0 + 20:x1 - 20, :3].mean() > 100
+    assert out[y0 + 1, x0 + 20:x1 - 20, :3].mean() < 50
+
+
+def test_bag_slot_texture_and_its_placement():
+    p = ia.pieces(ia.rework(base()), base())
+    x0, y0, x1, y1 = ia.GRID_SLOT_SRC
+    assert p["bag_slot"].size == (x1 - x0, y1 - y0)
+    S = data()
+    gx, gy = S.gridCols[1], S.gridRows[1]
+    assert (S.gridFrame.dx, S.gridFrame.dy) == (x0 - gx, y0 - gy)
+    assert (S.gridFrame.w, S.gridFrame.h) == (x1 - x0, y1 - y0)

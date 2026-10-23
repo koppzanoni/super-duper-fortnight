@@ -48,6 +48,8 @@ Data.INV = { w = 690, h = 1334,
   sort = { x = 589, y = 705, w = 34, h = 34 },
   gridCols = { 44, 116, 189, 261, 333, 405, 478, 550 }, gridRows = { 761, 841, 918, 995, 1072, 1149 },
   gridSlot = 59, gridPitchY = 77.6,
+  -- Each item button's own slot frame (texture bag_slot), relative to the button.
+  gridFrame = { dx = -2, dy = -4, w = 65, h = 70 },
   bags = { 42, 119, 196, 273, 350 }, bagY = 1234, bagW = 64, bagH = 66,
   gold = { x = 445, y = 1247, w = 202, h = 38 },
   -- Stats wing (art pixels of its own texture, built by tools/inventory_art.py).
