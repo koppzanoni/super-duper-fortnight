@@ -326,10 +326,18 @@ for _, ev in ipairs({ "PLAYER_EQUIPMENT_CHANGED", "COMBAT_RATING_UPDATE", "PLAYE
   ns.On(ev, function() if frame:IsShown() then updateStats() end end)
 end
 
--- C opens the unified window instead of the default character sheet (other tabs stay Blizzard's).
-hooksecurefunc("ToggleCharacter", function(tab)
-  if tab == "PaperDollFrame" then
-    if CharacterFrame and CharacterFrame:IsShown() then HideUIPanel(CharacterFrame) end
-    Inventory.Toggle()
-  end
+-- The unified window replaces the default character page: whenever that page shows (C key,
+-- micro button, tab switch), the default sheet closes and this window toggles. Hooked on the
+-- page itself: a hook on ToggleCharacter was lost when the client redefined it. Reputation and
+-- Currency stay in the default sheet.
+ns.On("PLAYER_LOGIN", function()
+  local page = PaperDollFrame
+  if not page or not page.HookScript then return end
+  page:HookScript("OnShow", function()
+    C_Timer.After(0, function()
+      if not page:IsVisible() then return end
+      if CharacterFrame then HideUIPanel(CharacterFrame) end
+      Inventory.Toggle()
+    end)
+  end)
 end)

@@ -154,3 +154,26 @@ def test_minimap_refreshes_zoom_after_layout(lua, ns):
     """)
     zooms = list(lua.globals().ZOOMS.values())
     assert len(zooms) >= 2 and zooms[-1] == 2 and zooms[-2] != 2
+
+
+# In-game: C still opened Blizzard's character sheet. Whenever its character page shows, the
+# unified window opens instead (C key, micro button, tab switch).
+C_PRE = """
+  HIDDEN_PANELS = {}
+  CharacterFrame = CreateFrame()
+  PaperDollFrame = CreateFrame()
+  PaperDollFrame.IsVisible = function() return true end
+  function HideUIPanel(f) HIDDEN_PANELS[#HIDDEN_PANELS + 1] = f end
+  C_Timer = { After = function(_, fn) fn() end }
+"""
+
+
+def test_character_page_redirects_to_the_unified_window(lua, ns):
+    boot(lua, ns, pre=C_PRE)
+    g = lua.globals()
+    toggles = {"n": 0}
+    ns.Inventory.Toggle = lambda: toggles.__setitem__("n", toggles["n"] + 1)
+    page = g.PaperDollFrame
+    page.hooks.OnShow(page)
+    assert toggles["n"] == 1
+    assert lua.eval("rawequal")(g.HIDDEN_PANELS[1], g.CharacterFrame)
