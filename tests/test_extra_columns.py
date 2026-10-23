@@ -206,13 +206,40 @@ def test_template_pieces_fit_the_icon(lua, ns):
     assert g.REMOVED_MASK >= 1
 
 
-# The grey stone connectors between the side caps and the bar are optional (off by default).
-def test_connectors_off_by_default(lua, ns):
-    boot(lua, ns, db={"scale": 0.7})
-    assert ns.db.connectBar is False
-    assert ns.HUD.connectorsShown == 0
+# The "connect the bar to the sides" option was removed: the bar always floats free, even for a
+# player whose saved settings still have it on, and the option is gone from the settings panel.
+CHECKBOX_STUB = """
+  CHECKBOXES = {}
+  local function setting(key)
+    return { SetValueChangedCallback = function() end }
+  end
+  Settings = {
+    RegisterVerticalLayoutCategory = function()
+      return { GetID = function() return 1 end }, { AddInitializer = function() end }
+    end,
+    RegisterAddOnSetting = function(cat, variable, key) local s = setting(key); s.key = key; return s end,
+    CreateCheckbox = function(cat, s) CHECKBOXES[s.key] = true end,
+    CreateSlider = function() end,
+    CreateSliderOptions = function() return { SetLabelFormatter = function() end } end,
+    CreateControlTextContainer = function()
+      return { Add = function() end, GetData = function() return {} end }
+    end,
+    CreateDropdown = function() end,
+    RegisterAddOnCategory = function() end,
+  }
+  MinimalSliderWithSteppersMixin = { Label = { Right = 1 } }
+"""
 
 
-def test_connectors_can_be_turned_on(lua, ns):
-    boot(lua, ns, db={"scale": 0.7, "connectBar": True})
-    assert ns.HUD.connectorsShown > 0
+def test_action_bar_always_floats_free(lua, ns):
+    boot(lua, ns, pre=CHECKBOX_STUB, db={"scale": 0.7, "connectBar": True})
+    used = []
+    apply = ns.Media.Apply
+    def recording(tex, key, *rest):
+        used.append(key)
+        return apply(tex, key, *rest)
+    ns.Media.Apply = recording
+    ns.HUD.Layout()
+    assert "hud_connector" not in used
+    assert lua.globals().CHECKBOXES["connectBar"] is None
+    assert lua.globals().CHECKBOXES["showHotkeys"] is True

@@ -1,15 +1,15 @@
 local _, ns = ...
 
--- The bottom HUD: cap | tiled connector | half bar | half bar (mirrored) | connector | cap (mirrored).
--- Always touches the bottom and both side edges of the screen. Each half bar is drawn as its
--- outer part, the optional extra slot columns (copies of one column of the art), and its inner
--- part; the extra columns take their width from the connector gap.
+-- The bottom HUD: cap | free gap | half bar | half bar (mirrored) | free gap | cap (mirrored).
+-- Always touches the bottom and both side edges of the screen; the bar floats free in the middle.
+-- Each half bar is drawn as its outer part, the optional extra slot columns (copies of one column
+-- of the art), and its inner part; the extra columns take their width from the gap.
 -- BOTTOM_PAD: transparent rows at the bottom of the HUD art, pushed below the screen edge.
 local HUD = { onResize = {}, BOTTOM_PAD = 19 }
 ns.HUD = HUD
 
 local D = ns.Data.HUD
-local CAP_W, BAR_W, TILE_W = 656, 684, 333
+local CAP_W, BAR_W = 656, 684
 
 local root = CreateFrame("Frame", "ObsidianUIHUD", UIParent)
 root:SetFrameStrata("LOW")
@@ -32,7 +32,6 @@ end
 
 local capL, capR = newTex(), newTex()
 local outerL, innerL, outerR, innerR = newTex(), newTex(), newTex(), newTex()
-local connectors = { left = {}, right = {} }
 local slices = { left = {}, right = {} }
 
 -- Bar art pieces, as fractions of the half bar texture: outer end | one slot column | inner.
@@ -43,14 +42,6 @@ local SLICE_END = SLICE_START + ns.Layout.EXTRA_PITCH / BAR_W
 local function slice(side, i)
   local list = slices[side]
   if not list[i] then list[i] = newTex() end
-  return list[i]
-end
-
-local function connector(side, i)
-  local list = connectors[side]
-  if not list[i] then
-    list[i] = HUD.art:CreateTexture(nil, "BACKGROUND")
-  end
   return list[i]
 end
 
@@ -80,22 +71,6 @@ function HUD.Place(region, x, y, w, h, noShift)
   local p = { region = region, x = x, y = y, w = w, h = h, noShift = noShift }
   placed[#placed + 1] = p
   if HUD.u then applyPlace(p) end
-end
-
-local function layoutConnectors(side, x0, stretch, u, h)
-  local pieces = ns.Layout.ConnectorPieces(stretch, TILE_W * u)
-  local x = x0
-  for i, w in ipairs(pieces) do
-    local t = connector(side, i)
-    t:ClearAllPoints()
-    t:SetPoint("BOTTOMLEFT", root, "BOTTOMLEFT", x, 0)
-    t:SetSize(w, h)
-    ns.Media.Apply(t, "hud_connector", side == "right", w / (TILE_W * u))
-    t:Show()
-    x = x + w
-  end
-  for i = #pieces + 1, #connectors[side] do connectors[side][i]:Hide() end
-  return #pieces
 end
 
 function HUD.Layout()
@@ -145,12 +120,6 @@ function HUD.Layout()
   for _, side in ipairs({ "left", "right" }) do
     for k = HUD.extra + 1, #slices[side] do slices[side][k]:Hide() end
   end
-
-  -- The stone connectors between the side caps and the bar are optional (setting "connectBar"):
-  -- without them the bar floats free in the middle.
-  local gap = (ns.db and ns.db.connectBar) and (stretch - HUD.extraW) or 0
-  HUD.connectorsShown = layoutConnectors("left", capW, gap, u, h)
-    + layoutConnectors("right", W / 2 + barW + HUD.extraW, gap, u, h)
 
   for _, p in ipairs(placed) do applyPlace(p) end
   for _, fn in ipairs(HUD.onResize) do fn(u, h, W) end

@@ -4,7 +4,7 @@ local _, ns = ...
 local Layout = {}
 ns.Layout = Layout
 
--- Bottom HUD texture, left half: cap (orb + menu panel) | tiled connector | half action bar.
+-- Bottom HUD texture, left half: cap (orb + menu panel) | free gap | half action bar.
 local HUD_H, CAP_W, BAR_W, HALF_W = 381, 656, 684, 1346
 
 -- Extra action columns: copies of a plain middle column of the bar art (SLICE_SRC..+EXTRA_PITCH:
@@ -13,7 +13,7 @@ local HUD_H, CAP_W, BAR_W, HALF_W = 381, 656, 684, 1346
 -- column 1's buttons take the slot next to column 2 (see ActionBars).
 Layout.BAR_SPLIT, Layout.SLICE_SRC, Layout.EXTRA_PITCH, Layout.MAX_EXTRA = 774, 845, 72, 6
 
--- How many extra columns fit in the connector gap of one side.
+-- How many extra columns fit in the free gap of one side.
 function Layout.MaxExtraColumns(stretch, u)
   if u <= 0 then return 0 end
   return math.max(0, math.min(Layout.MAX_EXTRA, math.floor(stretch / (Layout.EXTRA_PITCH * u))))
@@ -29,7 +29,7 @@ function Layout.MirrorX(texW, x, w)
   return texW - x - w
 end
 
--- HUD height h, texture unit u (screen px per texture px) and the width of each connector gap.
+-- HUD height h, texture unit u (screen px per texture px) and the width of each free gap.
 -- The HUD always spans the whole screen width; it shrinks when cap + half bar would not fit.
 function Layout.HudSize(screenW, screenH, userScale)
   local fitWidth = screenW * HUD_H / (2 * (CAP_W + BAR_W))
@@ -52,17 +52,4 @@ end
 -- columns have bar coordinates below the cap's width).
 function Layout.BarX(x, screenW, u)
   return screenW / 2 - (HALF_W - x) * u
-end
-
--- Widths of the connector tiles that fill a gap; the last one is cut to fit.
-function Layout.ConnectorPieces(stretch, tileW)
-  local pieces = {}
-  if tileW <= 0 then return pieces end
-  local left = stretch
-  while left > 0.01 do
-    local w = math.min(tileW, left)
-    pieces[#pieces + 1] = w
-    left = left - w
-  end
-  return pieces
 end

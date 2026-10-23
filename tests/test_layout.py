@@ -45,11 +45,3 @@ def test_mapx(L):
     assert L.MapX(656, 1920, u) == pytest.approx(464.88, abs=0.01)
     assert L.MapX(1346, 1920, u) == pytest.approx(960)
 
-
-def test_connector_pieces(L, pure):
-    assert list(L.ConnectorPieces(700, 333).values()) == [333, 333, 34]
-    assert list(L.ConnectorPieces(0, 333).values()) == []
-
-
-def test_connector_pieces_zero_tile_width_is_empty(L):
-    assert list(L.ConnectorPieces(100, 0).values()) == []

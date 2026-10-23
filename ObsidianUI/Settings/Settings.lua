@@ -26,8 +26,6 @@ local function register()
   checkbox("vbar2", "Barra vertical direita 2", false, function() ns.VerticalBars.Refresh() end)
   slider("extraCols", "Colunas extras na barra de ações", 0, 0, ns.Layout.MAX_EXTRA, 1, "%d", relayoutHUD,
     "Cada coluna adiciona 4 botões (barras de ação 6 e 7 do jogo). Só cabem se houver espaço livre ao lado da barra: diminua a Escala do HUD para liberar mais.")
-  checkbox("connectBar", "Ligar a barra de ações às laterais (pedra)", false, relayoutHUD,
-    "Desligado, a barra de ações fica solta no meio, sem a faixa de pedra até os orbes.")
   checkbox("showHotkeys", "Mostrar teclas de atalho nos botões", true, function() ns.ActionBars.UpdateBindings() end)
   if CreateSettingsButtonInitializer and layout then
     layout:AddInitializer(CreateSettingsButtonInitializer("Teclas de atalho da barra", "Definir teclas",
