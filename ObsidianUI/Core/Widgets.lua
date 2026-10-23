@@ -50,8 +50,18 @@ end
 
 -- Button: the stone tab plate (exported at about the buttons' shape), gold text, warm glow
 -- on hover, text sinks while pressed.
-function Widgets.Button(parent, label, onClick)
-  local b = CreateFrame("Button", nil, parent)
+-- With clickTarget (a Blizzard button's global name) the button is secure and clicks that
+-- button, so Blizzard's own code opens its window (calling it from addon code would taint).
+function Widgets.Button(parent, label, onClick, clickTarget)
+  local b
+  if clickTarget then
+    b = CreateFrame("Button", nil, parent, "SecureActionButtonTemplate")
+    b:RegisterForClicks("AnyUp", "AnyDown")
+    b:SetAttribute("type", "click")
+    b:SetAttribute("clickbutton", _G[clickTarget])
+  else
+    b = CreateFrame("Button", nil, parent)
+  end
   local plate = b:CreateTexture(nil, "BACKGROUND")
   plate:SetAllPoints(b)
   plate:SetTexture(M.plate.file)
@@ -65,6 +75,6 @@ function Widgets.Button(parent, label, onClick)
   b.text:SetTextColor(Widgets.GOLD[1], Widgets.GOLD[2], Widgets.GOLD[3])
   b:SetScript("OnMouseDown", function(self) self.text:SetPoint("CENTER", 1, -1) end)
   b:SetScript("OnMouseUp", function(self) self.text:SetPoint("CENTER") end)
-  b:SetScript("OnClick", onClick)
+  if onClick then b:SetScript("OnClick", onClick) end
   return b
 end

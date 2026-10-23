@@ -191,8 +191,8 @@ local function line(i)
   return l
 end
 
-Inventory.repButton = W.Button(stats, "Reputação", function() ToggleCharacter("ReputationFrame") end)
-Inventory.tokenButton = W.Button(stats, "Moedas", function() ToggleCharacter("TokenFrame") end)
+Inventory.repButton = W.Button(stats, "Reputação", nil, "CharacterFrameTab2")
+Inventory.tokenButton = W.Button(stats, "Moedas", nil, "CharacterFrameTab3")
 
 local function updateStats()
   local R = WG.rows
@@ -326,18 +326,20 @@ for _, ev in ipairs({ "PLAYER_EQUIPMENT_CHANGED", "COMBAT_RATING_UPDATE", "PLAYE
   ns.On(ev, function() if frame:IsShown() then updateStats() end end)
 end
 
--- The unified window replaces the default character page: whenever that page shows (C key,
--- micro button, tab switch), the default sheet closes and this window toggles. Hooked on the
--- page itself: a hook on ToggleCharacter was lost when the client redefined it. Reputation and
--- Currency stay in the default sheet.
-ns.On("PLAYER_LOGIN", function()
-  local page = PaperDollFrame
-  if not page or not page.HookScript then return end
-  page:HookScript("OnShow", function()
-    C_Timer.After(0, function()
-      if not page:IsVisible() then return end
-      if CharacterFrame then HideUIPanel(CharacterFrame) end
-      Inventory.Toggle()
-    end)
+-- The keys bound to the character sheet (C) toggle this window instead, through an override
+-- binding. The default sheet is never touched from here: hiding it from addon code tainted
+-- Blizzard's panel manager and then no menu button could open its window.
+local toggleButton = CreateFrame("Button", "ObsidianUIInventoryToggle", UIParent)
+toggleButton:RegisterForClicks("AnyUp")
+toggleButton:SetScript("OnClick", function() Inventory.Toggle() end)
+local bindingOwner = CreateFrame("Frame")
+local function bindCharacterKeys()
+  ns.RunOutOfCombat(function()
+    ClearOverrideBindings(bindingOwner)
+    for _, key in ipairs({ GetBindingKey("TOGGLECHARACTER0") }) do
+      SetOverrideBindingClick(bindingOwner, false, key, "ObsidianUIInventoryToggle")
+    end
   end)
-end)
+end
+ns.On("PLAYER_LOGIN", bindCharacterKeys)
+ns.On("UPDATE_BINDINGS", bindCharacterKeys)

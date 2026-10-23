@@ -76,18 +76,6 @@ def test_stats_panel_opens_with_inventory(lua, ns):
     assert shown["v"] is True
 
 
-def test_reputation_and_currency_buttons(lua, ns):
-    boot(lua, ns, pre="""
-      OPENED = {}
-      function ToggleCharacter(tab) OPENED[#OPENED + 1] = tab end
-    """)
-    for key, tab in (("repButton", "ReputationFrame"), ("tokenButton", "TokenFrame")):
-        b = ns.Inventory[key]
-        b.handlers.OnClick(b)
-        opened = lua.globals().OPENED
-        assert opened[len(opened)] == tab
-
-
 def test_inventory_size_setting_scales_the_window(lua, ns):
     boot(lua, ns)
     _, _, _, h1 = ns.Inventory.DefaultPlacement(1920, 1080, 270)

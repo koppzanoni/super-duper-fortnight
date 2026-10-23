@@ -156,24 +156,47 @@ def test_minimap_refreshes_zoom_after_layout(lua, ns):
     assert len(zooms) >= 2 and zooms[-1] == 2 and zooms[-2] != 2
 
 
-# In-game: C still opened Blizzard's character sheet. Whenever its character page shows, the
-# unified window opens instead (C key, micro button, tab switch).
-C_PRE = """
-  HIDDEN_PANELS = {}
-  CharacterFrame = CreateFrame()
-  PaperDollFrame = CreateFrame()
-  PaperDollFrame.IsVisible = function() return true end
-  function HideUIPanel(f) HIDDEN_PANELS[#HIDDEN_PANELS + 1] = f end
-  C_Timer = { After = function(_, fn) fn() end }
-"""
+# In-game: calling Blizzard's panel functions from addon code tainted the panel manager, and
+# afterwards every menu button failed to open its window. The addon never calls them.
+def test_addon_never_calls_blizzard_panel_functions():
+    import re
+    pattern = re.compile(r"\b(HideUIPanel|ShowUIPanel|ToggleCharacter|ToggleGameMenu|CloseAllWindows)\s*\(")
+    for path in (ROOT / "ObsidianUI").rglob("*.lua"):
+        for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            code = line.split("--")[0]
+            assert not pattern.search(code), f"{path.name}:{n}: {line.strip()}"
 
 
-def test_character_page_redirects_to_the_unified_window(lua, ns):
-    boot(lua, ns, pre=C_PRE)
+# C (and any key bound to the character sheet) opens the unified window through our own binding.
+def test_character_key_opens_the_unified_window(lua, ns):
+    boot(lua, ns, pre="""
+      OVERRIDES = {}
+      function GetBindingKey(b) if b == "TOGGLECHARACTER0" then return "C", "SHIFT-P" end end
+      function SetOverrideBindingClick(_, _, key, button) OVERRIDES[key] = button end
+    """)
+    o = lua.globals().OVERRIDES
+    assert o["C"] == "ObsidianUIInventoryToggle"
+    assert o["SHIFT-P"] == "ObsidianUIInventoryToggle"
+
+
+# Reputation and Currency click Blizzard's own tabs through secure buttons (no taint).
+def test_reputation_and_currency_click_the_blizzard_tabs(lua, ns):
+    boot(lua, ns, pre="""
+      CharacterFrameTab2 = CreateFrame()
+      CharacterFrameTab3 = CreateFrame()
+      local cf = CreateFrame
+      function CreateFrame(kind, name, parent, template)
+        local f = cf(kind, name, parent, template)
+        f.attrs = {}
+        f.SetAttribute = function(self, k, v) self.attrs[k] = v end
+        f.template = template
+        return f
+      end
+    """)
+    same = lua.eval("rawequal")
     g = lua.globals()
-    toggles = {"n": 0}
-    ns.Inventory.Toggle = lambda: toggles.__setitem__("n", toggles["n"] + 1)
-    page = g.PaperDollFrame
-    page.hooks.OnShow(page)
-    assert toggles["n"] == 1
-    assert lua.eval("rawequal")(g.HIDDEN_PANELS[1], g.CharacterFrame)
+    for key, tab in (("repButton", g.CharacterFrameTab2), ("tokenButton", g.CharacterFrameTab3)):
+        b = ns.Inventory[key]
+        assert b.template == "SecureActionButtonTemplate"
+        assert b.attrs.type == "click"
+        assert same(b.attrs.clickbutton, tab)

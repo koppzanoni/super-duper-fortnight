@@ -264,3 +264,28 @@ def test_minimap_keeps_both_corners_on_the_ring_opening(lua, ns):
     calls = g.POINTS.Minimap
     last_two = [calls[len(calls) - 1][1], calls[len(calls)][1]]
     assert last_two == ["TOPLEFT", "BOTTOMRIGHT"]
+
+
+# In-game: the vertical bar was tiny and the objective tracker sat on top of it.
+def test_vertical_bar_fills_the_gap_between_minimap_and_hud(lua, ns):
+    boot(lua, ns, pre='RecordingFrame("ObjectiveTrackerFrame")')
+    lua.execute("BAR_SIZE = nil")
+    c = ns.VerticalBars.container
+    c.SetSize = lua.eval("function(_, w, h) BAR_SIZE = { w, h } end")
+    ns.db.vbar1 = True
+    ns.VerticalBars.Refresh()
+    h = lua.globals().BAR_SIZE[2]
+    assert h >= 0.48 * 1080
+    top, bottom = ns.VerticalBars.TOP * 1080, ns.VerticalBars.TOP * 1080 + h
+    assert top >= 0.242 * 1080          # below the minimap
+    assert bottom <= 1080 - ns.HUD.h     # above the HUD
+
+
+def test_objective_tracker_moves_left_of_the_vertical_bars(lua, ns):
+    boot(lua, ns, pre='RecordingFrame("ObjectiveTrackerFrame")')
+    ns.db.vbar2 = True
+    ns.VerticalBars.Refresh()
+    g = lua.globals()
+    g.ObjectiveTrackerFrame.SetPoint(g.ObjectiveTrackerFrame, "TOPRIGHT", None, "TOPRIGHT", 0, 0)  # Edit Mode
+    point, x, _ = last_point(lua, "ObjectiveTrackerFrame")
+    assert point == "TOPRIGHT" and x == -10

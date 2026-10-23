@@ -2,10 +2,12 @@ local _, ns = ...
 
 -- Optional vertical bars on the right edge (spec 4.5). One enabled: single column art;
 -- both enabled: the joined two-column art, with no frame between the columns.
-local VerticalBars = {}
+-- Placed in the gap between the minimap (bottom at 0.242 H) and the bottom HUD.
+local VerticalBars = { TOP = 0.255, GAP = 0.012 }
 ns.VerticalBars = VerticalBars
 
 local container = CreateFrame("Frame", "ObsidianUIVerticalBars", UIParent, "SecureHandlerBaseTemplate")
+VerticalBars.container = container
 container:SetFrameStrata("LOW")
 local art = container:CreateTexture(nil, "ARTWORK")
 art:SetAllPoints(container)
@@ -48,18 +50,38 @@ function VerticalBars.Refresh()
     else
       local spec = #on == 1 and ns.Data.VBAR1 or ns.Data.VBAR2
       local _, screenH = UIParent:GetSize()
-      local height = 0.40 * screenH
+      local hudH = ns.HUD.h or 0.25 * screenH
+      local height = screenH * (1 - VerticalBars.TOP - VerticalBars.GAP) - hudH
       container:ClearAllPoints()
-      container:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -4, -0.275 * screenH)
+      container:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -4, -VerticalBars.TOP * screenH)
       container:SetSize(spec.w * height / spec.h, height)
       ns.Media.Apply(art, #on == 1 and "vbar1" or "vbar2")
       for col, buttons in ipairs(on) do placeColumn(buttons, spec, col, height) end
       container:Show()
     end
     ns.ActionBars.UpdateBindings()
+    VerticalBars.PlaceTracker()
+  end)
+end
+
+-- The objective tracker sits left of the bars while they are shown (Edit Mode puts it back on
+-- the right edge, over them); otherwise under the minimap on the right.
+function VerticalBars.PlaceTracker()
+  local tracker = ns.Resolve.First(ns.Data.FRAME_CANDIDATES.objectivetracker)
+  if not tracker then return end
+  ns.Pin(tracker, function(f)
+    local _, screenH = UIParent:GetSize()
+    f:ClearAllPoints()
+    if container:IsShown() then
+      f:SetPoint("TOPRIGHT", container, "TOPLEFT", -10, 0)
+    else
+      f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -0.012 * screenH, -VerticalBars.TOP * screenH)
+    end
   end)
 end
 
 ns.On("PLAYER_LOGIN", VerticalBars.Refresh)
 ns.On("DISPLAY_SIZE_CHANGED", VerticalBars.Refresh)
 ns.On("UI_SCALE_CHANGED", VerticalBars.Refresh)
+
+table.insert(ns.HUD.onResize, VerticalBars.Refresh)
