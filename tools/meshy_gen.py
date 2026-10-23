@@ -456,5 +456,93 @@ def main():
             print(f"{name}: {status}", flush=True)
 
 
+# "Moderno" style (2026-10-23): modern, clean, minimal. Only a blank magenta canvas as reference,
+# the style is described in words (a style image made Meshy copy its ornaments).
+MODERN = (
+    "Style: modern, clean and minimal sci-fi fantasy UI, like a premium modern MMO interface. "
+    "Flat dark navy blue translucent glass panels with slightly rounded corners, a single thin crisp glowing "
+    "light blue edge line with a soft subtle glow, very subtle inner gradient. Almost no gold: at most one very fine "
+    "thin gold hairline. NO ornaments, no filigree, no wings, no spikes, no gems, no stone, no metal engravings. "
+    "Sharp, high quality, high resolution, perfectly clean vector-like edges. "
+    "Put it on flat solid pure magenta (#FF00FF): the whole background evenly flat magenta, no scene, no shadow, "
+    "no gradient. Front view, flat, orthographic, centered. No text, no numbers, no letters, no icons.")
+PIECES["modern_unit"] = ("16:9",
+    "A player unit frame for a World of Warcraft UI addon. On the left a circular portrait ring (thin glowing blue "
+    "ring with a very fine gold hairline outside) whose inside is flat solid magenta (#FF00FF), with a tiny round "
+    "level badge on its lower left edge. Attached to its right, a slim horizontal panel holding an empty space for "
+    "the name on top, one long empty health bar groove and under it one thinner empty mana bar groove; the grooves "
+    "are flat solid magenta (#FF00FF) inside, framed by thin blue lines. About 3.5 times wider than tall, filling "
+    "most of the image width. " + MODERN)
+PIECES["modern_bar"] = ("16:9",
+    "A short segment of an action bar for a World of Warcraft UI addon: ONE single horizontal row of exactly 4 "
+    "identical empty square button slots with slightly rounded corners, evenly spaced, inside one slim panel, "
+    "with a clean left end and a clean right end of the panel (small simple chamfered ends, no decoration). "
+    "The inside of each slot is flat solid magenta (#FF00FF), framed by a thin blue line. " + MODERN)
+PIECES["modern_cast"] = ("16:9",
+    "A player cast bar for a World of Warcraft UI addon: a long thin horizontal bar about 9 times wider than tall. "
+    "At its left end a small square socket with slightly rounded corners for the spell icon (inside flat solid "
+    "magenta #FF00FF), to its right one long slim empty progress groove (inside flat solid magenta #FF00FF) framed "
+    "by a thin glowing blue line, all on one slim dark navy translucent panel. Spanning most of the image width. " + MODERN)
+for _n in ("modern_unit", "modern_bar", "modern_cast"):
+    REFS_OVERRIDE[_n] = ["art/blank_magenta.png"]
+    NO_ISOLATE.add(_n)
+
+
+# "Moderno" from the concept itself (art/concept_modern.png): each piece cropped from it and
+# redrawn at high resolution, empty and isolated.
+COPY = ("The attached image is a crop of a game UI concept for a World of Warcraft UI addon. Redraw EXACTLY this "
+    "UI piece in exactly the same style, colors, materials, line thickness, glow and proportions, as a clean, sharp, "
+    "very high quality, high resolution UI texture asset. ")
+EMPTY = (" Put it on flat solid pure magenta (#FF00FF): the whole background evenly flat magenta, no game scene, "
+    "no shadow, no gradient. Front view, flat, centered, filling most of the image width. "
+    "No text, no numbers, no letters, no icons, no character.")
+PIECES["modern2_unit"] = ("16:9", COPY +
+    "Only the frame: the round portrait ring (keep its look) whose inside is EMPTY flat solid magenta (#FF00FF) with no "
+    "portrait, the small round level badge on the ring (empty, no number), and the two bars to its right as EMPTY "
+    "grooves: the health bar groove and the mana bar groove are dark and EMPTY, with no green or blue fill, keeping "
+    "their thin frame lines. Keep the empty space above the bars where the name goes. Remove the two small buff icons." + EMPTY)
+PIECES["modern2_bar"] = ("16:9", COPY +
+    "Only the action bar frame, but simpler and cleaner: REMOVE the curved wing ornaments at both ends, REMOVE the "
+    "diamond gems at the top and bottom, REMOVE the gold lines. Keep only the dark navy translucent panel with its "
+    "thin glowing blue edge line and the square slot frames exactly as they look. Draw ONE single row of exactly 4 "
+    "identical EMPTY square slots (the inside of each slot is flat solid magenta #FF00FF), evenly spaced, with the "
+    "panel's clean left end and clean right end. No numbers above the slots." + EMPTY)
+PIECES["modern2_cast"] = ("16:9", COPY +
+    "Only the cast bar frame: the square spell icon socket on the left (inside EMPTY flat solid magenta #FF00FF, no "
+    "icon) and the long thin progress bar groove, EMPTY with no blue fill, keeping its thin frame lines and the dark "
+    "translucent panel behind it. About 9 times wider than tall." + EMPTY)
+for _n, _ref in (("modern2_unit", "art/ref_modern_unit.png"), ("modern2_bar", "art/ref_modern_bar.png"),
+                 ("modern2_cast", "art/ref_modern_cast.png")):
+    REFS_OVERRIDE[_n] = [_ref]
+    NO_ISOLATE.add(_n)
+
+
+# "Moderno" refinement pass: our own procedural pieces (tools/modern_meshy_inputs.py) redrawn by
+# Meshy with premium materials, the shape kept exactly (prompt reviewed with the user).
+REFINE = ("The attached image is a finished game UI element for a World of Warcraft UI addon. Redraw it keeping "
+    "EXACTLY the same shape, silhouette, proportions, layout, and the position and size of every part: do not move, "
+    "add or remove anything. Only upgrade the rendering quality and materials to a premium, polished, modern MMO "
+    "interface. Keep the same colors: near-black dark navy, teal-blue lines, gold only where it already is. All "
+    "panels are fully OPAQUE, not see-through. NO new ornaments: no filigree, no wings, no gems, no spikes, no runes. "
+    "No text, no numbers, no icons. Every area that is flat magenta (#FF00FF) in the attached image stays perfectly "
+    "flat magenta: the background and the holes. Front view, flat, orthographic, same framing, sharp, high resolution. ")
+PIECES["modern3_unit"] = ("16:9", REFINE +
+    "Round portrait ring: a thick dark navy band with a thin teal outer line and a soft light reflection on its top "
+    "edge; its inside is a magenta hole. A small round level badge with a thin gold ring on its lower left, empty and "
+    "dark inside. Two horizontal bar grooves to the right, the upper (health) thicker than the lower (mana): each is "
+    "a dark recessed groove inside a dark navy rim with a thin teal outline. The grooves stay EMPTY and dark, with no "
+    "green or blue fill. Material: smooth dark brushed metal, crisp teal edge lines with a faint glow.")
+PIECES["modern3_slot"] = ("1:1", REFINE +
+    "A single square action button slot with rounded corners: a steel-teal metal border with a fine light top edge "
+    "and a thin black inner line; its inside is a magenta hole for the spell icon.")
+PIECES["modern3_cast"] = ("16:9", REFINE +
+    "A square spell icon socket on the left with a magenta hole inside and tiny arrow tips on its left and bottom "
+    "edges; a dark name tab plate with a rounded top right corner above the bar; a long thin progress groove with a "
+    "pointed right end. The groove stays EMPTY and dark.")
+for _n in ("unit", "slot", "cast"):
+    REFS_OVERRIDE["modern3_" + _n] = ["art/modern_in_" + _n + ".png"]
+    NO_ISOLATE.add("modern3_" + _n)
+
+
 if __name__ == "__main__":
     main()
