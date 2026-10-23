@@ -26,7 +26,7 @@ def test_frames_leave_the_orb_opening_empty():
 def test_overlays_only_cover_the_orb():
     for n in relic_art.CAPS:
         a = np.asarray(relic_art.overlay(n))
-        assert a[..., 3][~opening()].max() == 0
+        assert a[..., 3][~opening(-relic_art.RIM_BAND)].max() == 0  # the opening and its rim band
         assert (a[..., 3][opening()] > 200).sum() > 2000, n  # the claws / the dragon's wing
 
 
@@ -61,6 +61,22 @@ def test_menu_buttons_sit_on_dark_slot_recesses():
 def test_claws_overlay_is_solid():
     from scipy import ndimage
     al = np.asarray(relic_art.overlay("claws"))[..., 3].astype(int)
+    al[~opening()] = 0  # the claws inside the opening (the rim band is the frame's own art)
     inner = ndimage.binary_erosion(al > 0, iterations=4)  # off the soft outline
     assert inner.sum() > 3000  # the four claws
     assert (al[inner] > 240).all()
+
+
+# The orb's glass is a bit larger than the frame's opening: on that rim the glass shine crossed
+# the claws. The overlay also carries the art of a band around the opening (ring and claws).
+def test_overlay_covers_the_rim_band_around_the_opening():
+    from PIL import Image
+    ys, xs = np.mgrid[0:cap_art.CAP_H, 0:cap_art.CAP_W]
+    r = np.hypot(xs - cap_art.CX, ys - cap_art.CY)
+    band = (r >= cap_art.OPENING) & (r < cap_art.OPENING + relic_art.RIM_BAND)
+    for n in relic_art.CAPS:
+        art = np.asarray(Image.open(relic_art.processed(n)).convert("RGBA")).astype(int)
+        over = np.asarray(relic_art.overlay(n)).astype(int)
+        solid = band & (art[..., 3] == 255)
+        assert solid.sum() > 500, n
+        assert (over[solid] == art[solid]).all(), n

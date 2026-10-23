@@ -18,6 +18,9 @@ from process_art import key_magenta
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CAPS = ("claws", "dragon")
+# The orb glass (Data.HUD.orb, 130 px radius) is a bit larger than the opening: the overlay also
+# carries the art of this band around the opening, so the glass shine stays under ring and claws.
+RIM_BAND = 6
 
 
 def meshy(name):
@@ -33,9 +36,9 @@ def prepare(name):
     cap_art.prepare(meshy(name), processed(name))
 
 
-def _opening():
+def _opening(extra=0):
     ys, xs = np.mgrid[0:cap_art.CAP_H, 0:cap_art.CAP_W]
-    return np.hypot(xs - cap_art.CX, ys - cap_art.CY) < cap_art.OPENING
+    return np.hypot(xs - cap_art.CX, ys - cap_art.CY) < cap_art.OPENING + extra
 
 
 def _claws(a):
@@ -60,11 +63,14 @@ def frame(name):
 
 
 def overlay(name):
-    a = np.asarray(Image.open(processed(name)).convert("RGBA")).astype(np.float32)
+    art = np.asarray(Image.open(processed(name)).convert("RGBA")).astype(np.float32)
+    a = art.copy()
     if name == "claws":
         a[..., 3] = 255 * _claws(a)
     # the dragon's wing membrane is see-through over magenta: its keyed alpha is kept as it is
     a[..., 3] *= _opening()
+    rim = _opening(RIM_BAND) & ~_opening()
+    a[rim] = art[rim]
     a[a[..., 3] < 8] = 0
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
 
