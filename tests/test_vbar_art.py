@@ -43,7 +43,7 @@ def test_fits_in_a_texture():
         assert max(va.build(src(), cols).size) <= 1024
 
 
-# Every button lies over a dark empty slot of the art.
+# Every button lies over a slot of the art: a see-through dark glass pane inside a solid edge.
 def test_buttons_sit_on_the_art_slots():
     for cols, key in ((1, "VBAR1"), (2, "VBAR2")):
         D = getattr(data(), key)
@@ -52,8 +52,21 @@ def test_buttons_sit_on_the_art_slots():
             for r in range(1, 13):
                 x, y, w, h = D.cols[c], D.rows[r], D.slot.w, D.slot.h
                 inner = a[y + 4:y + h - 4, x + 4:x + w - 4]
-                assert inner[..., 3].min() > 200, (key, c, r)
-                assert inner[..., :3].sum(axis=2).mean() < 75, (key, c, r)
+                assert 60 <= inner[..., 3].mean() <= 170, (key, c, r)
+                assert inner[..., :3].sum(axis=2).mean() < 150, (key, c, r)
+                assert a[y + h // 2, max(0, x - 3):x, 3].max() > 200, (key, c, r)
+
+
+# In game the user asked for glass-like, half transparent slots: a soft reflection on the
+# upper part of each pane.
+def test_slots_look_like_glass():
+    D = data().VBAR1
+    a = np.asarray(va.build(src(), 1)).astype(int)
+    x, y, w, h = D.cols[1], D.rows[5], D.slot.w, D.slot.h
+    top = a[y + 4:y + h // 3, x + 4:x + w - 4]
+    bottom = a[y + 2 * h // 3:y + h - 4, x + 4:x + w - 4]
+    light = lambda px: (px[..., :3].sum(axis=2) * px[..., 3]).mean()
+    assert light(top) > light(bottom) * 1.3
 
 
 # In game the user wanted only the slots, without the stone frame around and between them: each

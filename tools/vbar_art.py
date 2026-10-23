@@ -1,10 +1,12 @@
 """Vertical action bars built from the Meshy vertical bar art (art/processed/vbar_slim1_b.png:
 two columns of 10 slots). Only the slots are kept (each with its bronze edge); the stone frame
-around and between them is cut away. Rows are stretched to 12 by repeating bands of the art cut
-through the middle of the slots (the dark slot hides the seam); the one-bar art keeps the outer
-half of each column, also cut through the slots. The result is scaled to fit a 1024 px texture.
+around and between them is cut away, and each slot's dark recess becomes a see-through glass
+pane. Rows are stretched to 12 by repeating bands of the art cut through the middle of the slots
+(the dark slot hides the seam); the one-bar art keeps the outer half of each column, also cut
+through the slots. The result is scaled to fit a 1024 px texture.
 Used by export_textures.py for the "vbar1" and "vbar2" textures.
 """
+import numpy as np
 from PIL import Image, ImageChops, ImageDraw
 
 SOURCE = "vbar_slim1_b.png"
@@ -16,6 +18,8 @@ SRC_W, SRC_H = 300, 1352
 SLOT_W, SLOT_H = 89, 95
 # Bronze edge around each slot's dark recess, and the cut of its chamfered corners (source px).
 EDGE, CHAMFER = 7, 9
+# Glass pane: opacity of the recess, and the reflection on its upper part (strength, height).
+GLASS_ALPHA, SHEEN, SHEEN_H = 0.42, 0.22, 0.45
 ROWS = 12
 # Bands between slot centers, in order: band i joins source rows i and i+1 (1-based). Two
 # middle bands are repeated to get from 10 to 12 rows.
@@ -65,17 +69,35 @@ def _s(v):
     return round(v * SCALE)
 
 
-def _slots_mask(size, cols, tops):
+def _slots_mask(size, cols, tops, grow=EDGE, chamfer=CHAMFER):
+    """Chamfered slot shapes: grow > 0 takes the bronze edge, grow < 0 only the recess."""
     mask = Image.new("L", size, 0)
     d = ImageDraw.Draw(mask)
     for left in _lefts(cols):
         for top in tops:
-            x0, y0 = left - EDGE, top - EDGE
-            x1, y1 = left + SLOT_W + EDGE, top + SLOT_H + EDGE
-            c = CHAMFER
+            x0, y0 = left - grow, top - grow
+            x1, y1 = left + SLOT_W + grow, top + SLOT_H + grow
+            c = chamfer
             d.polygon([(x0 + c, y0), (x1 - c, y0), (x1, y0 + c), (x1, y1 - c),
                        (x1 - c, y1), (x0 + c, y1), (x0, y1 - c), (x0, y0 + c)], fill=255)
     return mask
+
+
+def _glass(img, cols, tops):
+    """Turn each slot recess into a half transparent dark pane with a soft top reflection."""
+    a = np.asarray(img).astype(np.float32)
+    pane = np.asarray(_slots_mask(img.size, cols, tops, grow=-1, chamfer=5)).astype(np.float32) / 255
+    sheen = np.zeros(pane.shape, np.float32)
+    for top in tops:
+        ys = np.arange(SLOT_H)
+        fade = np.clip(1 - ys / (SLOT_H * SHEEN_H), 0, 1) ** 1.5
+        sheen[top:top + SLOT_H] = np.maximum(sheen[top:top + SLOT_H], fade[:, None])
+    sheen *= pane * SHEEN
+    for ch in range(3):
+        a[..., ch] = a[..., ch] * (1 - sheen) + 235 * sheen
+    alpha = GLASS_ALPHA + sheen * 0.6
+    a[..., 3] = a[..., 3] * (1 - pane) + a[..., 3] * alpha * pane
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
 
 
 def build(src, cols):
@@ -92,6 +114,7 @@ def build(src, cols):
             x += x1 - x0
         y += y1 - y0
     out.putalpha(ImageChops.multiply(out.getchannel("A"), _slots_mask(out.size, cols, tops)))
+    out = _glass(out, cols, tops)
     ox, oy = _crop_origin()
     out = out.crop((ox, oy, _lefts(cols)[-1] + SLOT_W + EDGE, tops[-1] + SLOT_H + EDGE))
     return out.resize((_s(out.width), _s(out.height)), Image.LANCZOS)
