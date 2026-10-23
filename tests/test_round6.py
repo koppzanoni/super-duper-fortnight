@@ -105,3 +105,52 @@ def test_model_command_saves_camera(lua, ns):
     lua.globals().SlashCmdList.OBSIDIANUI("modelo 0.9 -0.2")
     assert ns.db.modelDistance == 0.9
     assert ns.db.modelHeight == -0.2
+
+
+# The window title shows the name the way the default character sheet does (with title).
+def test_inventory_title_uses_the_pvp_name(lua, ns):
+    boot(lua, ns, pre='function UnitPVPName() return "Agni, a Exploradora" end')
+    assert ns.Inventory.TitleText() == "Agni, a Exploradora"
+
+
+# Menu buttons stay lit and sunk while their window is open (Blizzard pushes the micro button).
+MICRO_PRE = """
+  SpellbookMicroButton = CreateFrame()
+  SpellbookMicroButton.SetPushed = function() end
+  SpellbookMicroButton.SetNormal = function() end
+  SpellbookMicroButton.GetButtonState = function() return "NORMAL" end
+"""
+
+
+def test_menu_button_active_while_its_window_is_open(lua, ns):
+    boot(lua, ns, pre=MICRO_PRE)
+    micro = lua.globals().SpellbookMicroButton
+    proxy = [b for b in ns.MenuPanels.buttons.values() if b.obMicro and lua.eval("rawequal")(b.obMicro, micro)][0]
+    assert proxy.obActive is False
+    micro.SetPushed(micro)
+    assert proxy.obActive is True
+    micro.SetNormal(micro)
+    assert proxy.obActive is False
+
+
+def test_character_and_bag_buttons_active_while_inventory_open(lua, ns):
+    boot(lua, ns)
+    inv = ns.Inventory.frame
+    inv.hooks.OnShow(inv)
+    actives = [b.obActive for b in ns.MenuPanels.buttons.values() if b.obInventory]
+    assert actives and all(a is True for a in actives)
+    inv.hooks.OnHide(inv)
+    assert all(b.obActive is False for b in ns.MenuPanels.buttons.values() if b.obInventory)
+
+
+# Minimap terrain only re-renders at its new size/place after a zoom change.
+def test_minimap_refreshes_zoom_after_layout(lua, ns):
+    boot(lua, ns, pre="""
+      ZOOMS = {}
+      Minimap = CreateFrame()
+      Minimap.GetZoom = function() return 2 end
+      Minimap.GetZoomLevels = function() return 6 end
+      Minimap.SetZoom = function(_, z) ZOOMS[#ZOOMS + 1] = z end
+    """)
+    zooms = list(lua.globals().ZOOMS.values())
+    assert len(zooms) >= 2 and zooms[-1] == 2 and zooms[-2] != 2

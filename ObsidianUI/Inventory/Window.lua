@@ -40,11 +40,22 @@ title:SetScript("OnDragStop", function()
 end)
 local titleText = title:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 titleText:SetAllPoints(title)
--- The character's name on the title plate.
+-- The character's full name (with title, like the default character sheet) on the plate;
+-- a smaller font when it does not fit.
 function Inventory.TitleText()
-  return UnitName("player") or "PERSONAGEM"
+  local name = UnitPVPName and UnitPVPName("player")
+  if type(name) ~= "string" or name == "" then name = UnitName("player") end
+  return name or "PERSONAGEM"
 end
-titleText:SetText(Inventory.TitleText())
+local function setTitle()
+  titleText:SetFontObject("GameFontNormalLarge")
+  titleText:SetText(Inventory.TitleText())
+  local textW, plateW = titleText:GetStringWidth(), title:GetWidth()
+  if type(textW) == "number" and type(plateW) == "number" and textW > plateW * 0.9 then
+    titleText:SetFontObject("GameFontNormal")
+  end
+end
+setTitle()
 titleText:SetTextColor(0.91, 0.77, 0.42)
 
 -- 3D model of the player, transparent background, drag to rotate, wheel to zoom.
@@ -268,6 +279,7 @@ function Inventory.Layout()
   end
   ns.Media.Apply(art, "inventory")
   rect(title, S.title)
+  setTitle()
   rect(model, S.model)
   for _, e in ipairs(equipLayout) do rect(e.b, { x = e.x, y = e.y, w = e.size, h = e.size }) end
   local cols, rows = S.gridCols, S.gridRows
@@ -303,8 +315,9 @@ function Inventory.Toggle()
 end
 
 ns.On("PLAYER_EQUIPMENT_CHANGED", function() if frame:IsShown() then updateEquipment(); refreshModel() end end)
-ns.On("PLAYER_LOGIN", function() titleText:SetText(Inventory.TitleText()) end)
-ns.On("UNIT_NAME_UPDATE", function(_, unit) if unit == "player" then titleText:SetText(Inventory.TitleText()) end end)
+ns.On("PLAYER_LOGIN", setTitle)
+ns.On("PLAYER_TITLE_CHANGED", setTitle)
+ns.On("UNIT_NAME_UPDATE", function(_, unit) if unit == "player" then setTitle() end end)
 ns.On("UNIT_MODEL_CHANGED", function(_, unit) if unit == "player" and frame:IsShown() then refreshModel() end end)
 for _, ev in ipairs({ "UNIT_STATS", "UNIT_ATTACK_POWER", "UNIT_RESISTANCES" }) do
   ns.On(ev, function(_, unit) if unit == "player" and frame:IsShown() then updateStats() end end)

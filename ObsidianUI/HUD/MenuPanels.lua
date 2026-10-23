@@ -35,21 +35,52 @@ local function iconOf(button)
   return icon
 end
 
--- Hover glow, and the icon sinks and dims while the button is held down.
+-- Active look while the button's window is open: icon slightly sunk, gold frame and glow.
+local function setActive(b, on)
+  b.obActive = on
+  b.obActiveArt:SetShown(on)
+  setInset(b.obIcon, b, on and INSET + 1 or INSET)
+end
+
+-- Hover glow; the icon sinks and dims while the button is held down.
 local function pressFeedback(b, icon)
-  b.obPress = true
+  b.obPress, b.obIcon, b.obActive, b.obInventory, b.obMicro = true, icon, false, false, false
   local glow = b:CreateTexture(nil, "HIGHLIGHT")
   glow:SetAllPoints(b)
   glow:SetColorTexture(1, 0.85, 0.5, 0.12)
+  local active = CreateFrame("Frame", nil, b)
+  active:SetAllPoints(b)
+  active:SetFrameLevel(b:GetFrameLevel() + 2)
+  local fill = active:CreateTexture(nil, "ARTWORK")
+  fill:SetAllPoints(active)
+  fill:SetColorTexture(1, 0.8, 0.4, 0.14)
+  local frame = active:CreateTexture(nil, "OVERLAY")
+  frame:SetAllPoints(active)
+  frame:SetTexture(M.aura_border.file)
+  frame:SetVertexColor(GOLD[1], GOLD[2], GOLD[3])
+  b.obActiveArt = active
+  active:Hide()
   b:HookScript("OnMouseDown", function()
     setInset(icon, b, INSET + 2)
     icon:SetAlpha(0.7)
   end)
   b:HookScript("OnMouseUp", function()
-    setInset(icon, b, INSET)
+    setInset(icon, b, b.obActive and INSET + 1 or INSET)
     icon:SetAlpha(1)
   end)
   MenuPanels.buttons[#MenuPanels.buttons + 1] = b
+end
+
+-- Mirror the micro button's pushed state: Blizzard pushes it while its window is open.
+local function followMicro(b, micro)
+  b.obMicro = micro
+  if type(micro.SetPushed) == "function" then
+    hooksecurefunc(micro, "SetPushed", function() setActive(b, true) end)
+  end
+  if type(micro.SetNormal) == "function" then
+    hooksecurefunc(micro, "SetNormal", function() setActive(b, false) end)
+  end
+  if type(micro.GetButtonState) == "function" then setActive(b, micro:GetButtonState() == "PUSHED") end
 end
 
 local function goldIcon(icon)
@@ -90,6 +121,7 @@ local function microButton(entry)
   setIcon(icon, entry, micro)
   tooltip(b, entry.label)
   pressFeedback(b, icon)
+  if micro then followMicro(b, micro) end
   return b
 end
 
@@ -122,6 +154,7 @@ local function realMicroButton(entry, x, y, w, h)
   end)
   micro:Show()
   pressFeedback(micro, icon)
+  followMicro(micro, micro)
 end
 
 -- Character: the player's portrait in a circle, like the default micro button.
@@ -138,6 +171,7 @@ local function characterButton(entry)
   b:SetScript("OnClick", toggleInventory)
   tooltip(b, entry.label)
   pressFeedback(b, icon)
+  b.obInventory = true
   return b
 end
 
@@ -154,6 +188,7 @@ local function bagButton(entry)
   end)
   tooltip(b, entry.label)
   pressFeedback(b, b.icon)
+  b.obInventory = true
   bagButtons[#bagButtons + 1] = b
   return b
 end
@@ -183,6 +218,18 @@ local function build()
     HUD.Place(b, ns.Layout.MirrorX(D.width, D.menuCols[4 - c], D.menuSlot.w), D.menuRows[r], D.menuSlot.w, D.menuSlot.h)
   end
   updateBagIcons()
+
+  -- Character and bag buttons are active while the inventory window is open.
+  local inv = ns.Inventory and ns.Inventory.frame
+  if inv then
+    local function follow(open)
+      for _, b in ipairs(MenuPanels.buttons) do
+        if b.obInventory then setActive(b, open) end
+      end
+    end
+    inv:HookScript("OnShow", function() follow(true) end)
+    inv:HookScript("OnHide", function() follow(false) end)
+  end
 end
 
 ns.On("PLAYER_LOGIN", function() ns.RunOutOfCombat(build) end)

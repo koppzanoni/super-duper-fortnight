@@ -97,3 +97,10 @@ def test_liquid_body_is_bright_inside_the_circle():
     c = (size - 1) / 2
     inside = np.sqrt((x - c) ** 2 + (y - c) ** 2) < c * 0.95
     assert img[..., 0][inside].min() >= 0.45 * 255
+
+
+# In-game: black triangles at the orb corners (the vignette was black outside the circle).
+def test_vignette_clear_outside_the_circle():
+    img = ex.vignette(128)
+    assert img.getpixel((0, 0))[3] == 0
+    assert img.getpixel((127, 127))[3] == 0

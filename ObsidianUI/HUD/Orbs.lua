@@ -46,6 +46,7 @@ local function makeOrb(x)
   local shade = bar:CreateTexture(nil, "OVERLAY")
   shade:SetAllPoints(well)
   shade:SetTexture(M.vignette.file)
+  shade:AddMaskTexture(mask)
 
   local textHolder = CreateFrame("Frame", nil, HUD.over)
   HUD.Place(textHolder, x, D.orb.y, D.orb.w, D.orb.h)

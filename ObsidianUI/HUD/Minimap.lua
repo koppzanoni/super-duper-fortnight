@@ -30,6 +30,14 @@ end
 
 local function updateZone() zone:SetText(GetMinimapZoneText() or "") end
 
+-- The terrain only re-renders at a new size/place after a zoom change: zoom away and back.
+local function refreshZoom()
+  local z = Minimap:GetZoom()
+  if type(z) ~= "number" then return end
+  Minimap:SetZoom(z > 0 and z - 1 or z + 1)
+  Minimap:SetZoom(z)
+end
+
 local function layout()
   local _, H = UIParent:GetSize()
   local w = WIDTH * H
@@ -49,6 +57,8 @@ local function layout()
     map:SetPoint("TOPLEFT", container, "TOPLEFT", x0, y0)
     map:SetPoint("BOTTOMRIGHT", container, "TOPLEFT", x1, y1)
   end)
+  refreshZoom()
+  C_Timer.After(0, refreshZoom)
   Minimap:SetMaskTexture(ns.MediaManifest.mask_circle.file)
   Minimap:SetFrameLevel(container:GetFrameLevel() + 1)
   ringFrame:SetFrameLevel(Minimap:GetFrameLevel() + 5)

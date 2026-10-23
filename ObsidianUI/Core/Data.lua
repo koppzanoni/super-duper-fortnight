@@ -31,7 +31,8 @@ Data.FOCUS = { w = 1252, h = 486, portrait = { x = 62, y = 60, w = 358, h = 364 
   name = { x = 492, y = 116, w = 720, h = 72 }, health = { x = 500, y = 210, w = 712, h = 68 },
   power = { x = 500, y = 296, w = 700, h = 38 } }
 Data.CASTBAR = { w = 1320, h = 176, icon = { x = 56, y = 40, w = 90, h = 88 }, bar = { x = 196, y = 56, w = 1058, h = 62 } }
-Data.MINIMAP = { w = 1008, h = 1012, map = { x = 86, y = 88, w = 837, h = 836 },
+-- Ring opening is x 85-922, y 87-925; the map tucks 3px under the ring.
+Data.MINIMAP = { w = 1008, h = 1012, map = { x = 82, y = 84, w = 844, h = 844 },
   plate = { x = 350, y = 10, w = 310, h = 66 },
   sockets = { { 180, 824 }, { 348, 932 }, { 660, 932 }, { 826, 824 } }, socketSize = 56 }
 

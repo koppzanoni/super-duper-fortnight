@@ -139,6 +139,7 @@ def vignette(size=256):
     c = (size - 1) / 2
     d = np.sqrt((x - c) ** 2 + (y - c) ** 2) / c
     alpha = np.clip((d - 0.84) / 0.16, 0, 1) ** 1.4 * 200
+    alpha[d > 1] = 0  # outside the circle: clear (the square's corners showed as black triangles)
     a = np.zeros((size, size, 4), np.uint8)
     a[..., 3] = alpha.astype(np.uint8)
     return Image.fromarray(a, "RGBA")
