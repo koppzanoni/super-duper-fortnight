@@ -139,6 +139,8 @@ def draw_text(canvas, r, region, rect):
     if not text:
         return
     size, face, color = FONTS.get(region.font or "", (12, "sans", (1, 1, 1)))
+    if region.fsize:
+        size = int(region.fsize)
     if region.tcolor:
         color = tuple(region.tcolor.values())[:3]
     f = font(face, size)
@@ -146,6 +148,12 @@ def draw_text(canvas, r, region, rect):
     draw = ImageDraw.Draw(canvas)
     bw, bh = draw.textbbox((0, 0), text, font=f)[2:]
     l, b, w, h = rect
+    # the game cuts a text that does not wrap and is wider than its region, with an ellipsis
+    if region.nowrap and w > 1 and bw > w:
+        while text and draw.textbbox((0, 0), text + "...", font=f)[2] > w:
+            text = text[:-1]
+        text = text.rstrip() + "..."
+        bw, bh = draw.textbbox((0, 0), text, font=f)[2:]
     top = H - (b + h)
     if w > 1 and h > 1:
         x = l + (w - bw) / 2 if region.justify not in ("LEFT", "RIGHT") else (l + 2 if region.justify == "LEFT" else l + w - bw - 2)

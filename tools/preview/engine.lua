@@ -193,13 +193,16 @@ local FONT_PX = { GameFontNormalLarge = 17, GameFontNormal = 14, GameFontNormalS
   GameFontHighlightSmall = 12, NumberFontNormalSmall = 11, NumberFontNormal = 13 }
 local function autosize(self)
   if self.fixedW then return end
-  local px = FONT_PX[self.font] or 12
+  local px = self.fsize or FONT_PX[self.font] or 12
   self.w, self.h = #(self.text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")) * px * 0.56, px + 2
 end
 function Region:SetText(t) self.text = t and tostring(t) or ""; autosize(self) end
 function Region:SetFormattedText(fmt, ...) self.text = string.format(fmt, ...); autosize(self) end
 function Region:SetTextColor(r, g, b) self.tcolor = { r, g, b } end
 function Region:SetJustifyH(j) self.justify = j end
+function Region:SetFont(path, size, flags) self.fsize = size; autosize(self) end
+function Region:GetFont() return "PREVIEW", self.fsize or FONT_PX[self.font] or 12, "" end
+function Region:SetWordWrap(v) self.nowrap = not v end
 
 -- Status bars -----------------------------------------------------------------------------------
 function Region:SetMinMaxValues(a, b) self.min, self.max = a, b end
