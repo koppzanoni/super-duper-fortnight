@@ -26,10 +26,11 @@ Data.VBAR2 = { w = 233, h = 944, cols = { 42, 143 }, slot = { w = 61, h = 56 }, 
 Data.TARGET = { w = 1298, h = 458, portrait = { x = 100, y = 64, w = 312, h = 318 },
   name = { x = 490, y = 105, w = 580, h = 80 }, health = { x = 456, y = 202, w = 784, h = 55 },
   power = { x = 461, y = 272, w = 543, h = 24 } }
-Data.UNIT_SMALL = { w = 1274, h = 494, portrait = { x = 67, y = 66, w = 351, h = 360 },
+-- Ring openings: small x 66-417 y 66-425, focus x 60-419 y 58-425; portraits tuck 4px under.
+Data.UNIT_SMALL = { w = 1274, h = 494, portrait = { x = 62, y = 62, w = 360, h = 368 },
   name = { x = 495, y = 108, w = 735, h = 66 }, health = { x = 502, y = 208, w = 724, h = 72 },
   power = { x = 507, y = 320, w = 708, h = 40 } }
-Data.FOCUS = { w = 1252, h = 486, portrait = { x = 62, y = 60, w = 358, h = 364 },
+Data.FOCUS = { w = 1252, h = 486, portrait = { x = 56, y = 54, w = 368, h = 376 },
   name = { x = 492, y = 116, w = 720, h = 72 }, health = { x = 500, y = 210, w = 712, h = 68 },
   power = { x = 500, y = 296, w = 700, h = 38 } }
 Data.CASTBAR = { w = 1320, h = 176, icon = { x = 56, y = 40, w = 90, h = 88 }, bar = { x = 196, y = 56, w = 1058, h = 62 } }
@@ -168,7 +169,8 @@ Data.MENU_RIGHT = {
   { id = "bag2", label = "Bolsa 2", bag = 2 },
   { id = "bag3", label = "Bolsa 3", bag = 3 },
   { id = "bag4", label = "Bolsa 4", bag = 4 },
-  { id = "reagent", label = "Bolsa de Reagentes", bag = 5 },
+  -- Same 5 bags as the inventory footer (no reagent bags in this game's content).
+  { id = "journal", label = "Guia de Aventura", candidates = { "EJMicroButton" } },
   -- No social micro button on this client (the chat's social button has no plain icon).
   { id = "social", label = "Social", candidates = { "FriendsMicroButton", "QuickJoinToastButton" },
     icon = "Interface\\FriendsFrame\\UI-Toast-FriendOnlineIcon" },

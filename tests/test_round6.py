@@ -243,3 +243,22 @@ def test_character_key_toggles_once_per_press(lua, ns):
     lua.globals().STUB_TIME = 200
     b.handlers.OnClick(b, "LeftButton", True)
     assert toggles["n"] == 2
+
+
+# In-game: the small frames' portraits left a dark band in their ring too.
+def test_small_and_focus_portraits_fill_their_rings():
+    rt = new_runtime()
+    D = load_addon_file(rt, "Core/Data.lua", rt.table()).Data
+    for spec, hole in ((D.UNIT_SMALL, (66, 417, 66, 425)), (D.FOCUS, (60, 419, 58, 425))):
+        p = spec.portrait
+        assert p.x <= hole[0] - 3 and p.x + p.w >= hole[1] + 4
+        assert p.y <= hole[2] - 3 and p.y + p.h >= hole[3] + 4
+
+
+# The HUD bag panel shows the same bags as the inventory footer (no reagent bag slot).
+def test_hud_bag_slots_match_the_inventory_footer():
+    rt = new_runtime()
+    D = load_addon_file(rt, "Core/Data.lua", rt.table()).Data
+    bags = [D.MENU_RIGHT[i].bag for i in range(1, len(D.MENU_RIGHT) + 1) if D.MENU_RIGHT[i].bag is not None]
+    assert bags == [0, 1, 2, 3, 4]
+    assert len(D.INV.bags) == 5
