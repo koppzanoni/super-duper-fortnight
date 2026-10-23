@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image
 
 import inventory_art
+import vbar_art
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ART = ROOT / "art" / "processed"
@@ -29,8 +30,6 @@ ART_SOURCES = {
     "gem_on": ("gem_lit.png", None, 128),
     "gem_off": ("gem_socket.png", None, 128),
     "minimap_ring": ("minimap_thin.png", None, None),
-    "vbar1": ("vertical_bar.png", None, None),
-    "vbar2": ("vertical_bar_double.png", None, None),
     "inventory": ("inventory.png", None, None),
     "slot": ("button_slot.png", None, 128),
 }
@@ -235,6 +234,9 @@ def export_all(out_dir=MEDIA):
             for piece, piece_img in inventory_art.pieces(img, original).items():
                 save(piece, piece_img)
         save(name, defringe(fit(img, max_side)))
+    hud = Image.open(ART / "hud_bottom.png").convert("RGBA")
+    save("vbar1", vbar_art.build(hud, 1))
+    save("vbar2", vbar_art.build(hud, 2))
     for name, fn in PROCEDURAL.items():
         save(name, fn())
 

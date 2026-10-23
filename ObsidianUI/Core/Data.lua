@@ -16,9 +16,10 @@ Data.HUD = {
 }
 
 -- Vertical bars. Spec 4.5.
-Data.VBAR1 = { w = 156, h = 1279, cols = { 38 }, slot = { w = 78, h = 75 },
-  rows = { 72, 168, 265, 361, 458, 554, 651, 748, 844, 941, 1037, 1133 } }
-Data.VBAR2 = { w = 256, h = 1279, cols = { 38, 138 }, slot = { w = 78, h = 75 }, rows = Data.VBAR1.rows }
+-- Built from the main bar's art by tools/vbar_art.py (rotated): same frame, same slots.
+Data.VBAR1 = { w = 134, h = 944, cols = { 44 }, slot = { w = 61, h = 56 },
+  rows = { 48, 120, 192, 264, 336, 408, 480, 552, 624, 696, 768, 840 } }
+Data.VBAR2 = { w = 233, h = 944, cols = { 42, 143 }, slot = { w = 61, h = 56 }, rows = Data.VBAR1.rows }
 
 -- Unit frames. Spec 4.6 and 7.1.
 -- Portrait ring opening is x 104-407, y 68-377; the portrait tucks 4px under the ring.
