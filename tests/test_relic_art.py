@@ -54,3 +54,13 @@ def test_menu_buttons_sit_on_dark_slot_recesses():
             for y in (143, 202, 262):
                 inner = a[y + 8:y + 33, x + 8:x + 27, :3]
                 assert inner.max(axis=2).mean() < 45, (n, x, y)
+
+
+# In the preview the glass shine and the liquid showed through the claws, with dark speckles:
+# the claws over the orb are solid, only their outline is soft.
+def test_claws_overlay_is_solid():
+    from scipy import ndimage
+    al = np.asarray(relic_art.overlay("claws"))[..., 3].astype(int)
+    inner = ndimage.binary_erosion(al > 0, iterations=4)  # off the soft outline
+    assert inner.sum() > 3000  # the four claws
+    assert (al[inner] > 240).all()

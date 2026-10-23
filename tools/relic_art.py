@@ -38,12 +38,18 @@ def _opening():
     return np.hypot(xs - cap_art.CX, ys - cap_art.CY) < cap_art.OPENING
 
 
-def _void(a):
-    """Inside the claws' opening Meshy painted a dark purple void: how much a pixel is that void
-    (0..1). The claws are neutral grey; the void is dark with red and blue well above green."""
-    rgb = a[..., :3].astype(np.float32)
+def _claws(a):
+    """Inside the claws' opening Meshy painted a dark purple void around the claws. The claws are
+    neutral grey: the solid shapes of neutral pixels (no specks, holes closed), softly outlined."""
+    from scipy import ndimage
+    rgb = a[..., :3]
     tint = np.minimum(rgb[..., 0], rgb[..., 2]) - rgb[..., 1]
-    return np.clip((tint - 3) / 8, 0, 1) * (rgb.max(axis=2) < 70)
+    solid = (tint <= 2) & (rgb.max(axis=2) >= 10) & _opening()
+    labels, n = ndimage.label(solid)
+    sizes = ndimage.sum(solid, labels, range(1, n + 1))
+    keep = np.isin(labels, 1 + np.nonzero(sizes > 300)[0])
+    keep = ndimage.binary_fill_holes(ndimage.binary_closing(keep, iterations=3))
+    return ndimage.gaussian_filter(keep.astype(np.float32), 0.8)
 
 
 def frame(name):
@@ -55,8 +61,10 @@ def frame(name):
 
 def overlay(name):
     a = np.asarray(Image.open(processed(name)).convert("RGBA")).astype(np.float32)
+    if name == "claws":
+        a[..., 3] = 255 * _claws(a)
     # the dragon's wing membrane is see-through over magenta: its keyed alpha is kept as it is
-    a[..., 3] *= (1 - _void(a)) * _opening()
+    a[..., 3] *= _opening()
     a[a[..., 3] < 8] = 0
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
 
