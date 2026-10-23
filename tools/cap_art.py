@@ -5,7 +5,8 @@ The right half of the original orb ring (with its top and bottom crests, which h
 and the original block of the 9 menu slots are pasted back over the Meshy image, so the orb and
 the menu buttons stay exactly where the addon places them. The orb opening is always cut out, and
 the two bottom corner slots (whose edge the old sculpture covered) are copies of the clean
-bottom middle slot, so no wing lies over a slot.
+bottom middle slot, so no wing lies over a slot. Holes left in the art (the tracery between the
+ring and the panel) get dark stone behind them, so the game never shows through.
 Used by export_textures.py for the "hud_cap" texture.
 
 Usage: python tools/cap_art.py   (keys the Meshy image into art/processed/cap_wing.png)
@@ -32,6 +33,8 @@ EDGE_MARGIN = 2  # empty columns Meshy left at the screen edge
 # The bottom middle slot with its bronze frame (x0, y0, x1, y1), copied one slot pitch left and right.
 CLEAN_SLOT = (478, 254, 535, 310)
 CLEAN_COPIES = (-59, 59)
+# Stone of the wing's backing (x0, y0, x1, y1), darkened, put behind the holes.
+HOLE_STONE, HOLE_SHADE = (8, 150, 60, 250), 0.55
 
 
 def keep_original_mask():
@@ -52,6 +55,28 @@ def prepare(meshy=MESHY, out=WING):
     Image.fromarray(a, "RGBA").save(out)
 
 
+def fill_holes(a):
+    """Dark stone behind every enclosed see-through hole except the orb opening."""
+    from scipy import ndimage
+    labels, n = ndimage.label(a[..., 3] < 128)
+    border = set(np.unique(np.concatenate([labels[0], labels[-1], labels[:, 0], labels[:, -1]])))
+    holes = np.isin(labels, [i for i in range(1, n + 1) if i not in border and i != labels[CY, CX]])
+    holes = ndimage.binary_dilation(holes, iterations=2) & (a[..., 3] < 255) & ~(labels == labels[CY, CX])
+    x0, y0, x1, y1 = HOLE_STONE
+    patch = a[y0:y1, x0:x1, :3] * HOLE_SHADE
+    ys, xs = np.nonzero(holes)
+    back = patch[ys % patch.shape[0], xs % patch.shape[1]]
+    k = a[ys, xs, 3:] / 255
+    rgb = a[ys, xs, :3] * k + back * (1 - k)
+    # the soft edges of the old art still carry magenta from the chroma key: remove it
+    spill = np.clip(np.minimum(rgb[:, 0], rgb[:, 2]) - rgb[:, 1], 0, None)
+    rgb[:, 0] -= spill
+    rgb[:, 2] -= spill
+    a[ys, xs, :3] = rgb
+    a[ys, xs, 3] = 255
+    return a
+
+
 def build(cap, wing_path=WING):
     w = np.asarray(Image.open(wing_path).convert("RGBA")).astype(np.float32)
     o = np.asarray(cap.convert("RGBA")).astype(np.float32)
@@ -61,6 +86,7 @@ def build(cap, wing_path=WING):
     x0, y0, x1, y1 = CLEAN_SLOT
     for dx in CLEAN_COPIES:
         out[y0:y1, x0 + dx:x1 + dx] = out[y0:y1, x0:x1]
+    out = fill_holes(out)
     return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), "RGBA")
 
 

@@ -42,6 +42,7 @@ def test_menu_slots_and_right_ring_are_untouched():
     assert same.all()
     ys, xs = np.mgrid[0:381, 0:656]
     ring = (np.hypot(xs - cap_art.CX, ys - cap_art.CY) <= cap_art.RING) & (xs >= cap_art.CX)
+    ring &= o[..., 3] == 255  # holes in the tracery get stone behind them (see below)
     assert (a[ring] == o[ring]).all()
 
 
@@ -75,3 +76,16 @@ def test_bottom_corner_slots_are_clean():
     middle = a[y0:y1, x0:x1]
     for dx in (-59, 59):
         assert (a[y0:y1, x0 + dx:x1 + dx] == middle).all()
+
+
+# In game the background showed through the holes of the tracery between the ring and the panel:
+# apart from the orb opening, no enclosed see-through hole is left in the art.
+def test_no_see_through_holes_besides_the_orb():
+    from scipy import ndimage
+    a = built()
+    clear = a[..., 3] < 128
+    labels, n = ndimage.label(clear)
+    border = set(np.unique(np.concatenate([labels[0], labels[-1], labels[:, 0], labels[:, -1]])))
+    orb = labels[cap_art.CY, cap_art.CX]
+    holes = [i for i in range(1, n + 1) if i not in border and i != orb]
+    assert holes == [], [int((labels == i).sum()) for i in holes]
