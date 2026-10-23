@@ -33,6 +33,11 @@ end
 local capL, capR = newTex(), newTex()
 local outerL, innerL, outerR, innerR = newTex(), newTex(), newTex(), newTex()
 local slices = { left = {}, right = {} }
+-- Between a cap and the screen edge: the plain stone just inside the panel's trim (cap art
+-- x 10..15, the same from top to bottom) stretched out, and the bronze trim (x 0..10) at the
+-- screen edge.
+local FILL_TRIM, FILL_STONE = 10, 5
+HUD.capFill = { left = {}, right = {} }
 
 -- Bar art pieces, as fractions of the half bar texture: outer end | one slot column | inner.
 local SPLIT = (ns.Layout.BAR_SPLIT - (D.half - BAR_W)) / BAR_W
@@ -101,6 +106,28 @@ function HUD.Layout()
   put(capR, W / 2 + barW + HUD.extraW, capW)
   ns.Media.Apply(capL, "hud_cap")
   ns.Media.Apply(capR, "hud_cap", true)
+  for _, side in ipairs({ "left", "right" }) do
+    local list, n = HUD.capFill[side], 0
+    local function piece(x, w, x0, x1)
+      n = n + 1
+      local t = list[n]
+      if not t then
+        t = HUD.art:CreateTexture(nil, "ARTWORK", nil, 1)
+        list[n] = t
+      end
+      local mirror = side == "right"
+      put(t, mirror and W - x - w or x, w)
+      t.obLeft, t.obWidth = mirror and W - x - w or x, w
+      ns.Media.ApplyRange(t, "hud_cap", mirror, x0 / CAP_W, x1 / CAP_W)
+      t:Show()
+    end
+    if HUD.capX > 0 then
+      piece(0, FILL_TRIM * u, 0, FILL_TRIM)
+      -- the stone also covers the cap's own trim, which would sit in the middle of it
+      piece(FILL_TRIM * u, HUD.capX, FILL_TRIM, FILL_TRIM + FILL_STONE)
+    end
+    for k = n + 1, #list do list[k]:Hide() end
+  end
 
   put(innerL, W / 2 - innerW, innerW)
   put(outerL, W / 2 - innerW - HUD.extraW - outerW, outerW)
