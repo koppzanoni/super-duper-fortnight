@@ -299,3 +299,29 @@ def test_castbar_text_centered(lua, ns):
       PlayerCastingBarFrame.Text.SetPoint = function(_, p) TEXT_POINT = p end
     """)
     assert lua.globals().TEXT_POINT == "CENTER"
+
+
+# In-game: Blizzard's SetLook("CLASSIC") shrank the bar to 11 px under the top of our groove and
+# moved the spell name below it. Our size and centered text come back after it.
+def test_castbar_keeps_its_size_and_text_after_blizzard_set_look(lua, ns):
+    boot(lua, ns, pre="""
+      TEXT_POINT, BAR_W, BAR_H = nil, nil, nil
+      local f = CreateFrame()
+      PlayerCastingBarFrame = f
+      f.Text = setmetatable({}, { __index = function() return function() end end })
+      f.Text.SetPoint = function(_, p) TEXT_POINT = p end
+      f.SetSize = function(_, w, h) BAR_W, BAR_H = w, h end
+      f.SetWidth = function(_, w) BAR_W = w end
+      f.SetHeight = function(_, h) BAR_H = h end
+      function f:SetLook(look)
+        self:SetWidth(208); self:SetHeight(11)
+        self.Text:ClearAllPoints(); self.Text:SetPoint("TOP", 0, -10)
+      end
+    """)
+    g = lua.globals()
+    ours = (g.BAR_W, g.BAR_H)
+    assert ours[1] > 11
+    f = g.PlayerCastingBarFrame
+    f.SetLook(f, "CLASSIC")
+    assert (g.BAR_W, g.BAR_H) == ours
+    assert g.TEXT_POINT == "CENTER"

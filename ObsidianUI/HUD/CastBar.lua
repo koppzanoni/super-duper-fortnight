@@ -5,6 +5,7 @@ local _, ns = ...
 local M = ns.MediaManifest
 local S = ns.Data.CASTBAR
 local art
+local barW, barH
 local WIDTH = 0.47 -- of the screen height
 ns.CastBar = {}
 
@@ -33,6 +34,17 @@ local function reskin(bar)
 end
 ns.CastBar.Reskin = reskin
 
+-- The StatusBar fills exactly our groove, with the spell name centered on it.
+local function fit(bar)
+  if not barW then return end
+  bar:SetSize(barW, barH)
+  if bar.Text then
+    bar.Text:ClearAllPoints()
+    bar.Text:SetPoint("CENTER", bar, "CENTER", 0, 0)
+    bar.Text:SetJustifyH("CENTER")
+  end
+end
+
 local function layout()
   local bar = castbar()
   if not bar then return end
@@ -46,6 +58,8 @@ local function layout()
     t:SetAllPoints(art)
     ns.Media.Apply(t, "castbar")
     bar:HookScript("OnEvent", reskin)
+    -- Blizzard's SetLook (PlayerFrame) resizes the bar to 11 px and puts the text under it.
+    if bar.SetLook then hooksecurefunc(bar, "SetLook", fit) end
     bar:HookScript("OnShow", reskin)
     -- The icon sits in our frame's socket: Blizzard hides it on some casts (after an
     -- interrupt, for one), so it is shown again right away.
@@ -61,7 +75,8 @@ local function layout()
     b:ClearAllPoints()
     b:SetPoint("BOTTOMLEFT", UIParent, "BOTTOM", x, y)
   end)
-  bar:SetSize(S.bar.w * u, S.bar.h * u)
+  barW, barH = S.bar.w * u, S.bar.h * u
+  fit(bar)
   art:ClearAllPoints()
   art:SetPoint("TOPLEFT", bar, "TOPLEFT", -S.bar.x * u, S.bar.y * u)
   art:SetSize(w, S.h * u)
@@ -71,11 +86,6 @@ local function layout()
     bar.Icon:SetSize(S.icon.w * u, S.icon.h * u)
     bar.Icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     bar.Icon:Show()
-  end
-  if bar.Text then
-    bar.Text:ClearAllPoints()
-    bar.Text:SetPoint("CENTER", bar, "CENTER", 0, 0)
-    bar.Text:SetJustifyH("CENTER")
   end
   reskin(bar)
 end
