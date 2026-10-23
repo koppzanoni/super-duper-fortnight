@@ -95,6 +95,7 @@ local function layoutConnectors(side, x0, stretch, u, h)
     x = x + w
   end
   for i = #pieces + 1, #connectors[side] do connectors[side][i]:Hide() end
+  return #pieces
 end
 
 function HUD.Layout()
@@ -145,8 +146,11 @@ function HUD.Layout()
     for k = HUD.extra + 1, #slices[side] do slices[side][k]:Hide() end
   end
 
-  layoutConnectors("left", capW, stretch - HUD.extraW, u, h)
-  layoutConnectors("right", W / 2 + barW + HUD.extraW, stretch - HUD.extraW, u, h)
+  -- The stone connectors between the side caps and the bar are optional (setting "connectBar"):
+  -- without them the bar floats free in the middle.
+  local gap = (ns.db and ns.db.connectBar) and (stretch - HUD.extraW) or 0
+  HUD.connectorsShown = layoutConnectors("left", capW, gap, u, h)
+    + layoutConnectors("right", W / 2 + barW + HUD.extraW, gap, u, h)
 
   for _, p in ipairs(placed) do applyPlace(p) end
   for _, fn in ipairs(HUD.onResize) do fn(u, h, W) end

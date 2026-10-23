@@ -167,3 +167,52 @@ def test_button_text_and_icon_scale_with_the_button(lua, ns):
     assert b.icon.w == 26 and b.icon.h == 26          # square, inside the slot
     b.hooks.OnSizeChanged(b, 56, 61)
     assert b.HotKey.size >= 14
+
+
+# In-game: Blizzard's template keeps fixed-size highlight/pushed/checked/cooldown pieces and a
+# mask that crops the icon; on our smaller buttons they were offset and bigger than the slot.
+PIECES_PRE = """
+  FIT = {}
+  REMOVED_MASK = 0
+  local cf = CreateFrame
+  local function piece(name)
+    local t = setmetatable({}, { __index = function() return function() end end })
+    t.SetAllPoints = function(_, target) FIT[name] = target end
+    return t
+  end
+  function CreateFrame(...)
+    local f = cf(...)
+    f.icon = piece("icon")
+    f.icon.RemoveMaskTexture = function() REMOVED_MASK = REMOVED_MASK + 1 end
+    f.IconMask = piece("mask")
+    f.cooldown = piece("cooldown")
+    f.Flash = piece("flash")
+    local hl, pu, ch = piece("highlight"), piece("pushed"), piece("checked")
+    f.GetHighlightTexture = function() return hl end
+    f.GetPushedTexture = function() return pu end
+    f.GetCheckedTexture = function() return ch end
+    return f
+  end
+"""
+
+
+def test_template_pieces_fit_the_icon(lua, ns):
+    boot(lua, ns, pre=PIECES_PRE)
+    g = lua.globals()
+    b = ns.ActionBars.buttons[1]
+    same = lua.eval("rawequal")
+    for name in ("highlight", "pushed", "checked", "cooldown", "flash"):
+        assert g.FIT[name] is not None, name
+    assert g.REMOVED_MASK >= 1
+
+
+# The grey stone connectors between the side caps and the bar are optional (off by default).
+def test_connectors_off_by_default(lua, ns):
+    boot(lua, ns, db={"scale": 0.7})
+    assert ns.db.connectBar is False
+    assert ns.HUD.connectorsShown == 0
+
+
+def test_connectors_can_be_turned_on(lua, ns):
+    boot(lua, ns, db={"scale": 0.7, "connectBar": True})
+    assert ns.HUD.connectorsShown > 0

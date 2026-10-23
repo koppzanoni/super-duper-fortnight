@@ -35,6 +35,21 @@ local function skin(button)
     hotkey:SetPoint("TOPRIGHT", -2, -2)
     hotkey:SetTextColor(0.91, 0.86, 0.75)
   end
+  -- Blizzard's template pieces have fixed sizes and offsets for its own 45px buttons, and a mask
+  -- that crops the icon: on our buttons they were offset and bigger than the slot. Fit them all
+  -- to the icon.
+  if icon then
+    if button.IconMask and icon.RemoveMaskTexture then icon:RemoveMaskTexture(button.IconMask) end
+    local pieces = { button:GetHighlightTexture() or false, button:GetPushedTexture() or false,
+      button.GetCheckedTexture and button:GetCheckedTexture() or false, button.cooldown or _G[name .. "Cooldown"] or false,
+      button.Flash or _G[name .. "Flash"] or false, button.NewActionTexture or false, button.SpellHighlightTexture or false }
+    for _, region in ipairs(pieces) do
+      if region then
+        region:ClearAllPoints()
+        region:SetAllPoints(icon)
+      end
+    end
+  end
   local count = button.Count or _G[name .. "Count"]
   local macroName = button.Name or _G[name .. "Name"]
   if macroName then macroName:SetAlpha(0) end
