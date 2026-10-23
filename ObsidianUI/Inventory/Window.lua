@@ -357,6 +357,8 @@ function Inventory.Layout()
     h = rows[#rows] + S.gridSlot - rows[1] })
   layoutWing()
   if Inventory.onLayout then Inventory.onLayout() end
+  -- Resized while open (size setting): the stat rows are placed by updateStats.
+  if frame:IsShown() then updateStats() end
 end
 
 -- The item buttons make the window protected on clients where their template is protected:

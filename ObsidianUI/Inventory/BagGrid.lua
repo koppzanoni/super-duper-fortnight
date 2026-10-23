@@ -335,6 +335,8 @@ Inventory.onLayout = function()
   for i, b in ipairs(footerBags) do place(b, S.bags[i], S.bagY, S.bagW, S.bagH) end
   place(gold, S.gold.x, S.gold.y, S.gold.w, S.gold.h)
   placeScrollBar()
+  -- Item buttons follow the new size right away (they were only placed on open).
+  scheduleRelayout()
 end
 Inventory.onOpen = function()
   setTab(activeTab)

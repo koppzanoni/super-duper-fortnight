@@ -115,3 +115,26 @@ def test_hovering_a_stat_shows_the_blizzard_stat_tooltip(lua, ns):
     force.hover.handlers.OnEnter(force.hover)
     g = lua.globals()
     assert g.SET_STAT == 1 and g.SHOWN == "Espírito 67"
+
+
+# In game, changing the inventory size with the window open resized the frame but left the
+# bag items and the stat rows where they were until the window was reopened.
+def test_resizing_an_open_inventory_relays_out_items_and_stats(lua, ns):
+    boot(lua, ns)
+    api = lua.execute(API)
+    ns.Stats.GameAPI = lambda: api
+    ns.Inventory.Open()
+    calls = {"grid": 0, "wing": 0}
+    build, place = ns.GridModel.Build, ns.Inventory.PlaceInWing
+    def counting_build(*a):
+        calls["grid"] += 1
+        return build(*a)
+    def counting_place(*a):
+        calls["wing"] += 1
+        return place(*a)
+    ns.GridModel.Build = counting_build
+    ns.Inventory.PlaceInWing = counting_place
+    ns.db.invScale = 1.2
+    ns.Inventory.Layout()
+    assert calls["grid"] >= 1
+    assert calls["wing"] > 10  # every stat row, not only the title and buttons
