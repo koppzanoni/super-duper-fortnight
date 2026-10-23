@@ -288,3 +288,16 @@ def test_empty_equipment_slots_show_their_placeholder(lua, ns):
     ns.Inventory.Open()
     icons = [b.icon for b in ns.Inventory.slotButtons.values()]
     assert icons and all(str(i.file).startswith("EMPTY:") and i.shown for i in icons)
+
+
+def test_hovering_an_empty_equipment_slot_names_it(lua, ns):
+    boot(lua, ns, pre="""
+      TIP = nil
+      RANGEDSLOT = "Relic"
+      GameTooltip = setmetatable({}, { __index = function() return function() end end })
+      GameTooltip.SetInventoryItem = function() return false end
+      GameTooltip.SetText = function(_, t) TIP = t end
+    """)
+    ranged = [b for b in ns.Inventory.slotButtons.values() if b.slotName == "RangedSlot"][0]
+    ranged.handlers.OnEnter(ranged)
+    assert lua.globals().TIP == "Relic"

@@ -101,7 +101,7 @@ local function slotButton(slotName)
   local ok, slotID, emptyTexture = pcall(GetInventorySlotInfo, slotName)
   if not ok or not slotID then return nil end
   local b = CreateFrame("Button", nil, frame)
-  b.slotID, b.emptyTexture = slotID, emptyTexture
+  b.slotID, b.slotName, b.emptyTexture = slotID, slotName, emptyTexture
   b.icon = b:CreateTexture(nil, "ARTWORK")
   b.icon:SetAllPoints(b)
   b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
