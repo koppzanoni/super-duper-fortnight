@@ -27,9 +27,9 @@ Data.VBAR2 = { w = 138, h = 935, cols = { 4, 78 }, slot = { w = 56, h = 59 }, ro
 Data.UNIT = { w = 530, h = 177, portrait = { x = 47, y = 17, w = 142, h = 142 },
   name = { x = 216, y = 32, w = 296, h = 36 }, health = { x = 214, y = 82, w = 302, h = 30 },
   power = { x = 214, y = 126, w = 302, h = 22 } }
--- Player cast bar in the unit frame style (tools/unit_art.py castbar): round icon socket x 74-266
--- y 26-220 (the icon sits just inside it, masked round), thin groove x 300-1254 y 86-167.
-Data.CASTBAR = { w = 1270, h = 248, icon = { x = 76, y = 28, w = 188, h = 190 }, bar = { x = 300, y = 86, w = 954, h = 81 } }
+-- Player cast bar in the unit frame style (tools/unit_art.py castbar): round icon socket x 48-173
+-- y 17-143 (the icon sits just inside it, masked round), thin groove x 195-1149 y 43-124.
+Data.CASTBAR = { w = 1165, h = 161, icon = { x = 50, y = 19, w = 121, h = 122 }, bar = { x = 195, y = 43, w = 954, h = 81 } }
 -- Ring opening is x 85-922, y 87-925; the map tucks 3px under the ring.
 Data.MINIMAP = { w = 1008, h = 1012, map = { x = 82, y = 84, w = 844, h = 844 },
   plate = { x = 350, y = 10, w = 310, h = 66 },

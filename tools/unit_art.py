@@ -83,8 +83,11 @@ def build(meshy=MESHY):
 # the uniform middle rows of the bar (MIDDLE) are squeezed to MIDDLE_TO rows and the bar is
 # centered on the socket. The socket's plate pieces sticking out above and below the thin bar are
 # cut off outside the ring (center RING_C, outer radius RING_R).
+# Then the socket (x < SPLIT) is scaled by RING_SCALE (the icon was too big next to the bar), and
+# the empty rows are trimmed.
 SPLIT, MIDDLE, MIDDLE_TO = 300, (70, 180), 25
 RING_C, RING_R = (170, 123), 122
+RING_SCALE = 0.65
 
 
 def castbar_open():
@@ -101,7 +104,14 @@ def castbar_open():
     ys, xs = np.mgrid[0:a.shape[0], 0:a.shape[1]]
     outside = (xs < SPLIT) & (xs > RING_C[0]) & (np.hypot(xs - RING_C[0], ys - RING_C[1]) > RING_R)
     out[outside & ((ys < top + 30) | (ys >= top + thin.shape[0] - 30))] = 0
-    return Image.fromarray(out, "RGBA")
+    socket = Image.fromarray(out[:, :SPLIT])
+    sw, sh = round(socket.width * RING_SCALE), round(socket.height * RING_SCALE)
+    socket = socket.resize((sw, sh), Image.LANCZOS)
+    bar = Image.fromarray(out[:, SPLIT:])
+    img = Image.new("RGBA", (sw + bar.width, out.shape[0]))
+    img.paste(bar, (sw, 0))
+    img.alpha_composite(socket, (0, (out.shape[0] - sh) // 2))
+    return img.crop(img.getchannel("A").point(lambda v: 255 if v > 40 else 0).getbbox())
 
 
 def castbar():

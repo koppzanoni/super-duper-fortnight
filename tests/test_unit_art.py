@@ -57,3 +57,10 @@ def test_castbar_groove_is_thin_and_backed():
     icon, groove = unit_art.holes(np.asarray(unit_art.castbar_open()))
     assert groove[2] / groove[3] > 10  # a thin bar, not a unit frame groove
     assert unit_art.holes(np.asarray(unit_art.castbar())) == [icon]  # the groove has its dark backing
+
+
+# The user found the spell icon too big: the socket is only a bit taller than the bar.
+def test_castbar_icon_socket_is_small():
+    icon, groove = unit_art.holes(np.asarray(unit_art.castbar_open()))
+    assert icon[3] <= 1.7 * groove[3]
+    assert unit_art.castbar().height <= icon[3] + 40  # no empty rows above and below

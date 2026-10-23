@@ -6,7 +6,7 @@ local M = ns.MediaManifest
 local S = ns.Data.CASTBAR
 local art
 local barW, barH
-local WIDTH = 0.38 -- of the screen height
+local WIDTH = 0.35 -- of the screen height
 ns.CastBar = {}
 
 -- Half the cast bar art width, for frames placed beside it.
