@@ -36,6 +36,19 @@ local function register()
   end
   checkbox("orbText", "Mostrar números nos orbes", true, function() ns.Orbs.ApplyTextVisibility() end)
 
+  local orbStyle = Settings.RegisterAddOnSetting(category, "ObsidianUI_orbStyle", "orbStyle", ns.db, "string",
+    "Estilo dos orbes", "a")
+  orbStyle:SetValueChangedCallback(function(_, value) ns.Orbs.SetStyle(value) end)
+  local function orbStyleOptions()
+    local container = Settings.CreateControlTextContainer()
+    for _, key in ipairs(ns.Data.ORB_STYLE_ORDER) do
+      container:Add(key, key:upper() .. " — " .. ns.Data.ORB_STYLE_LABELS[key])
+    end
+    return container:GetData()
+  end
+  Settings.CreateDropdown(category, orbStyle, orbStyleOptions,
+    "Como o líquido dos orbes de vida e recurso se mexe. D fica parado.")
+
   local scale = Settings.RegisterAddOnSetting(category, "ObsidianUI_scale", "scale", ns.db, "number", "Escala do HUD", 1.0)
   scale:SetValueChangedCallback(function() ns.RunOutOfCombat(ns.HUD.Layout) end)
   local options = Settings.CreateSliderOptions(0.6, 1.4, 0.05)

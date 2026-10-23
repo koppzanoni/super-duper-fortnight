@@ -183,3 +183,49 @@ def test_health_uses_the_health_palette(lua, ns):
     wisp, body = ns.Data.OrbPalette("HEALTH").wisp, ns.Data.OrbPalette("HEALTH").body
     assert last(o.wisp[1], "SetVertexColor")[:3] == (wisp[1], wisp[2], wisp[3])
     assert last(o.bar, "SetStatusBarColor")[:3] == (body[1], body[2], body[3])
+
+
+# ---- Setting (Settings/Settings.lua) ----
+SETTINGS_STUB = """
+  DROPDOWNS, CALLBACKS = {}, {}
+  local function setting(key)
+    return { SetValueChangedCallback = function(self, fn) CALLBACKS[key] = fn end }
+  end
+  Settings = {
+    RegisterVerticalLayoutCategory = function(name)
+      return { GetID = function() return 1 end }, { AddInitializer = function() end }
+    end,
+    RegisterAddOnSetting = function(cat, variable, key, tbl, kind, label, default)
+      local s = setting(key); s.kind, s.default, s.label = kind, default, label; return s
+    end,
+    CreateCheckbox = function() end,
+    CreateSlider = function() end,
+    CreateSliderOptions = function() return { SetLabelFormatter = function() end } end,
+    CreateControlTextContainer = function()
+      local c = { list = {} }
+      function c:Add(value, label) table.insert(self.list, { value = value, label = label }) end
+      function c:GetData() return self.list end
+      return c
+    end,
+    CreateDropdown = function(cat, s, options, tooltip)
+      table.insert(DROPDOWNS, { setting = s, options = options, tooltip = tooltip })
+    end,
+    RegisterAddOnCategory = function() end,
+  }
+  MinimalSliderWithSteppersMixin = { Label = { Right = 1 } }
+"""
+
+
+def test_style_dropdown_in_settings(lua, ns):
+    boot(lua, ns, pre=SETTINGS_STUB)
+    g = lua.globals()
+    dd = g.DROPDOWNS[1]
+    assert dd.setting.label == "Estilo dos orbes" and dd.setting.default == "a" and dd.setting.kind == "string"
+    opts = dd.options()
+    assert [(opts[i].value, opts[i].label) for i in range(1, 5)] == [
+        ("a", "A — Redemoinho"), ("b", "B — Energia"), ("c", "C — Névoa"), ("d", "D — Parado")]
+    assert dd.tooltip == "Como o líquido dos orbes de vida e recurso se mexe. D fica parado."
+    got = []
+    ns.Orbs.SetStyle = lambda key: got.append(key)
+    g.CALLBACKS["orbStyle"](None, "c")
+    assert got == ["c"]
