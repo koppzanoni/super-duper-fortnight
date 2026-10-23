@@ -90,6 +90,7 @@ pcall(model.SetLight, model, true, false, -1, 1, -1, 1, 1, 0.82, 0.62, 1, 0.95, 
 
 -- Equipment slots.
 local slotButtons = {}
+Inventory.slotButtons = slotButtons
 local function qualityColor(q)
   local c = q and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[q]
   if c then return c.r, c.g, c.b end
@@ -97,10 +98,10 @@ local function qualityColor(q)
 end
 
 local function slotButton(slotName)
-  local ok, slotID = pcall(GetInventorySlotInfo, slotName)
+  local ok, slotID, emptyTexture = pcall(GetInventorySlotInfo, slotName)
   if not ok or not slotID then return nil end
   local b = CreateFrame("Button", nil, frame)
-  b.slotID = slotID
+  b.slotID, b.emptyTexture = slotID, emptyTexture
   b.icon = b:CreateTexture(nil, "ARTWORK")
   b.icon:SetAllPoints(b)
   b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
@@ -145,9 +146,11 @@ end
 
 local function updateEquipment()
   for _, b in ipairs(slotButtons) do
+    -- Empty slots show the game's empty-slot picture, dimmed (like the default sheet).
     local tex = GetInventoryItemTexture("player", b.slotID)
-    b.icon:SetTexture(tex)
-    b.icon:SetShown(tex ~= nil)
+    b.icon:SetTexture(tex or b.emptyTexture)
+    b.icon:SetShown((tex or b.emptyTexture) ~= nil)
+    if tex then b.icon:SetVertexColor(1, 1, 1) else b.icon:SetVertexColor(0.55, 0.55, 0.55) end
     b.border:SetShown(tex ~= nil)
     if tex then b.border:SetVertexColor(qualityColor(GetInventoryItemQuality("player", b.slotID))) end
   end

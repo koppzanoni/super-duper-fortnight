@@ -262,3 +262,29 @@ def test_hud_bag_slots_match_the_inventory_footer():
     bags = [D.MENU_RIGHT[i].bag for i in range(1, len(D.MENU_RIGHT) + 1) if D.MENU_RIGHT[i].bag is not None]
     assert bags == [0, 1, 2, 3, 4]
     assert len(D.INV.bags) == 5
+
+
+# Empty equipment slots show the game's empty-slot picture (like the default character sheet).
+def test_empty_equipment_slots_show_their_placeholder(lua, ns):
+    boot(lua, ns, pre="""
+      TEXTURES = {}
+      function GetInventorySlotInfo(name) return 1, "EMPTY:" .. name end
+      function GetInventoryItemTexture() return nil end
+      local cf = CreateFrame
+      function CreateFrame(...)
+        local f = cf(...)
+        local cfTex = f.CreateTexture
+        f.CreateTexture = function(self, ...)
+          local t = cfTex(self, ...)
+          t.SetTexture = function(tt, file) tt.file = file end
+          t.SetShown = function(tt, v) tt.shown = v end
+          t.Show = function(tt) tt.shown = true end
+          t.Hide = function(tt) tt.shown = false end
+          return t
+        end
+        return f
+      end
+    """)
+    ns.Inventory.Open()
+    icons = [b.icon for b in ns.Inventory.slotButtons.values()]
+    assert icons and all(str(i.file).startswith("EMPTY:") and i.shown for i in icons)
