@@ -243,3 +243,14 @@ def test_castbar_hides_blizzard_cast_effects(lua, ns):
     alphas = lua.globals().ALPHAS
     for k in ("Flakes01", "Flakes02", "Flakes03", "Sparkles01", "InterruptGlow", "Shine"):
         assert alphas[k] == 0, k
+
+
+# In-game: recasting in combat, Blizzard re-anchored the cast bar down onto the action bar.
+def test_castbar_stays_put_when_blizzard_moves_it_in_combat(lua, ns):
+    boot(lua, ns, pre='RecordingFrame("PlayerCastingBarFrame")')
+    ours = last_point(lua, "PlayerCastingBarFrame")
+    g = lua.globals()
+    g.STUB_COMBAT = True
+    f = g.PlayerCastingBarFrame
+    f.SetPoint(f, "BOTTOM", None, "BOTTOM", 0, 120)
+    assert last_point(lua, "PlayerCastingBarFrame") == ours

@@ -53,17 +53,15 @@ local function layout()
       hooksecurefunc(bar.Icon, "Hide", function(icon) icon:Show() end)
       hooksecurefunc(bar.Icon, "SetShown", function(icon, shown) if not shown then icon:Show() end end)
     end
-    hooksecurefunc(bar, "SetPoint", function(self)
-      if self.obApplying or InCombatLockdown() then return end
-      layout()
-    end)
   end
-  bar.obApplying = true
-  bar:ClearAllPoints()
-  -- The StatusBar itself fills exactly the groove; the frame art sits around it.
-  bar:SetPoint("BOTTOMLEFT", UIParent, "BOTTOM", -w / 2 + S.bar.x * u, ns.Stack.BarTop() + 64 + (S.h - S.bar.y - S.bar.h) * u)
+  -- The StatusBar itself fills exactly the groove; the frame art sits around it. Pinned:
+  -- Blizzard re-anchors the bar on some casts, in combat too (the bar is not protected).
+  local x, y = -w / 2 + S.bar.x * u, ns.Stack.BarTop() + 64 + (S.h - S.bar.y - S.bar.h) * u
+  ns.Pin(bar, function(b)
+    b:ClearAllPoints()
+    b:SetPoint("BOTTOMLEFT", UIParent, "BOTTOM", x, y)
+  end)
   bar:SetSize(S.bar.w * u, S.bar.h * u)
-  bar.obApplying = false
   art:ClearAllPoints()
   art:SetPoint("TOPLEFT", bar, "TOPLEFT", -S.bar.x * u, S.bar.y * u)
   art:SetSize(w, S.h * u)

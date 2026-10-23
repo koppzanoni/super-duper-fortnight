@@ -9,6 +9,8 @@ import pathlib
 import numpy as np
 from PIL import Image
 
+import inventory_art
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ART = ROOT / "art" / "processed"
 MEDIA = ROOT / "ObsidianUI" / "Media"
@@ -32,6 +34,8 @@ ART_SOURCES = {
     "inventory": ("inventory.png", None, None),
     "slot": ("button_slot.png", None, 128),
 }
+# Changes drawn on top of a processed piece before export.
+REWORK = {"inventory": inventory_art.rework}
 
 
 def next_pot(n):
@@ -140,6 +144,20 @@ def vignette(size=256):
     return Image.fromarray(a, "RGBA")
 
 
+def icon_sort(size=64):
+    # "Sort" glyph: three bars getting shorter and a down arrow; tinted gold in game.
+    a = np.zeros((size, size), np.float32)
+    for top, length in ((14, 34), (28, 25), (42, 16)):
+        a[top:top + 7, 6:6 + length] = 1
+    a[10:40, 47:53] = 1
+    for i in range(12):
+        a[38 + i, 50 - 11 + i:50 + 11 - i + 1] = 1
+    img = np.zeros((size, size, 4), np.uint8)
+    img[..., :3] = 255
+    img[..., 3] = (a * 255).astype(np.uint8)
+    return Image.fromarray(img, "RGBA")
+
+
 def ring_glow(size=256):
     # Thin soft ring at the rim; tinted by classification (elite purple, rare silver).
     y, x = np.mgrid[0:size, 0:size]
@@ -161,6 +179,7 @@ PROCEDURAL = {
     "wave": wave,
     "bar_fill": bar_fill,
     "aura_border": aura_border,
+    "icon_sort": icon_sort,
 }
 
 
@@ -188,6 +207,8 @@ def export_all(out_dir=MEDIA):
         img = Image.open(ART / src).convert("RGBA")
         if box:
             img = img.crop(box)
+        if name in REWORK:
+            img = REWORK[name](img)
         save(name, defringe(fit(img, max_side)))
     for name, fn in PROCEDURAL.items():
         save(name, fn())

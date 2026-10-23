@@ -168,7 +168,10 @@ local tabs = {}
 local function setTab(tab)
   activeTab = tab
   for _, t in ipairs(tabs) do
-    if t.tab == tab then t.text:SetTextColor(1, 0.82, 0) else t.text:SetTextColor(0.73, 0.68, 0.58) end
+    local active = t.tab == tab
+    if active then t.text:SetTextColor(1, 0.82, 0) else t.text:SetTextColor(0.73, 0.68, 0.58) end
+    t.glow:SetShown(active)
+    t.underline:SetShown(active)
   end
   scheduleRelayout()
 end
@@ -178,6 +181,18 @@ for i, tab in ipairs(ns.Filters.TABS) do
   t.text = t:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
   t.text:SetAllPoints(t)
   t.text:SetText(ns.Filters.LABELS[tab])
+  -- Active tab: warm glow and a gold underline on the stone plate (all plates are alike).
+  t.glow = t:CreateTexture(nil, "ARTWORK")
+  t.glow:SetAllPoints(t)
+  t.glow:SetColorTexture(0.91, 0.77, 0.42, 0.10)
+  t.underline = t:CreateTexture(nil, "ARTWORK", nil, 1)
+  t.underline:SetPoint("BOTTOMLEFT", 6, 2)
+  t.underline:SetPoint("BOTTOMRIGHT", -6, 2)
+  t.underline:SetHeight(2)
+  t.underline:SetColorTexture(0.91, 0.77, 0.42, 0.85)
+  local hover = t:CreateTexture(nil, "HIGHLIGHT")
+  hover:SetAllPoints(t)
+  hover:SetColorTexture(1, 1, 1, 0.05)
   t:SetScript("OnClick", function() setTab(tab) end)
   tabs[i] = t
 end
@@ -205,7 +220,7 @@ for i = 1, 5 do
 end
 local gold = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 
--- Search box and sort button, on the row above the window (right of the stats buttons).
+-- Search box above the window; sort button in its plate right after the tabs.
 local search = CreateFrame("EditBox", "ObsidianUIBagSearch", frame, "SearchBoxTemplate")
 search:SetSize(110, 20)
 search:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", -30, 2)
@@ -219,10 +234,16 @@ end)
 Inventory.searchBox = search
 
 local sort = CreateFrame("Button", nil, frame)
-sort:SetSize(22, 22)
-sort:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", -4, 1)
-sort:SetNormalTexture("Interface\\Icons\\INV_Pet_Broom")
-sort:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+sort.icon = sort:CreateTexture(nil, "ARTWORK")
+sort.icon:SetPoint("TOPLEFT", 5, -5)
+sort.icon:SetPoint("BOTTOMRIGHT", -5, 5)
+sort.icon:SetTexture(M.icon_sort.file)
+sort.icon:SetVertexColor(0.91, 0.77, 0.42)
+local sortHover = sort:CreateTexture(nil, "HIGHLIGHT")
+sortHover:SetAllPoints(sort)
+sortHover:SetColorTexture(1, 1, 1, 0.06)
+sort:SetScript("OnMouseDown", function(self) self.icon:SetVertexColor(1, 0.9, 0.6) end)
+sort:SetScript("OnMouseUp", function(self) self.icon:SetVertexColor(0.91, 0.77, 0.42) end)
 sort:SetScript("OnClick", function()
   if C_Container.SortBags then C_Container.SortBags() end
 end)
@@ -253,6 +274,7 @@ end
 Inventory.onLayout = function()
   unit = frame:GetWidth() / S.w
   for i, t in ipairs(tabs) do place(t, S.tabs[i], S.tabY, S.tabW, S.tabH) end
+  place(sort, S.sort.x, S.sort.y, S.sort.w, S.sort.h)
   for i, b in ipairs(footerBags) do place(b, S.bags[i], S.bagY, S.bagW, S.bagH) end
   place(gold, S.gold.x, S.gold.y, S.gold.w, S.gold.h)
 end

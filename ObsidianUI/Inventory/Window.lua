@@ -48,7 +48,14 @@ local model = CreateFrame("PlayerModel", nil, frame)
 model:EnableMouse(true)
 model:EnableMouseWheel(true)
 local zoom, dragging, lastX = 0, false, 0
-model:SetScript("OnShow", function(self) self:SetUnit("player"); self:SetPortraitZoom(zoom) end)
+-- Camera a bit closer than the default full-body shot, so the character fills the frame.
+local CAMERA_DISTANCE = 0.78
+local function refreshModel()
+  model:SetUnit("player")
+  model:SetPortraitZoom(zoom)
+  if model.SetCamDistanceScale then pcall(model.SetCamDistanceScale, model, CAMERA_DISTANCE) end
+end
+model:SetScript("OnShow", refreshModel)
 model:SetScript("OnMouseDown", function(_, button) if button == "LeftButton" then dragging = true; lastX = GetCursorPosition() end end)
 model:SetScript("OnMouseUp", function() dragging = false end)
 model:SetScript("OnUpdate", function(self)
@@ -271,8 +278,8 @@ function Inventory.Toggle()
   end)
 end
 
-ns.On("PLAYER_EQUIPMENT_CHANGED", function() if frame:IsShown() then updateEquipment(); model:SetUnit("player") end end)
-ns.On("UNIT_MODEL_CHANGED", function(_, unit) if unit == "player" and frame:IsShown() then model:SetUnit("player") end end)
+ns.On("PLAYER_EQUIPMENT_CHANGED", function() if frame:IsShown() then updateEquipment(); refreshModel() end end)
+ns.On("UNIT_MODEL_CHANGED", function(_, unit) if unit == "player" and frame:IsShown() then refreshModel() end end)
 for _, ev in ipairs({ "UNIT_STATS", "UNIT_ATTACK_POWER", "UNIT_RESISTANCES" }) do
   ns.On(ev, function(_, unit) if unit == "player" and frame:IsShown() then updateStats() end end)
 end
