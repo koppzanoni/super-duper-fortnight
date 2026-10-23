@@ -216,6 +216,54 @@ for _style, _desc in VB_STYLE.items():
             PIECES[_n] = _p
             REFS_OVERRIDE[_n] = ["art/processed/hud_bottom.png", "art/processed/side_panel.png", "art/processed/action_bar.png"]
 
+# Orb cap redesign: a dragon wing embracing the orb instead of the gargoyle, filling the space
+# out to the screen edge. Only the wing is used: the ring and the 3x3 panel are pasted back.
+CAP_WING = ("16:9",
+    "The FIRST attached image is the left end of a game HUD: a round orb ring frame, a sculpted gargoyle figure on its left, "
+    "and a 3x3 menu panel on its right. Redraw it keeping the orb ring and the 3x3 panel EXACTLY as they are (same position, size, shape and details), "
+    "but REMOVE the gargoyle figure completely and replace it with ONE large, majestic dragon wing that embraces the orb ring from behind: "
+    "the wing's bony arm arches over the top-left of the ring with a small claw near the top, its long finger bones curve down and around the left side of the ring, "
+    "and the leathery membrane between them fills ALL the space to the left of and behind the ring. "
+    "The wing must fill the left area completely with no gaps: its outer edge is a straight vertical cut exactly at the left image edge, "
+    "from the bottom of the image up to the top of the ring, and it fills down to the bottom edge. "
+    "Material: carved dark grey stone and blackened iron with thin aged bronze trim on the bones, exactly like the ring, with subtle scales and veins. "
+    "The inside of the ring stays flat solid magenta (#FF00FF), and everything above and around that is not part of the HUD is flat magenta too.")
+PIECES["cap_wing"] = CAP_WING
+PIECES["cap_wing_b"] = CAP_WING
+REFS_OVERRIDE["cap_wing"] = ["art/cap_ref.png", "art/processed/hud_bottom.png"]
+REFS_OVERRIDE["cap_wing_b"] = REFS_OVERRIDE["cap_wing"]
+# Second try: the first wings were drawn over the orb. This one stays outside the opening.
+CAP_WING2 = ("16:9",
+    "The FIRST attached image is the left end of a game HUD: a round orb ring frame, a sculpted gargoyle figure on its left, "
+    "and a 3x3 menu panel on its right. Redraw it keeping the orb ring and the 3x3 panel EXACTLY as they are (same position, size, shape and details). "
+    "REMOVE the gargoyle and put in its place a SLIM, compact folded dragon wing that occupies only the narrow strip where the gargoyle was, "
+    "between the left image edge and the outer edge of the ring: the wing's bony arm comes out from behind the ring at its upper left with a small claw, "
+    "runs down the left side, and its finger bones curve along the outside of the ring like a hand holding it; the leathery membrane between the bones "
+    "fills that strip completely down to the bottom of the image, with its outer edge a straight vertical line exactly at the left image edge. "
+    "The wing may overlap the outer rim of the ring slightly, but it must NEVER enter the round opening of the ring: the whole round opening stays "
+    "completely empty flat solid magenta (#FF00FF). The wing is small compared to the ring. "
+    "Material: carved dark grey stone and blackened iron with thin aged bronze trim on the bones, exactly like the ring, subtle scales and veins. "
+    "Everything that is not part of the HUD is flat solid magenta (#FF00FF).")
+PIECES["cap_wing2"] = CAP_WING2
+PIECES["cap_wing2_b"] = CAP_WING2
+REFS_OVERRIDE["cap_wing2"] = REFS_OVERRIDE["cap_wing"]
+REFS_OVERRIDE["cap_wing2_b"] = REFS_OVERRIDE["cap_wing"]
+# Third step, from the chosen wing (cap_wing2_b composed): the 3x3 panel's side figures become
+# small folded wings, and a stone backing fills the screen edge behind the big wing.
+CAP_PANEL = ("16:9",
+    "The FIRST attached image is the left end of a game HUD: a dragon wing at the far left wrapping a round orb ring, and a square 3x3 menu panel on the right. "
+    "Redraw it keeping the dragon wing, the orb ring and the 3x3 grid of square slots EXACTLY as they are (same position, size, shape and details). Change only two things: "
+    "(1) Replace the two twisted sculpted figures on the left and right sides of the 3x3 panel with two SMALL FOLDED dragon wings, one on each side, mirrored, "
+    "in exactly the same style and material as the big dragon wing (bony arm with a small claw on top, membrane folded down along the panel side), "
+    "framing the panel neatly; keep the panel's top ornament and frame. "
+    "(2) Behind the big dragon wing, add a solid backing of carved dark grey stone with thin aged bronze trim that fills ALL the empty space between the wing and the left image edge, "
+    "from the bottom edge of the image up to the top of the ring, its outer edge a straight vertical line exactly at the left image edge, so no background shows between the wing and the left edge. "
+    "The inside of the ring stays flat solid magenta (#FF00FF); everything that is not part of the HUD is flat solid magenta (#FF00FF).")
+PIECES["cap_panel"] = CAP_PANEL
+PIECES["cap_panel_b"] = CAP_PANEL
+REFS_OVERRIDE["cap_panel"] = ["art/cap_ref2.png", "art/processed/hud_bottom.png"]
+REFS_OVERRIDE["cap_panel_b"] = REFS_OVERRIDE["cap_panel"]
+
 PIECES["connector"] = ("16:9",
     "The FIRST attached image shows part of a game HUD: on the left a 3x3 menu panel, on the right the start of an action bar, and a wide empty magenta GAP between them. "
     "Redraw the image keeping the left panel and the right action bar exactly as they are, and fill the gap with a natural, seamless continuation of the low carved dark stone backing that connects them: "

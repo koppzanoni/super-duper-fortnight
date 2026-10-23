@@ -9,6 +9,7 @@ import pathlib
 import numpy as np
 from PIL import Image
 
+import cap_art
 import inventory_art
 import orb_fluid
 import vbar_art
@@ -35,7 +36,7 @@ ART_SOURCES = {
     "slot": ("button_slot.png", None, 128),
 }
 # Changes drawn on top of a processed piece before export.
-REWORK = {"inventory": inventory_art.rework}
+REWORK = {"inventory": inventory_art.rework, "hud_cap": cap_art.build}
 
 
 def next_pot(n):
