@@ -104,3 +104,28 @@ def test_vignette_clear_outside_the_circle():
     img = ex.vignette(128)
     assert img.getpixel((0, 0))[3] == 0
     assert img.getpixel((127, 127))[3] == 0
+
+
+# In-game: a dark band of uneven width showed between the map and the ring. A thicker inner rim
+# (stone with a bronze edge) drawn over the map's outer edge narrows the opening and hides it.
+def test_map_rim_covers_the_map_edge():
+    img = ex.map_rim(512)
+    a = np.asarray(img)[..., 3]
+    c = 255.5
+    def alpha_at(frac):
+        return int(a[int(c), int(c + frac * c)])
+    assert alpha_at(0.0) == 0 and alpha_at(0.8) == 0       # map visible inside
+    assert alpha_at(0.95) == 255                           # rim covers the edge band
+    rgb = np.asarray(img)[int(c), int(c + 0.89 * c), :3]
+    assert rgb[0] > rgb[2] + 40                             # bronze line at the inner edge
+
+
+def test_minimap_draws_the_rim(lua=None):
+    from conftest import new_runtime, toc_files
+    rt = new_runtime()
+    ns = rt.table()
+    for f in toc_files():
+        load_addon_file(rt, f, ns)
+    rt.execute('STUB_FIRE("ADDON_LOADED", "ObsidianUI")')
+    rt.execute('STUB_FIRE("PLAYER_LOGIN")')
+    assert ns.Minimap.rim is not None

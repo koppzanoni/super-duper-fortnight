@@ -88,3 +88,30 @@ def test_inventory_size_setting_scales_the_window(lua, ns):
 def test_inventory_size_defaults_to_one(lua, ns):
     boot(lua, ns)
     assert ns.db.invScale == 1.0
+
+
+def test_rows_carry_the_stat_they_show():
+    rt = new_runtime()
+    ns = load_addon_file(rt, "Inventory/Stats.lua", rt.table())
+    rows = ns.Stats.Rows(rt.execute(API))
+    byLabel = {rows[i].label: rows[i] for i in range(1, len(rows) + 1) if rows[i].label}
+    assert (byLabel["Força"].key, byLabel["Força"].index) == ("stat", 1)
+    assert byLabel["Espírito"].index == 5
+    assert byLabel["Armadura"].key == "armor"
+    assert byLabel["Crítico"].key == "crit"
+
+
+# Hovering a stat shows the same tooltip as the default character sheet.
+def test_hovering_a_stat_shows_the_blizzard_stat_tooltip(lua, ns):
+    boot(lua, ns, pre="""
+      SET_STAT, SHOWN = nil, nil
+      function UnitStat(_, i) return 20, 26, 6, 0 end
+      function PaperDollFrame_SetStat(f, unit, i) SET_STAT = i; f.tooltip = "Espírito 67" end
+      function PaperDollStatTooltip(f) SHOWN = f.tooltip end
+    """)
+    ns.Inventory.Open()
+    rows = ns.Inventory.statLines
+    force = [rows[i] for i in range(1, len(rows) + 1) if rows[i].key == "stat" and rows[i].index == 1][0]
+    force.hover.handlers.OnEnter(force.hover)
+    g = lua.globals()
+    assert g.SET_STAT == 1 and g.SHOWN == "Espírito 67"

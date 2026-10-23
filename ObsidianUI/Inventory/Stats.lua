@@ -16,27 +16,28 @@ function Stats.Rows(api)
     rows[#rows + 1] = { header = title }
     sectionStart = #rows
   end
-  local function row(label, v, fmt, optional)
+  -- key/index: which stat the row shows (for its tooltip).
+  local function row(label, v, fmt, optional, key, index)
     if type(v) ~= "number" or (optional and v == 0) then return end
     local text = fmt and string.format(fmt, v) or string.format("%d", math.floor(v + 0.5))
-    rows[#rows + 1] = { label = label, value = text }
+    rows[#rows + 1] = { label = label, value = text, key = key, index = index }
   end
 
   section("Primários")
-  for i, name in ipairs(STAT_NAMES) do row(name, api.stat(i)) end
+  for i, name in ipairs(STAT_NAMES) do row(name, api.stat(i), nil, false, "stat", i) end
   section("Ataque")
-  row("Poder de Ataque", api.attackPower())
-  row("Crítico", api.crit(), PCT)
-  row("Aceleração", api.haste(), PCT, true)
-  row("Maestria", api.mastery(), PCT, true)
+  row("Poder de Ataque", api.attackPower(), nil, false, "attackPower")
+  row("Crítico", api.crit(), PCT, false, "crit")
+  row("Aceleração", api.haste(), PCT, true, "haste")
+  row("Maestria", api.mastery(), PCT, true, "mastery")
   section("Magia")
-  row("Poder Mágico", api.spellPower(), nil, true)
-  row("Crítico Mágico", api.spellCrit(), PCT, true)
+  row("Poder Mágico", api.spellPower(), nil, true, "spellPower")
+  row("Crítico Mágico", api.spellCrit(), PCT, true, "spellCrit")
   section("Defesa")
-  row("Armadura", api.armor())
-  row("Esquiva", api.dodge(), PCT, true)
-  row("Aparar", api.parry(), PCT, true)
-  row("Bloqueio", api.block(), PCT, true)
+  row("Armadura", api.armor(), nil, false, "armor")
+  row("Esquiva", api.dodge(), PCT, true, "dodge")
+  row("Aparar", api.parry(), PCT, true, "parry")
+  row("Bloqueio", api.block(), PCT, true, "block")
   if #rows == sectionStart then rows[#rows] = nil end
   return rows
 end

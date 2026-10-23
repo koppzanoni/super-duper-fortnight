@@ -14,6 +14,7 @@ ns.MediaManifest = {
   inventory = { file = "Interface\\AddOns\\ObsidianUI\\Media\\inventory", w = 690, h = 1334, potW = 1024, potH = 2048 },
   inventory_wing = { file = "Interface\\AddOns\\ObsidianUI\\Media\\inventory_wing", w = 400, h = 1334, potW = 512, potH = 2048 },
   liquid = { file = "Interface\\AddOns\\ObsidianUI\\Media\\liquid", w = 256, h = 256, potW = 256, potH = 256 },
+  map_rim = { file = "Interface\\AddOns\\ObsidianUI\\Media\\map_rim", w = 512, h = 512, potW = 512, potH = 512 },
   mask_circle = { file = "Interface\\AddOns\\ObsidianUI\\Media\\mask_circle", w = 256, h = 256, potW = 256, potH = 256 },
   minimap_ring = { file = "Interface\\AddOns\\ObsidianUI\\Media\\minimap_ring", w = 1008, h = 1012, potW = 1024, potH = 1024 },
   plate = { file = "Interface\\AddOns\\ObsidianUI\\Media\\plate", w = 128, h = 32, potW = 128, potH = 32 },

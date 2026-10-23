@@ -159,6 +159,25 @@ def icon_sort(size=64):
     return Image.fromarray(img, "RGBA")
 
 
+def map_rim(size=512):
+    # Inner rim drawn over the minimap's outer edge: dark stone from 0.885 R outwards, a bronze
+    # line at its inner edge and a soft shadow on the map just inside it.
+    y, x = np.mgrid[0:size, 0:size]
+    c = (size - 1) / 2
+    d = np.sqrt((x - c) ** 2 + (y - c) ** 2) / c
+    inner, line = 0.885, 0.015
+    a = np.zeros((size, size, 4), np.float32)
+    stone = (d >= inner) & (d <= 1.0)
+    shade = 0.10 + 0.05 * np.clip((d - inner) / (1 - inner), 0, 1)
+    a[stone, 0], a[stone, 1], a[stone, 2] = shade[stone], shade[stone], shade[stone] * 1.1
+    a[stone, 3] = 1
+    bronze = (d >= inner) & (d < inner + line)
+    a[bronze, :3] = (0.62, 0.48, 0.27)
+    shadow = (d >= inner - 0.03) & (d < inner)
+    a[shadow, 3] = ((d[shadow] - (inner - 0.03)) / 0.03) * 0.6
+    return Image.fromarray((a * 255).astype(np.uint8), "RGBA")
+
+
 def ring_glow(size=256):
     # Thin soft ring at the rim; tinted by classification (elite purple, rare silver).
     y, x = np.mgrid[0:size, 0:size]
@@ -181,6 +200,7 @@ PROCEDURAL = {
     "bar_fill": bar_fill,
     "aura_border": aura_border,
     "icon_sort": icon_sort,
+    "map_rim": map_rim,
 }
 
 

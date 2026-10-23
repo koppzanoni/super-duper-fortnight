@@ -74,7 +74,8 @@ local function layout()
   end
   if bar.Text then
     bar.Text:ClearAllPoints()
-    bar.Text:SetPoint("LEFT", bar, "LEFT", 8, 0)
+    bar.Text:SetPoint("CENTER", bar, "CENTER", 0, 0)
+    bar.Text:SetJustifyH("CENTER")
   end
   reskin(bar)
 end

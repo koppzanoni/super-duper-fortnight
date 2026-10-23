@@ -177,10 +177,46 @@ local statsTitle = stats:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 statsTitle:SetText("ATRIBUTOS")
 statsTitle:SetTextColor(W.GOLD[1], W.GOLD[2], W.GOLD[3])
 
+-- Stat tooltips: the default character sheet's own setters fill a stat frame's tooltip fields
+-- (or a custom onEnterFunc); each row's hover area plays that stat frame.
+local SETTERS = { stat = "PaperDollFrame_SetStat", armor = "PaperDollFrame_SetArmor",
+  attackPower = "PaperDollFrame_SetAttackPower", crit = "PaperDollFrame_SetCritChance",
+  spellPower = "PaperDollFrame_SetSpellPower", mastery = "PaperDollFrame_SetMastery",
+  dodge = "PaperDollFrame_SetDodge", parry = "PaperDollFrame_SetParry", block = "PaperDollFrame_SetBlock" }
+
+local function showStatTooltip(hover)
+  local l = hover.line
+  hover.tooltip, hover.tooltip2, hover.tooltip3, hover.onEnterFunc = nil, nil, nil, nil
+  local setter = l.key and _G[SETTERS[l.key]]
+  if type(setter) == "function" then
+    if l.key == "stat" then pcall(setter, hover, "player", l.index) else pcall(setter, hover, "player") end
+  end
+  if type(hover.onEnterFunc) == "function" and pcall(hover.onEnterFunc, hover) then return end
+  if hover.tooltip and type(PaperDollStatTooltip) == "function" then
+    PaperDollStatTooltip(hover)
+    return
+  end
+  GameTooltip:SetOwner(hover, "ANCHOR_RIGHT")
+  GameTooltip:SetText(l.labelText or "")
+  if l.valueText then GameTooltip:AddLine(l.valueText, 1, 1, 1) end
+  GameTooltip:Show()
+end
+
 local lines = {}
+Inventory.statLines = lines
 local function line(i)
   if lines[i] then return lines[i] end
   local l = {}
+  -- Hover area; also the stat frame Blizzard's setters write to (hidden Label/Value).
+  l.hover = CreateFrame("Frame", nil, stats)
+  l.hover:EnableMouse(true)
+  l.hover.line = l
+  l.hover.Label = l.hover:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  l.hover.Value = l.hover:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  l.hover.Label:SetAlpha(0)
+  l.hover.Value:SetAlpha(0)
+  l.hover:SetScript("OnEnter", showStatTooltip)
+  l.hover:SetScript("OnLeave", GameTooltip_Hide)
   l.label = stats:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   l.label:SetJustifyH("LEFT")
   l.value = stats:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -209,6 +245,8 @@ local function updateStats()
       l.value:SetText("")
       Inventory.PlaceInWing(l.divider, R.x0, y + R.header - 8, R.x1 - R.x0, 2)
       l.divider:Show()
+      l.key, l.index = nil, nil
+      l.hover:Hide()
       y = y + R.header
     else
       l.label:SetFontObject("GameFontHighlight")
@@ -219,13 +257,16 @@ local function updateStats()
       l.value:ClearAllPoints()
       l.value:SetPoint("TOPRIGHT", stats, "TOPLEFT", R.x1 * wingUnit, -y * wingUnit)
       l.divider:Hide()
+      l.key, l.index, l.labelText, l.valueText = r.key, r.index, r.label, r.value
+      Inventory.PlaceInWing(l.hover, R.x0, y - 4, R.x1 - R.x0, R.row)
+      l.hover:Show()
       y = y + R.row
     end
     l.label:Show()
     l.value:Show()
   end
   for i = #rows + 1, #lines do
-    lines[i].label:Hide(); lines[i].value:Hide(); lines[i].divider:Hide()
+    lines[i].label:Hide(); lines[i].value:Hide(); lines[i].divider:Hide(); lines[i].hover:Hide()
   end
 end
 

@@ -289,3 +289,13 @@ def test_objective_tracker_moves_left_of_the_vertical_bars(lua, ns):
     g.ObjectiveTrackerFrame.SetPoint(g.ObjectiveTrackerFrame, "TOPRIGHT", None, "TOPRIGHT", 0, 0)  # Edit Mode
     point, x, _ = last_point(lua, "ObjectiveTrackerFrame")
     assert point == "TOPRIGHT" and x == -10
+
+
+def test_castbar_text_centered(lua, ns):
+    boot(lua, ns, pre="""
+      TEXT_POINT = nil
+      PlayerCastingBarFrame = CreateFrame()
+      PlayerCastingBarFrame.Text = setmetatable({}, { __index = function() return function() end end })
+      PlayerCastingBarFrame.Text.SetPoint = function(_, p) TEXT_POINT = p end
+    """)
+    assert lua.globals().TEXT_POINT == "CENTER"

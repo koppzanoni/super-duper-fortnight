@@ -19,6 +19,11 @@ zone:SetTextColor(0.91, 0.77, 0.42)
 -- The ring opening; the map is anchored to it with zero offsets, so the Minimap's own scale
 -- (offsets are in its units) cannot shift or shrink it.
 local hole = CreateFrame("Frame", nil, container)
+-- A thicker inner rim over the map's edge: the terrain did not reach the ring evenly in game.
+local rim = ringFrame:CreateTexture(nil, "ARTWORK", nil, -1)
+rim:SetAllPoints(hole)
+rim:SetTexture(ns.MediaManifest.map_rim and ns.MediaManifest.map_rim.file)
+ns.Minimap.rim = rim
 local sockets = {}
 for i = 1, 4 do sockets[i] = CreateFrame("Frame", nil, ringFrame) end
 
