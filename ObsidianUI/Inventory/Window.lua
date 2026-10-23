@@ -487,34 +487,25 @@ ns.On("PLAYER_LOGIN", hookForeverToggle)
 ns.On("ADDON_LOADED", hookForeverToggle)
 ns.On("PLAYER_ENTERING_WORLD", hookForeverToggle)
 
--- The character key opens the default sheet through ToggleCharacter("PaperDollFrame"), which
--- picks the page before showing the sheet. A secure wrap on the sheet's OnShow hides it when
--- it opens on the character page and toggles this window. Hiding it from secure code leaves
--- the panel manager untainted (HideUIPanel from addon code broke every menu button); the
--- manager drops hidden panels by itself. Reputation/currency pages open normally.
-local sheetCloser = CreateFrame("Frame", "ObsidianUICharacterSheetCloser", UIParent, "SecureHandlerBaseTemplate")
-sheetCloser.OpenInventory = function() toggleOncePerPress() end
-Inventory.sheetCloser = sheetCloser
-local sheetWrapped = false
-local function wrapCharacterSheet()
-  if sheetWrapped or InCombatLockdown() then return end
-  local sheet, page = rawget(_G, "CharacterFrame"), rawget(_G, "PaperDollFrame")
-  if type(sheet) ~= "table" or type(page) ~= "table" or type(sheetCloser.WrapScript) ~= "function" then return end
-  sheetWrapped = true
-  SecureHandlerSetFrameRef(sheetCloser, "paperdoll", page)
-  sheetCloser:WrapScript(sheet, "OnShow", [[
-    local page = owner:GetFrameRef("paperdoll")
-    if page and page:IsShown() then return nil, "close" end
-  ]], [[
-    if message == "close" then
-      self:Hide()
-      control:CallMethod("OpenInventory")
-    end
-  ]])
+-- The character key and the character menu button call ToggleCharacter with the character
+-- page. That page is flagged "hidden" (only ToggleCharacter reads the flag, and then does
+-- nothing), and a post-hook toggles this window instead. Blizzard's sheet is never hidden from
+-- here: that tainted the panel manager and broke every menu button. Its other pages
+-- (reputation, currency) open normally.
+local characterHooked = false
+local function claimCharacterPage()
+  local page = rawget(_G, "PaperDollFrame")
+  if type(page) == "table" then page.hidden = true end
+  if not characterHooked and type(rawget(_G, "ToggleCharacter")) == "function" then
+    characterHooked = true
+    hooksecurefunc("ToggleCharacter", function(tab)
+      if tab == "PaperDollFrame" then toggleOncePerPress() end
+    end)
+  end
 end
-wrapCharacterSheet()
-ns.On("PLAYER_LOGIN", wrapCharacterSheet)
-ns.On("ADDON_LOADED", wrapCharacterSheet)
+claimCharacterPage()
+ns.On("PLAYER_LOGIN", claimCharacterPage)
+ns.On("ADDON_LOADED", claimCharacterPage)
 
 -- Once in the world, check the character key really clicks our button; if not, say in chat
 -- what holds it (so it can be fixed without the player typing anything).

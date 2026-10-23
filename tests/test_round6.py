@@ -487,33 +487,26 @@ def test_bag_scroll_bar_sits_on_the_painted_rail(lua, ns):
     assert "scroll_thumb" in bar.GetThumbTexture().file
 
 
-# The character key opens the default sheet through ToggleCharacter. A secure wrap on the
-# sheet's OnShow hides it when it opens on the character page and toggles the unified window
-# (hiding it from secure code does not taint the panel manager, unlike HideUIPanel).
-def test_character_sheet_wrapped_to_open_the_unified_window(lua, ns):
+# The character key runs ToggleCharacter("PaperDollFrame"). The page is flagged hidden (only
+# ToggleCharacter reads the flag, and then does nothing) and a post-hook opens the unified
+# window instead. Nothing hides Blizzard's sheet from addon code (that tainted the menus);
+# the secure wrap tried before does not act on unprotected frames.
+def test_character_key_opens_the_unified_window_instead_of_the_sheet(lua, ns):
     boot(lua, ns, pre="""
-      WRAPS, REFS = {}, {}
-      CharacterFrame = CreateFrame()
+      SHEET = 0
       PaperDollFrame = CreateFrame()
-      function SecureHandlerSetFrameRef(f, label, ref) REFS[label] = ref end
-      local cf = CreateFrame
-      function CreateFrame(kind, name, parent, template)
-        local f = cf(kind, name, parent, template)
-        if template == "SecureHandlerBaseTemplate" then
-          f.WrapScript = function(self, target, script, pre, post)
-            WRAPS[#WRAPS + 1] = { target = target, script = script, pre = pre, post = post, header = self }
-          end
-        end
-        return f
+      ReputationFrame = CreateFrame()
+      ReputationFrame.hidden = false
+      function ToggleCharacter(tab)
+        local sub = _G[tab]
+        if sub and not sub.hidden then SHEET = SHEET + 1 end
       end
     """)
-    g = lua.globals()
-    w = g.WRAPS[1]
-    assert lua.eval("WRAPS[1].target == CharacterFrame") and w.script == "OnShow"
-    assert lua.eval("REFS.paperdoll == PaperDollFrame")
-    assert 'GetFrameRef("paperdoll")' in w.pre and "self:Hide()" in w.post
-    assert 'CallMethod("OpenInventory")' in w.post
     toggles = {"n": 0}
     ns.Inventory.Toggle = lambda: toggles.__setitem__("n", toggles["n"] + 1)
-    w.header.OpenInventory(w.header)
-    assert toggles["n"] == 1
+    g = lua.globals()
+    g.ToggleCharacter("PaperDollFrame")
+    assert toggles["n"] == 1 and g.SHEET == 0
+    g.STUB_TIME = 200
+    g.ToggleCharacter("ReputationFrame")
+    assert toggles["n"] == 1 and g.SHEET == 1
