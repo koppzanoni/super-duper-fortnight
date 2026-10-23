@@ -30,9 +30,11 @@ local bannerText = banner:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 bannerText:SetPoint("TOP", bannerTitle, "BOTTOM", 0, -6)
 bannerText:SetText("Passe o mouse num botão da barra e aperte a tecla. Backspace limpa. Esc sai.")
 
--- Captures the keyboard only while a button is hovered (and the settings window is closed);
--- every other key goes on to the game.
+-- Captures the keyboard only while a button is hovered; every other key goes on to the game
+-- (Esc closes the settings window first when it is open). It covers the screen: a frame with
+-- no size gets no keys.
 local catcher = CreateFrame("Frame", nil, UIParent)
+catcher:SetAllPoints(UIParent)
 catcher:SetFrameStrata("FULLSCREEN_DIALOG")
 catcher:EnableKeyboard(false)
 KeybindMode.catcher = catcher
@@ -63,8 +65,9 @@ local function propagate(on)
 end
 
 catcher:SetScript("OnKeyDown", function(_, key)
-  if not KeybindMode.active or settingsOpen() then propagate(true); return end
+  if not KeybindMode.active then propagate(true); return end
   if key == "ESCAPE" then
+    if settingsOpen() then propagate(true); return end
     propagate(false)
     KeybindMode.Stop()
     return

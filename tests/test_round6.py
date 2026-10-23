@@ -485,3 +485,35 @@ def test_bag_scroll_bar_sits_on_the_painted_rail(lua, ns):
     assert up.points[1][4] == S.up.x * ux and up.tex.alpha == 0
     assert bar.ScrollDownButton.points[1][5] == -S.down.y * uy
     assert "scroll_thumb" in bar.GetThumbTexture().file
+
+
+# The character key opens the default sheet through ToggleCharacter. A secure wrap on the
+# sheet's OnShow hides it when it opens on the character page and toggles the unified window
+# (hiding it from secure code does not taint the panel manager, unlike HideUIPanel).
+def test_character_sheet_wrapped_to_open_the_unified_window(lua, ns):
+    boot(lua, ns, pre="""
+      WRAPS, REFS = {}, {}
+      CharacterFrame = CreateFrame()
+      PaperDollFrame = CreateFrame()
+      function SecureHandlerSetFrameRef(f, label, ref) REFS[label] = ref end
+      local cf = CreateFrame
+      function CreateFrame(kind, name, parent, template)
+        local f = cf(kind, name, parent, template)
+        if template == "SecureHandlerBaseTemplate" then
+          f.WrapScript = function(self, target, script, pre, post)
+            WRAPS[#WRAPS + 1] = { target = target, script = script, pre = pre, post = post, header = self }
+          end
+        end
+        return f
+      end
+    """)
+    g = lua.globals()
+    w = g.WRAPS[1]
+    assert lua.eval("WRAPS[1].target == CharacterFrame") and w.script == "OnShow"
+    assert lua.eval("REFS.paperdoll == PaperDollFrame")
+    assert 'GetFrameRef("paperdoll")' in w.pre and "self:Hide()" in w.post
+    assert 'CallMethod("OpenInventory")' in w.post
+    toggles = {"n": 0}
+    ns.Inventory.Toggle = lambda: toggles.__setitem__("n", toggles["n"] + 1)
+    w.header.OpenInventory(w.header)
+    assert toggles["n"] == 1

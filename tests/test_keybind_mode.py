@@ -94,3 +94,36 @@ def test_combat_ends_the_mode(lua, ns):
     ns.KeybindMode.Start()
     lua.execute('STUB_FIRE("PLAYER_REGEN_DISABLED")')
     assert not ns.KeybindMode.active
+
+
+# In game nothing was bound: the settings window stayed open (keys were passed on while it was
+# open) and the keyboard catcher had no size. Keys over a button bind even with it open.
+def test_binds_while_the_settings_window_is_open(lua, ns):
+    boot(lua, ns)
+    lua.execute("SettingsPanel.IsShown = function() return true end")
+    ns.KeybindMode.Start()
+    b = hover(ns)
+    press(ns, "E")
+    assert lua.globals().BINDINGS["E"] == b.binding
+
+
+def test_escape_with_settings_open_closes_them_and_keeps_the_mode(lua, ns):
+    boot(lua, ns)
+    lua.execute("SettingsPanel.IsShown = function() return true end")
+    ns.KeybindMode.Start()
+    press(ns, "ESCAPE")
+    assert ns.KeybindMode.active
+
+
+def test_catcher_covers_the_screen(lua, ns):
+    lua.execute("ALLPOINTS = {}")
+    lua.execute("""
+      local cf = CreateFrame
+      function CreateFrame(...)
+        local f = cf(...)
+        f.SetAllPoints = function(self, rel) ALLPOINTS[self] = rel end
+        return f
+      end
+    """)
+    boot(lua, ns)
+    assert lua.globals().ALLPOINTS[ns.KeybindMode.catcher] is not None

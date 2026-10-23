@@ -487,6 +487,35 @@ ns.On("PLAYER_LOGIN", hookForeverToggle)
 ns.On("ADDON_LOADED", hookForeverToggle)
 ns.On("PLAYER_ENTERING_WORLD", hookForeverToggle)
 
+-- The character key opens the default sheet through ToggleCharacter("PaperDollFrame"), which
+-- picks the page before showing the sheet. A secure wrap on the sheet's OnShow hides it when
+-- it opens on the character page and toggles this window. Hiding it from secure code leaves
+-- the panel manager untainted (HideUIPanel from addon code broke every menu button); the
+-- manager drops hidden panels by itself. Reputation/currency pages open normally.
+local sheetCloser = CreateFrame("Frame", "ObsidianUICharacterSheetCloser", UIParent, "SecureHandlerBaseTemplate")
+sheetCloser.OpenInventory = function() toggleOncePerPress() end
+Inventory.sheetCloser = sheetCloser
+local sheetWrapped = false
+local function wrapCharacterSheet()
+  if sheetWrapped or InCombatLockdown() then return end
+  local sheet, page = rawget(_G, "CharacterFrame"), rawget(_G, "PaperDollFrame")
+  if type(sheet) ~= "table" or type(page) ~= "table" or type(sheetCloser.WrapScript) ~= "function" then return end
+  sheetWrapped = true
+  SecureHandlerSetFrameRef(sheetCloser, "paperdoll", page)
+  sheetCloser:WrapScript(sheet, "OnShow", [[
+    local page = owner:GetFrameRef("paperdoll")
+    if page and page:IsShown() then return nil, "close" end
+  ]], [[
+    if message == "close" then
+      self:Hide()
+      control:CallMethod("OpenInventory")
+    end
+  ]])
+end
+wrapCharacterSheet()
+ns.On("PLAYER_LOGIN", wrapCharacterSheet)
+ns.On("ADDON_LOADED", wrapCharacterSheet)
+
 -- Once in the world, check the character key really clicks our button; if not, say in chat
 -- what holds it (so it can be fixed without the player typing anything).
 local checked = false
