@@ -33,11 +33,26 @@ local function hideArt(frame)
   end
 end
 
+-- Stance bar: left of the gems, or under the player frame when the class page asks (called
+-- again by the class modules once the unit frames exist).
+function ns.Stack.PlaceStance()
+  local gems = ns.ClassResource.HalfWidth(6) + 8
+  ns.Pin(ns.Resolve.First(ns.Data.FRAME_CANDIDATES.stancebar), function(frame)
+    frame:ClearAllPoints()
+    local player = ns.Classes and ns.Classes.StanceOnPlayer() and ns.UnitFrames.frames.player
+    if player then
+      frame:SetPoint("TOPLEFT", player, "BOTTOMLEFT", 0, -6)
+    else
+      frame:SetPoint("BOTTOMRIGHT", ns.Stack.Anchor(), "TOP", -gems, 6)
+    end
+  end)
+end
+
 local function layout()
   ns.RunOutOfCombat(function()
     -- Stance (left) and pet (right) bars start past the widest gem row (6 runes).
     local gems = ns.ClassResource.HalfWidth(6) + 8
-    pin("stancebar", "BOTTOMRIGHT", -gems, 6)
+    ns.Stack.PlaceStance()
     pin("petbar", "BOTTOMLEFT", gems, 6)
     pin("extrabutton", "BOTTOMRIGHT", -8, 150)
     pin("zoneability", "BOTTOMLEFT", 8, 150)

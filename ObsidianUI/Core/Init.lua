@@ -21,7 +21,8 @@ local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, sh
   autoJunk = true, autoRepair = "guild", autoInvite = true, noDuel = false, autoRes = true, autoRelease = true,
   skipCine = true, fastLoot = true, hideErrors = false, afkScreen = true,
   rmBuff = true, rmFood = true, rmPoison = true, rmRepair = true, rmBags = true,
-  c_rog_tick = true, c_rog_ontarget = false, c_rog_snd = true, c_rog_poison = true }
+  c_rog_tick = true, c_rog_ontarget = false, c_rog_snd = true, c_rog_poison = true,
+  c_war_swing = true, c_war_proc = true, c_war_stance = false, c_war_text = true }
 
 -- A Moderno texture in the chosen colour: the black theme, or the concept's blue.
 function ns.ModernTex(name)

@@ -236,6 +236,8 @@ function Region:SetWordWrap(v) self.nowrap = not v end
 -- Status bars -----------------------------------------------------------------------------------
 function Region:SetMinMaxValues(a, b) self.min, self.max = a, b end
 function Region:SetValue(v) self.value = v end
+function Region:GetMinMaxValues() return self.min or 0, self.max or 1 end
+function Region:GetValue() return self.value or 0 end
 function Region:SetOrientation(o) self.orientation = o end
 function Region:SetReverseFill(r) self.reverse = r end
 function Region:GetStatusBarTexture()

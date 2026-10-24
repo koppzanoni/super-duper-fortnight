@@ -110,7 +110,13 @@ na barra de energia (só se a energia chega em saltos de 2 s; regeneração cont
 pontos de combo acima da barra do alvo (opção, desligado), barras de Picar e Rasgar acima da barra de
 cast (GetPlayerAuraBySpellID / GetUnitAuraBySpellID + GetAuraDuration -> SetTimerDuration; Rasgar só o
 seu; movível "Temporizadores (Ladino)"), venenos acabando liga/desliga o aviso nos Lembretes.
-Próximas classes, uma por commit: Guerreiro, Paladino, Caçador, Sacerdote, Cavaleiro da Morte, Xamã,
+Guerreiro (FEITO: Classes/Warrior.lua): timer de ataque automático pelo log de combate (SWING_* seus,
+só a mão principal; Golpe Heroico/Cutilada reiniciam; some se C_CombatLog.IsCombatLogRestricted ou fora
+de combate; movível "Ataque automático"), aviso Sobrepujar/Executar no meio da tela (brilho do jogo
+SPELL_ACTIVATION_OVERLAY_GLOW_*, Executar também por C_Spell.IsSpellUsable com alvo inimigo), barra de
+posturas da Blizzard sob o quadro do jogador (opção; ns.Stack.PlaceStance + Classes.stanceKeys),
+fúria em número no lugar das gemas.
+Próximas classes, uma por commit: Paladino, Caçador, Sacerdote, Cavaleiro da Morte, Xamã,
 Mago, Bruxo, Monge, Druida (opções de cada uma no protótipo, CLASS_OPTS).
 Falta: as outras classes na página Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
@@ -184,6 +190,8 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
   batendo com a aura (Intelecto Arcano etc.), frasco reconhecido pelo nome no idioma do jogo.
 - Ladino: o tick de energia existe neste cliente (saltos de 20 a cada 2 s) ou a linha nunca aparece;
   Picar/Rasgar andando em combate (GetPlayerAuraBySpellID pode devolver nil se a aura for secreta).
+- Guerreiro: o log de combate chega para addons (senão o timer de ataque nunca aparece); posição da
+  barra de posturas sob o quadro do jogador sem cobrir o quadro de foco.
 - Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
   UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.

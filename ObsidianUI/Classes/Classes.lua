@@ -3,7 +3,7 @@ local _, ns = ...
 -- Classes: options of each class on one panel page. The character's class opens first; the
 -- other classes can be looked at (and set up for alts). Each class file registers its card with
 -- Classes.Register; a class without one shows "em breve".
-local Classes = { cards = {} }
+local Classes = { cards = {}, stanceKeys = {} }
 ns.Classes = Classes
 
 Classes.LIST = {
@@ -17,6 +17,13 @@ function Classes.Mine()
   return token
 end
 function Classes.Is(token) return Classes.Mine() == token end
+
+-- Whether the player's class wants Blizzard's stance/form bar under the player frame
+-- (stanceKeys[class] = the setting that says so).
+function Classes.StanceOnPlayer()
+  local key = Classes.stanceKeys[Classes.Mine() or ""]
+  return key ~= nil and ns.db ~= nil and ns.db[key] == true
+end
 
 -- title: the card heading; rows: panel rows ({ kind = "toggle", label, key, default, ... }).
 function Classes.Register(token, title, rows) Classes.cards[token] = { title, rows } end
