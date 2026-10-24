@@ -22,6 +22,7 @@ HUD\ActionBars.lua
 HUD\VerticalBars.lua
 HUD\KeybindMode.lua
 Settings\Settings.lua
+Settings\Panel.lua
 HUD\MenuPanels.lua
 HUD\SpecialBars.lua
 HUD\UnitFrames.lua

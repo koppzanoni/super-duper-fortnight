@@ -4,7 +4,8 @@ ns.name = addonName
 
 local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, showHotkeys = true,
   -- the HUD (the stone HUD retired: git tag hud-pedra-final)
-  modernColor = "black", arcaneRing = true, modernRows = 2, modernCols = 12 }
+  modernColor = "black", arcaneRing = true, modernRows = 2, modernCols = 12,
+  castLag = true, castMs = true, castQueue = true }
 
 -- A Moderno texture in the chosen colour: the black theme, or the concept's blue.
 function ns.ModernTex(name)

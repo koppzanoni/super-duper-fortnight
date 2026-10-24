@@ -26,6 +26,9 @@ local function register()
   checkbox("vbar2", "Barra vertical direita 2", false, function() ns.VerticalBars.Refresh() end)
   checkbox("showHotkeys", "Mostrar teclas de atalho nos botões", true, function() ns.ActionBars.UpdateBindings() end)
   if CreateSettingsButtonInitializer and layout then
+    layout:AddInitializer(CreateSettingsButtonInitializer("Todas as opções", "Abrir o painel da ObsidianUI",
+      function() ns.Panel.Open() end, -- above the game's window (DIALOG strata); never closing it from code
+      "O painel próprio do addon, com todas as opções por módulo. Também abre com /obui.", true))
     layout:AddInitializer(CreateSettingsButtonInitializer("Posição e tamanho dos elementos", "Modo de edição",
       function() ns.EditMode.Start() end,
       "Arraste cada elemento da HUD, mude o tamanho com a roda do mouse e ajuste com as setas. Esc sai.", true))

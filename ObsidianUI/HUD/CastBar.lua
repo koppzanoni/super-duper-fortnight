@@ -76,12 +76,13 @@ local function showZone()
   end)
   local lagFrac = ok and type(duration) == "number" and ns.Layout.CastLag(ns.CastBar.latency, duration)
   if not lagFrac then return hideZone() end
+  local db = ns.db or {}
   lag:SetWidth(math.max(1, barW * lagFrac))
-  lag:Show()
+  lag:SetShown(db.castLag ~= false)
   ns.CastBar.lagText:SetFormattedText("%d ms", math.floor(ns.CastBar.latency * 1000 + 0.5))
-  ns.CastBar.lagText:Show()
+  ns.CastBar.lagText:SetShown(db.castLag ~= false and db.castMs ~= false)
   local q = ns.Layout.CastQueue(queueWindow(), duration)
-  if q then
+  if q and db.castQueue ~= false then
     ns.CastBar.queue:SetSize(math.max(1, barH * 0.1), barH * 1.35)
     ns.CastBar.queue:ClearAllPoints()
     ns.CastBar.queue:SetPoint("CENTER", castbar(), "LEFT", barW * q, 0)
@@ -90,6 +91,9 @@ local function showZone()
     ns.CastBar.queue:Hide()
   end
 end
+
+-- Settings changed (zone, ms, queue mark): redrawn for the cast in progress.
+function ns.CastBar.Refresh() showZone() end
 
 ns.On("UNIT_SPELLCAST_SENT", function(_, unit) if unit == "player" then sentAt = GetTime() end end)
 ns.On("UNIT_SPELLCAST_START", function(_, unit)

@@ -72,8 +72,8 @@ SlashCmdList.OBSIDIANUI = function(msg)
   if msg == "diag" then
     armed = true
     run()
-  elseif msg == "config" then
-    ns.OpenSettings()
+  elseif msg == "" or msg == "config" then
+    ns.Panel.Toggle()
   elseif msg:match("^modelo") then
     local dist, height = msg:match("^modelo%s+([%-%d%.]+)%s+([%-%d%.]+)")
     if not dist then
@@ -92,6 +92,6 @@ SlashCmdList.OBSIDIANUI = function(msg)
     ns.ResetPositions()
     out("posições restauradas.")
   else
-    out("comandos: /obui editar, /obui config, /obui atalhos, /obui reset, /obui diag, /obui modelo")
+    out("comandos: /obui (configurações), /obui editar, /obui atalhos, /obui reset, /obui diag, /obui modelo")
   end
 end
