@@ -57,3 +57,17 @@ def _radius_alpha(img, frac):
     c = (img.width - 1) / 2
     return int(a[int(c), int(c + frac * c)])
 
+
+
+def test_cursor_ring_is_a_hollow_ring():
+    r = ex.cursor_ring(64)
+    assert r.getpixel((32, 32))[3] == 0                 # hollow middle
+    assert r.getpixel((0, 0))[3] == 0                   # nothing in the corners
+    assert max(r.getpixel((32, y))[3] for y in range(0, 12)) == 255   # the ring near the edge
+    assert r.getpixel((32, 4))[:3] == (255, 255, 255)   # white, tinted in game
+
+
+def test_cursor_dot_is_soft():
+    d = ex.cursor_dot(32)
+    assert d.getpixel((16, 16))[3] > 200 and d.getpixel((0, 16))[3] == 0
+    assert 0 < d.getpixel((16, 26))[3] < d.getpixel((16, 16))[3]

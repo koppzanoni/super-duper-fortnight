@@ -47,6 +47,7 @@ HUD\Tooltip.lua
 HUD\QuestTracker.lua
 HUD\Skins.lua
 HUD\Cooldowns.lua
+HUD\Cursor.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Stats.lua

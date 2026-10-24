@@ -98,11 +98,40 @@ def icon_sort(size=64):
     return Image.fromarray(img, "RGBA")
 
 
+def cursor_ring(size=128, width=0.06):
+    # Ring around the mouse: a crisp band near the edge with a soft glow inside; tinted in game.
+    y, x = np.mgrid[0:size, 0:size]
+    c = (size - 1) / 2
+    d = np.sqrt((x - c) ** 2 + (y - c) ** 2) / c
+    outer, inner = 0.92, 0.92 - width * 2
+    band = np.clip((outer - d) * c + 0.5, 0, 1) * np.clip((d - inner) * c + 0.5, 0, 1)
+    glow = np.clip(1 - (inner - d) / 0.35, 0, 1) ** 2 * 0.35 * (d < inner)
+    alpha = np.maximum(band, glow)
+    a = np.zeros((size, size, 4), np.uint8)
+    a[..., :3] = 255
+    a[..., 3] = (alpha * 255).round().astype(np.uint8)
+    return Image.fromarray(a, "RGBA")
+
+
+def cursor_dot(size=32):
+    # Soft round dot for the trail: solid centre fading to nothing at the edge.
+    y, x = np.mgrid[0:size, 0:size]
+    c = size / 2
+    d = np.sqrt((x - c) ** 2 + (y - c) ** 2) / (c - 1)
+    alpha = np.clip(1 - d, 0, 1) ** 1.5
+    a = np.zeros((size, size, 4), np.uint8)
+    a[..., :3] = 255
+    a[..., 3] = (alpha * 255).round().astype(np.uint8)
+    return Image.fromarray(a, "RGBA")
+
+
 PROCEDURAL = {
     "mask_circle": mask_circle,
     "bar_fill": bar_fill,
     "aura_border": aura_border,
     "icon_sort": icon_sort,
+    "cursor_ring": cursor_ring,
+    "cursor_dot": cursor_dot,
 }
 
 

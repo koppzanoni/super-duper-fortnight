@@ -87,8 +87,11 @@ Recarga nos ícones (FEITO: HUD/Cooldowns.lua): os números do próprio jogo em 
 (SetMinimumCountdownDuration), décimos nos últimos 3 s, fonte da HUD no tamanho do ícone; barras
 de ação, itens das bolsas, seus buffs/debuffs e debuffs no alvo; só estiliza os quadros novos
 entre uma mudança de ajuste e outra.
-Falta (marcado "em breve" no painel): Rastreador de missões, Dicas, Janelas da Blizzard,
-Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste,
+Cursor (FEITO: HUD/Cursor.lua): anel em volta do cursor e rastro de pontos que somem (texturas
+cursor_ring/cursor_dot geradas em export_textures.py), cor das cores prontas (padrão: roxo da HUD),
+só em combate (padrão), tamanho; some enquanto gira a câmera (IsMouselooking); por cima de tudo
+(TOOLTIP), sem pegar o mouse; o OnUpdate só roda com anel ou rastro ligado.
+Falta (marcado "em breve" no painel): Automação, Lembretes, Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
 
 ## Perfis (FEITO: Core/Serialize.lua + Core/Profiles.lua, página Perfis)
@@ -151,6 +154,8 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
 - Janelas da Blizzard: abrir cada uma e ver se nenhuma ficou sem fundo ou com conteúdo escondido
   atrás do painel; abas trocando de cor; o mapa.
 - Recarga nos ícones: números aparecendo nas barras, sem número na recarga global, décimos no fim.
+- Cursor: reiniciar o jogo (texturas novas); anel seguindo o mouse sem atraso, some ao girar a
+  câmera com o botão direito, rastro sumindo quando o mouse para.
 - Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
   UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.

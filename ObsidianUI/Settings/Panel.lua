@@ -268,7 +268,18 @@ Panel.SECTIONS = {
         "Desligado, as janelas voltam ao normal depois de recarregar. A de conquistas fica com a arte dela."),
     } },
   } },
-  { id = "cursor", group = "Interface", name = "Cursor", soon = true },
+  { id = "cursor", group = "Interface", name = "Cursor", lead = "Deixar o cursor fácil de achar no meio da luta.", cards = {
+    { "Efeitos", {
+      toggle("Anel em volta do cursor", "curRing", false, function() ns.Cursor.Refresh() end),
+      toggle("Rastro", "curTrail", false, function() ns.Cursor.Refresh() end, "Pontos que somem atrás do cursor quando ele se move."),
+      { kind = "cycle", label = "Cor", key = "c_cursor", options = Panel.ColorOptions, get = function() return Panel.ColorGet("cursor") end,
+        set = function(v) Panel.ColorSet("cursor", v) end, help = "\"Padrão\" usa o roxo da HUD." },
+    } },
+    { "Quando", {
+      toggle("Só em combate", "curCombat", true, function() ns.Cursor.Refresh() end),
+      steps("Tamanho", "curSize", 1, 0.5, 2, 0.1, pct, function() ns.Cursor.Refresh() end),
+    } },
+  } },
   { id = "automation", group = "Qualidade de vida", name = "Automação", soon = true },
   { id = "cooldowns", group = "Qualidade de vida", name = "Recarga nos ícones", lead = "O tempo que falta em cima de cada ícone, desenhado pelo próprio jogo.", cards = {
     { "Mostrar", {

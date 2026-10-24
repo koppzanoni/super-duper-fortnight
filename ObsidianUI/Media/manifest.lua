@@ -3,6 +3,8 @@ local _, ns = ...
 ns.MediaManifest = {
   aura_border = { file = "Interface\\AddOns\\ObsidianUI\\Media\\aura_border", w = 64, h = 64, potW = 64, potH = 64 },
   bar_fill = { file = "Interface\\AddOns\\ObsidianUI\\Media\\bar_fill", w = 256, h = 32, potW = 256, potH = 32 },
+  cursor_dot = { file = "Interface\\AddOns\\ObsidianUI\\Media\\cursor_dot", w = 32, h = 32, potW = 32, potH = 32 },
+  cursor_ring = { file = "Interface\\AddOns\\ObsidianUI\\Media\\cursor_ring", w = 128, h = 128, potW = 128, potH = 128 },
   gem_off = { file = "Interface\\AddOns\\ObsidianUI\\Media\\gem_off", w = 128, h = 127, potW = 128, potH = 128 },
   gem_on = { file = "Interface\\AddOns\\ObsidianUI\\Media\\gem_on", w = 123, h = 128, potW = 128, potH = 128 },
   icon_sort = { file = "Interface\\AddOns\\ObsidianUI\\Media\\icon_sort", w = 64, h = 64, potW = 64, potH = 64 },
