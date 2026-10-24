@@ -36,6 +36,15 @@ no sistema de movers (hoje tem o arrastar próprio).
 - Só fora de combate (frames seguros); sair do modo de edição ao entrar em combate.
 - Os layouts padrão continuam valendo quando não há posição salva.
 
+## Painel próprio (FEITO, primeira versão: Settings/Panel.lua, /obui)
+Barra lateral em grupos, busca, mudanças ao vivo; opções já ligadas: cor (recarrega), escala,
+modo de edição, teclas, restaurar posições, linhas/colunas, números das teclas, barras verticais,
+anel arcano, zona de latência / ms / marca da fila, tamanho do inventário.
+Falta (marcado "em breve" no painel): Visual, Recursos de classe, Auras, Barras de dados, Barra de
+informações, Grupo, Raide, Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
+Cursor, Automação, Recarga nos ícones, Lembretes, Classes, Perfis (+ modo de teste, instalador,
+visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
+
 ## Fase 3 — Inventário Moderno
 - Janela larga, preto fosco translúcido: personagem à esquerda (modelo, 8+8 slots, 3 armas, nível
   de item, abas Atributos/Reputação/Moedas), mochila à direita (busca, ordenar, abas de filtro,
