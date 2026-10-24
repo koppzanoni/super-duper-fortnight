@@ -364,42 +364,40 @@ ns.On("PLAYER_LOGIN", function()
 end)
 
 -- Default bag frames stay hidden; every bag toggle opens/closes this window instead.
--- The window is the source of truth: opening/closing it also tells Blizzard, so B never needs
--- two presses. Toggle functions call Open/Close internally, so ignore a second action in the
--- same instant, and ignore the hooks fired by our own sync calls.
-local last, syncing = 0, false
-local function syncBlizzard(fn)
-  if syncing or type(fn) ~= "function" then return end
-  syncing = true
-  pcall(fn)
-  syncing = false
-end
-local baseOpen, baseClose = Inventory.Open, Inventory.Close
-function Inventory.Open() baseOpen(); syncBlizzard(OpenAllBags) end
+-- The addon never calls the game's bag functions back: OpenAllBags from addon code taints the
+-- panel manager (the bank opened off screen, "blocked from an action"). So the game's own idea
+-- of "bags open" can drift from this window. A toggle therefore flips this window from what it
+-- was before the press, not from the Open/Close the game ran inside the same press.
+local baseClose = Inventory.Close
 function Inventory.Close()
   baseClose()
-  syncBlizzard(CloseAllBags)
   -- Items stop being "new" once the player has seen the bags, like the default bags.
   if C_NewItems and C_NewItems.ClearAll then pcall(C_NewItems.ClearAll) end
 end
 
-local function guarded(method)
+local stamp, before = nil, false
+local function note()
+  local now = GetTime()
+  if now ~= stamp then stamp, before = now, frame:IsShown() and true or false end
+end
+local function follow(method)
   return function()
-    if syncing then return end
-    local now = GetTime()
-    if now - last < 0.05 then return end
-    last = now
-    Inventory[method]()
+    note()
+    if method == "Toggle" then
+      if before then Inventory.Close() else Inventory.Open() end
+    else
+      Inventory[method]()
+    end
   end
 end
 for _, name in ipairs({ "ToggleAllBags", "ToggleBackpack", "ToggleBag" }) do
-  if _G[name] then hooksecurefunc(name, guarded("Toggle")) end
+  if _G[name] then hooksecurefunc(name, follow("Toggle")) end
 end
 for _, name in ipairs({ "OpenAllBags", "OpenBackpack" }) do
-  if _G[name] then hooksecurefunc(name, guarded("Open")) end
+  if _G[name] then hooksecurefunc(name, follow("Open")) end
 end
 for _, name in ipairs({ "CloseAllBags", "CloseBackpack" }) do
-  if _G[name] then hooksecurefunc(name, guarded("Close")) end
+  if _G[name] then hooksecurefunc(name, follow("Close")) end
 end
 
 ns.On("PLAYER_LOGIN", function()

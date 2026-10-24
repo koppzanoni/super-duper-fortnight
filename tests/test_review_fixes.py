@@ -85,6 +85,39 @@ def test_b_key_opens_in_one_press_after_closing_from_our_button(lua, ns):
     assert shown["v"] is True
 
 
+def test_inventory_never_calls_blizzard_bag_functions(lua, ns):
+    # Calling OpenAllBags/CloseAllBags from addon code taints the panel manager: the bank
+    # opened off screen with "ObsidianUI has been blocked from an action".
+    boot(lua, ns, pre=BLIZZ_BAGS + """
+BLIZZ_CALLS = 0
+local o, c = OpenAllBags, CloseAllBags
+function OpenAllBags() BLIZZ_CALLS = BLIZZ_CALLS + 1; o() end
+function CloseAllBags() BLIZZ_CALLS = BLIZZ_CALLS + 1; c() end
+""")
+    g = lua.globals()
+    ns.Inventory.Open()
+    g.STUB_TIME = 101
+    ns.Inventory.Close()
+    g.STUB_TIME = 102
+    ns.Inventory.Toggle()
+    assert g.BLIZZ_CALLS == 0
+
+
+def test_bank_open_and_close_follow_blizzard(lua, ns):
+    boot(lua, ns, pre=BLIZZ_BAGS)
+    g = lua.globals()
+    shown = {"v": False}
+    f = ns.Inventory.frame
+    f.Show = lambda self: shown.__setitem__("v", True)
+    f.Hide = lambda self: shown.__setitem__("v", False)
+    f.IsShown = lambda self: shown["v"]
+    g.OpenAllBags()  # the bank opening
+    assert shown["v"] is True
+    g.STUB_TIME = 101
+    g.CloseAllBags()  # the bank closing
+    assert shown["v"] is False
+
+
 def test_chat_moved_off_the_hud_every_login(lua, ns):
     boot(lua, ns, pre="""
       CHAT_MOVES = 0
