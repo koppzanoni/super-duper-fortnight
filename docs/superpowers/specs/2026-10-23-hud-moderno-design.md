@@ -4,9 +4,9 @@ Approved by the user in the interactive sketch (2026-10-23). Concept: the user's
 `art/concept_modern.png`; the art is drawn by `tools/modern_art.py`, copying the concept's look.
 
 ## Intent
-A second HUD style next to the stone one (which stays exactly as it is): clean, modern, black
-see-through panels with thin neutral lines, round portraits with straight bars. Highly configurable,
-like WoW's Edit Mode.
+The addon's HUD (it started as a second style next to the stone one, which was then retired): clean,
+modern, black see-through panels with thin neutral lines, round portraits with straight bars. Highly
+configurable, like WoW's Edit Mode.
 
 ## Decided by the user
 - 2026-10-23 update: the other HUDs are retired, Moderno is the only HUD (stone, Relicário and orbs
