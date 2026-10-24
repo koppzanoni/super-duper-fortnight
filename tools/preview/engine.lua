@@ -140,6 +140,8 @@ end
 function Region:SetParent(p) self.parent = p end
 function Region:GetParent() return self.parent end
 function Region:SetAlpha(a) self.alpha = a end
+function Region:GetAlpha() return self.alpha or 1 end
+function Region:SetAlphaFromBoolean(b, yes, no) self.alpha = b and (yes or 1) or (no or 0) end
 function Region:SetFrameLevel(l) self.level = l end
 function Region:GetFrameLevel()
   if self.level then return self.level end

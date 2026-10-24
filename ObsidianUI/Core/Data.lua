@@ -210,6 +210,8 @@ Data.FRAME_CANDIDATES = {
   statusbar = { "StatusTrackingBarManager", "MainStatusTrackingBarContainer" },
   playerframe = { "PlayerFrame" }, targetframe = { "TargetFrame" }, focusframe = { "FocusFrame" },
   buffframe = { "BuffFrame" }, debuffframe = { "DebuffFrame" },
+  partyframe = { "PartyFrame" }, compactparty = { "CompactPartyFrame" },
+  raidmanager = { "CompactRaidFrameManager" }, raidcontainer = { "CompactRaidFrameContainer" },
   castbar = { "PlayerCastingBarFrame", "CastingBarFrame" },
   targetcastbar = { "TargetFrameSpellBar" }, focuscastbar = { "FocusFrameSpellBar" },
   stancebar = { "StanceBar", "StanceBarFrame" },

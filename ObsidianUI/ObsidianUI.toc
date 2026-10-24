@@ -39,6 +39,7 @@ HUD\PlayerStatus.lua
 HUD\InfoBar.lua
 HUD\DefaultPositions.lua
 HUD\EditMode.lua
+HUD\GroupFrames.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Stats.lua

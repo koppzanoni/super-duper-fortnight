@@ -90,10 +90,15 @@ SlashCmdList.OBSIDIANUI = function(msg)
     ns.Installer.Open()
   elseif msg == "editar" then
     ns.EditMode.Start()
+  elseif msg:match("^teste") then
+    local what = msg:match("^teste%s+(%S+)")
+    if what == "raide" or what == "raid" then ns.GroupFrames.Test("raid")
+    elseif what == "grupo" or what == "party" then ns.GroupFrames.Test("party")
+    else ns.GroupFrames.Test(not ns.GroupFrames.testing and "party" or nil) end
   elseif msg == "reset" then
     ns.ResetPositions()
     out("posições restauradas.")
   else
-    out("comandos: /obui (configurações), /obui editar, /obui instalar, /obui atalhos, /obui reset, /obui diag, /obui modelo")
+    out("comandos: /obui (configurações), /obui editar, /obui teste [grupo|raide], /obui instalar, /obui atalhos, /obui reset, /obui diag, /obui modelo")
   end
 end

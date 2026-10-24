@@ -203,6 +203,24 @@ local function updateAll(f)
 end
 UnitFrames.Update = updateAll
 
+-- Test mode: stand-in values for a frame whose unit does not exist (d: name, class, level, hp).
+function UnitFrames.Fake(f, d)
+  f.name:SetText(d.name)
+  f.levelText:SetText(d.level or 60)
+  local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS[d.class]
+  if c then f.health:SetStatusBarColor(c.r, c.g, c.b) end
+  f.health:SetMinMaxValues(0, 10000); f.health:SetValue(d.hp)
+  f.power:SetMinMaxValues(0, 100); f.power:SetValue(d.power or 70)
+  f.power:SetStatusBarColor(ns.Data.PowerColor("MANA"))
+  f.hpText:SetText(ns.Look.Number(d.hp) .. " / " .. ns.Look.Number(10000))
+  f.powerText:SetText((d.power or 70) .. " / 100")
+  local coords = CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[d.class]
+  if coords then
+    f.portrait:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
+    f.portrait:SetTexCoord(unpack(coords))
+  end
+end
+
 -- Debuffs the player applied on the target, in a row right under the target bars.
 local debuffs = {}
 UnitFrames.debuffs = debuffs

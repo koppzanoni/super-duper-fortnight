@@ -90,8 +90,6 @@ function GetTime() return 100 end
 function GetRuneCooldown() return 0, 0, true end
 function IsModifiedClick() return false end
 function hooksecurefunc() end
-function RegisterStateDriver() end
-function RegisterUnitWatch() end
 function print() end
 SlashCmdList = {}
 UISpecialFrames = {}
@@ -110,7 +108,6 @@ function UnitIsTapDenied() return false end
 function UnitIsPlayer(u) return u == "player" or u == "targettarget" end
 local REACTION = { target = 2, focus = 2, pet = 5, targettarget = 5 }
 function UnitReaction(u) return REACTION[u] end
-RAID_CLASS_COLORS = { ROGUE = { r = 1.0, g = 0.96, b = 0.41 } }
 -- The wolf is casting too: Blizzard's target cast bar, adopted by our target frame.
 TargetFrameSpellBar = CreateFrame("StatusBar", "TargetFrameSpellBar", UIParent)
 TargetFrameSpellBar:SetMinMaxValues(0, 1); TargetFrameSpellBar:SetValue(0.35)
@@ -139,3 +136,68 @@ function GetSpellCritChance() return 0 end
 function GetFramerate() return 60 end
 function GetNetStats() return 0, 0, 32, 45 end
 function date(f) return "10:24" end
+
+-- Group roster for the group frames: solo by default. PREVIEW_ROSTER("party"|"raid"|nil, n) fills
+-- party1..n or raid1..n (five per subgroup), re-evaluates unit watches and visibility drivers and
+-- fires GROUP_ROSTER_UPDATE. Member 3 is out of range, 4 is dead, 7 is offline.
+PREVIEW_GROUP, ROSTER = false, {} -- false, not nil: unknown globals are stubs here
+local CLASSES = { "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID" }
+local ROLES = { "TANK", "HEALER", "DAMAGER", "DAMAGER", "DAMAGER" }
+RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 }, PALADIN = { r = 0.96, g = 0.55, b = 0.73 },
+  HUNTER = { r = 0.67, g = 0.83, b = 0.45 }, ROGUE = { r = 1.0, g = 0.96, b = 0.41 }, PRIEST = { r = 1, g = 1, b = 1 },
+  SHAMAN = { r = 0, g = 0.44, b = 0.87 }, MAGE = { r = 0.25, g = 0.78, b = 0.92 }, WARLOCK = { r = 0.53, g = 0.53, b = 0.93 },
+  DRUID = { r = 1.0, g = 0.49, b = 0.04 } }
+local WATCHED, DRIVERS = {}, {}
+local base = { UnitExists = UnitExists, UnitName = UnitName, UnitClass = UnitClass, UnitHealth = UnitHealth,
+  UnitHealthMax = UnitHealthMax, UnitIsPlayer = UnitIsPlayer, UnitHealthPercent = UnitHealthPercent }
+function UnitExists(u) return ROSTER[u] ~= nil or base.UnitExists(u) end
+function UnitName(u) if ROSTER[u] then return ROSTER[u].name end return base.UnitName(u) end
+function UnitClass(u) local m = ROSTER[u]; if m then return m.class, m.class end return base.UnitClass(u) end
+function UnitHealth(u) if ROSTER[u] then return ROSTER[u].hp end return base.UnitHealth(u) end
+function UnitHealthMax(u) if ROSTER[u] then return 10000 end return base.UnitHealthMax(u) end
+function UnitHealthPercent(u) if ROSTER[u] then return ROSTER[u].hp / 100 end return base.UnitHealthPercent(u) end
+function UnitIsPlayer(u) return ROSTER[u] ~= nil or base.UnitIsPlayer(u) end
+function UnitGroupRolesAssigned(u) return ROSTER[u] and ROSTER[u].role or "NONE" end
+function UnitIsConnected(u) return not (ROSTER[u] and ROSTER[u].offline) end
+function UnitIsDeadOrGhost(u) return ROSTER[u] and ROSTER[u].dead or false end
+function UnitInRange(u) if ROSTER[u] then return not ROSTER[u].far, true end return false, false end
+function IsInRaid() return PREVIEW_GROUP == "raid" end
+function UnitIsUnit(a, b) return a == b end
+function IsInGroup() return PREVIEW_GROUP ~= false end
+function GetNumGroupMembers() local n = 0; for _ in pairs(ROSTER) do n = n + 1 end return n end
+function GetRaidRosterInfo(i)
+  local m = ROSTER["raid" .. i]
+  if not m then return nil end
+  return m.name, 0, m.group, 60, m.class, m.class, "", not m.offline, m.dead, m.role
+end
+
+local function evalDriver(expr)
+  for clause in expr:gmatch("[^;]+") do
+    local cond, action = clause:match("^%s*%[(.-)%]%s*(%S+)")
+    if not cond then return clause:match("%S+") end
+    local ok = (cond == "group:raid" and PREVIEW_GROUP == "raid") or (cond == "group:party" and PREVIEW_GROUP ~= false)
+      or (cond == "nogroup" and PREVIEW_GROUP == false)
+    if ok then return action end
+  end
+end
+local function applyWatch(f) f:SetShown(UnitExists(f:GetAttribute("unit"))) end
+local function applyDriver(f) f:SetShown(evalDriver(DRIVERS[f]) == "show") end
+function RegisterUnitWatch(f) WATCHED[f] = true; applyWatch(f) end
+function UnregisterUnitWatch(f) WATCHED[f] = nil end
+function RegisterStateDriver(f, state, expr)
+  if state ~= "visibility" then return end
+  DRIVERS[f] = expr; applyDriver(f)
+end
+function UnregisterStateDriver(f, state) if state == "visibility" then DRIVERS[f] = nil end end
+
+function PREVIEW_ROSTER(kind, n)
+  ROSTER, PREVIEW_GROUP = {}, kind or false
+  for i = 1, (kind and n or 0) do
+    ROSTER[(kind == "raid" and "raid" or "party") .. i] = { name = "Membro " .. i, class = CLASSES[(i - 1) % #CLASSES + 1],
+      role = ROLES[(i - 1) % 5 + 1], hp = 1000 * (10 - i % 7), group = math.floor((i - 1) / 5) + 1,
+      far = i == 3, dead = i == 4, offline = i == 7 }
+  end
+  for f in pairs(WATCHED) do applyWatch(f) end
+  for f in pairs(DRIVERS) do applyDriver(f) end
+  PREVIEW_FIRE("GROUP_ROSTER_UPDATE")
+end

@@ -43,7 +43,15 @@ anel arcano, zona de latência / ms / marca da fila, tamanho do inventário.
 Barras de dados (FEITO): experiência + descanso e reputação acompanhada (cor por reputação),
 texto sempre/ao passar o mouse/nunca, altura, liga/desliga, modo de edição; a barra de ações sobe
 quando as duas barras não cabem embaixo dela.
-Falta (marcado "em breve" no painel): Grupo, Raide, Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
+Grupo e Raide (FEITO: HUD/GroupFrames.lua): grupo com os quadros Moderno pequenos empilhados
+(some em raide); raide em células por subgrupo (linhas ou colunas), cor da classe, nome, linha de
+mana, ícone de tanque/curador, Morto/Desconectado em cinza, borda na cor do debuff dissipável,
+apagado fora de alcance (UnitInRange é secreto: SetAlphaFromBoolean); largura/altura; modo de teste
+(painel, /obui teste [grupo|raide], o modo de edição mostra o grupo quando sozinho; combate encerra);
+esconde PartyFrame/CompactPartyFrame/CompactRaidFrameManager/Container quando ligados.
+Falta no grupo/raide: jogador dentro do grupo, estilo raide para o grupo, auras nos quadros,
+marcadores de raide e pronto/checagem (o gerenciador da Blizzard fica escondido).
+Falta (marcado "em breve" no painel): Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
 Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
 
@@ -79,12 +87,10 @@ Auras: moldura mod_slot (debuffs tingidos pelo tipo), tamanho, ícones por linha
 - Opção azul também.
 
 ## Ajustes pendentes da fase 1
-- Gemas de recurso de classe (combo, runas, poder sagrado...) ainda usam a arte de pedra no Moderno.
 - Buffs do jogador ficam no topo central; no sketch apareciam embaixo do quadro do jogador
   (decidir com o usuário).
 - Ícones do menu: conferir no jogo (no preview saem como quadrados escuros por limitação do
   simulador).
-- Quadros de grupo e raide no estilo Moderno (planejados também para a HUD de pedra).
 - Nameplates no estilo Moderno.
 
 ## Verificar no jogo quando o servidor voltar
@@ -97,3 +103,6 @@ Auras: moldura mod_slot (debuffs tingidos pelo tipo), tamanho, ícones por linha
 - Anel arcano girando; ligar/desligar.
 - Minimapa: relógio, correio, rastreamento e calendário nos lugares novos.
 - Menu: todos os botões abrindo as janelas (sem taint).
+- Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
+  UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
+  botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.

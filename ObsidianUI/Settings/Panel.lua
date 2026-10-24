@@ -46,6 +46,14 @@ function Panel.ResourceToken()
   local r = ns.Data.ClassResourceFor(classToken, GetSpecialization and GetSpecialization(), (UnitPowerType("player")))
   return r and r.token or "COMBO_POINTS"
 end
+-- Test mode of the group frames: stand-ins to place and size them while solo (combat ends it).
+function Panel.TestRow()
+  return { kind = "choice", label = "Modo de teste", key = "groupTest",
+    options = { { "", "Desligado" }, { "party", "Grupo" }, { "raid", "Raide" } },
+    get = function() return ns.GroupFrames.testing or "" end,
+    set = function(v) ns.GroupFrames.Test(v ~= "" and v or nil) end,
+    help = "Mostra quadros de exemplo para posicionar. Some ao entrar em combate." }
+end
 function Panel.ColorOptions() local o = {}; for _, c in ipairs(Panel.COLORS) do o[#o + 1] = { c[1], c[2] } end; return o end
 function Panel.ColorGet(key)
   local c = ns.db.colors and ns.db.colors[key]
@@ -183,8 +191,26 @@ Panel.SECTIONS = {
       end
       return { { "Itens", items } }
     end },
-  { id = "party", group = "Grupo", name = "Grupo", soon = true },
-  { id = "raid", group = "Grupo", name = "Raide", soon = true },
+  { id = "party", group = "Grupo", name = "Grupo", lead = "Os outros quatro do grupo, no visual dos quadros. Posição: modo de edição.", cards = {
+    { "Quadros", {
+      toggle("Mostrar", "party_on", true, function() ns.GroupFrames.Refresh() end,
+        "Desligado, os quadros da Blizzard voltam depois de recarregar."),
+    } },
+    { "Teste", { Panel.TestRow() } },
+  } },
+  { id = "raid", group = "Grupo", name = "Raide", lead = "Células compactas por grupo, na cor da classe. Posição: modo de edição.", cards = {
+    { "Quadros", {
+      toggle("Mostrar", "raid_on", true, function() ns.GroupFrames.Refresh() end,
+        "Desligado, os quadros da Blizzard voltam depois de recarregar."),
+      choice("Grupos", "raidGrowth", "rows", { { "rows", "Em linhas" }, { "columns", "Em colunas" } },
+        function() ns.GroupFrames.Refresh() end),
+    } },
+    { "Tamanho", {
+      steps("Largura", "raidW", 72, 40, 140, 4, int, function() ns.GroupFrames.Refresh() end),
+      steps("Altura", "raidH", 36, 20, 80, 2, int, function() ns.GroupFrames.Refresh() end),
+    } },
+    { "Teste", { Panel.TestRow() } },
+  } },
   { id = "plates", group = "Grupo", name = "Nameplates", soon = true },
   { id = "chat", group = "Interface", name = "Chat", soon = true },
   { id = "quests", group = "Interface", name = "Rastreador de missões", soon = true },

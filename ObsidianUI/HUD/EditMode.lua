@@ -267,9 +267,13 @@ button("Restaurar tudo", -116, function() EditMode.ResetAll() end)
 button("Centralizar", -222, function() if EditMode.selected then EditMode.Center(EditMode.selected) end end)
 button("Restaurar", -328, function() if EditMode.selected then EditMode.Reset(EditMode.selected) end end)
 
+-- Modules that show stand-ins while editing (the group frames when solo) hook in here.
+EditMode.onStart, EditMode.onStop = {}, {}
+
 function EditMode.Start()
   if InCombatLockdown() or EditMode.active then return end
   EditMode.active = true
+  for _, fn in ipairs(EditMode.onStart) do fn() end
   drawGrid()
   grid:Show()
   banner:Show()
@@ -291,6 +295,7 @@ function EditMode.Stop()
   guideX:Hide(); guideY:Hide()
   for _, box in pairs(EditMode.boxes) do box:Hide() end
   if not InCombatLockdown() then catcher:EnableKeyboard(false) end
+  for _, fn in ipairs(EditMode.onStop) do fn() end
 end
 
 ns.On("PLAYER_REGEN_DISABLED", function() if EditMode.active then EditMode.Stop() end end)
