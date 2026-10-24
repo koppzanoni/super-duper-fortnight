@@ -44,6 +44,7 @@ function Classes.NewAlert()
     ns.Look.SetFont(self.text, 22)
     self.text:SetText(text or ((C_Spell.GetSpellName(id) or "") .. "!"))
     self.text:SetTextColor(1, 0.82, 0.2)
+    self:SetWidth(40 + 10 + (tonumber(self.text:GetStringWidth()) or 190)) -- centred on its content
     self:Show()
   end
   return alert

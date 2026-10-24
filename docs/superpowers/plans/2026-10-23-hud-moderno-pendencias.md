@@ -135,6 +135,9 @@ estilo gemas), poder rúnico em barra fina sob as runas, Febre Gélida / Peste S
 Xamã (FEITO: Classes/Shaman.lua): barra de totens (GetTotemInfo, 4 espaços mod_slot, contagem do próprio
 jogo num Cooldown, vazio apagado; embaixo do jogador ou no lugar das gemas), arma sem encantamento ou
 acabando e escudo faltando nos Lembretes (o aviso genérico de óleo cede ao do Xamã), regra dos 5 s.
+Mago (FEITO: Classes/Mage.lua): regra dos 5 s, armadura faltando e sem gema de mana (quando já conjura
+uma) nos Lembretes, procs no aviso central (SPELL_ACTIVATION_OVERLAY_SHOW/HIDE; o aviso agora se
+centraliza pela largura do texto).
 Próximas classes, uma por commit: Xamã,
 Mago, Bruxo, Monge, Druida (opções de cada uma no protótipo, CLASS_OPTS).
 Falta: as outras classes na página Classes (+ modo de teste,
