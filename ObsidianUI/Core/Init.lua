@@ -14,7 +14,8 @@ local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, sh
   partyPlayer = false, partyStyle = "frames", groupDebuffs = true, raidTools = true,
   plates_on = true, plateW = 140, plateH = 10, plateHP = true, plateCast = true, plateDebuffs = true, plateFade = true,
   chat_on = true, chatButtons = false, chatFade = 120,
-  tip_on = true, tipAnchor = "default", tipCombat = true }
+  tip_on = true, tipAnchor = "default", tipCombat = true,
+  quest_on = true, questCombat = true, questInstance = false }
 
 -- A Moderno texture in the chosen colour: the black theme, or the concept's blue.
 function ns.ModernTex(name)

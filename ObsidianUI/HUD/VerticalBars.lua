@@ -74,20 +74,10 @@ function VerticalBars.Refresh()
   end)
 end
 
--- The objective tracker sits left of the bars while they are shown (Edit Mode puts it back on
--- the right edge, over them); otherwise under the minimap on the right.
+-- The objective tracker sits left of the bars while they are shown, otherwise under the minimap:
+-- the quest tracker module places its holder (movable in the edit mode).
 function VerticalBars.PlaceTracker()
-  local tracker = ns.Resolve.First(ns.Data.FRAME_CANDIDATES.objectivetracker)
-  if not tracker then return end
-  ns.Pin(tracker, function(f)
-    local _, screenH = UIParent:GetSize()
-    f:ClearAllPoints()
-    if container:IsShown() then
-      f:SetPoint("TOPRIGHT", container, "TOPLEFT", -10, 0)
-    else
-      f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -0.012 * screenH, -VerticalBars.TOP * screenH)
-    end
-  end)
+  if ns.QuestTracker then ns.QuestTracker.Place() end
 end
 
 ns.On("PLAYER_LOGIN", VerticalBars.Refresh)

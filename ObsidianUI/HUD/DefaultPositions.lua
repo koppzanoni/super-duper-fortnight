@@ -33,12 +33,7 @@ end
 local function apply()
   local W, H = UIParent:GetSize()
 
-  local tracker = ns.Resolve.First(ns.Data.FRAME_CANDIDATES.objectivetracker)
-  if tracker then
-    tracker:ClearAllPoints()
-    tracker:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -0.11 * H, -0.27 * H)
-  end
-
+  -- the objective tracker is placed by HUD/QuestTracker.lua (its holder moves in the edit mode)
   if AlertFrame then
     AlertFrame:ClearAllPoints()
     AlertFrame:SetPoint("TOP", UIParent, "TOP", 0, -0.18 * H)

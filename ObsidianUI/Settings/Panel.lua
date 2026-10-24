@@ -244,7 +244,15 @@ Panel.SECTIONS = {
         function() ns.Chat.Apply() end, "Passe o mouse no chat para ver de novo."),
     } },
   } },
-  { id = "quests", group = "Interface", name = "Rastreador de missões", soon = true },
+  { id = "quests", group = "Interface", name = "Rastreador de missões", lead = "Títulos em branco com linha roxa. Posição: modo de edição.", cards = {
+    { "Visual", {
+      toggle("Usar o visual da ObsidianUI", "quest_on", true, nil, "Desligado, volta ao normal depois de recarregar."),
+    } },
+    { "Comportamento", {
+      toggle("Recolher em combate", "questCombat", true, nil, "Abre de novo quando o combate acaba."),
+      toggle("Recolher em instâncias", "questInstance", false, nil, "Masmorras, raides e campos de batalha."),
+    } },
+  } },
   { id = "tooltip", group = "Interface", name = "Dicas (tooltip)", lead = "Painel preto com a borda na cor da raridade ou da classe.", cards = {
     { "Visual", {
       toggle("Usar as dicas da ObsidianUI", "tip_on", true, nil, "Desligado, as dicas voltam ao normal depois de recarregar."),

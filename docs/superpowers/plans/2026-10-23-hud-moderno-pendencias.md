@@ -70,6 +70,10 @@ EmbeddedItemTooltip num painel preto (NineSlice alpha 0, também depois de
 SharedTooltip_SetBackdropStyle), borda na cor da raridade (TooltipDataProcessor Item) ou da classe
 (Unit, nome também), linha "Alvo:", barra de vida fina; posição padrão / cursor / acima da barra de
 informações; some sobre o mundo em combate (opção).
+Rastreador de missões (FEITO: HUD/QuestTracker.lua): sem NineSlice e arte dos títulos, títulos
+brancos com linha roxa (também em módulos novos, hook em Update), pendurado num suporte movível
+("Missões", padrão: à esquerda das barras verticais ou sob o minimapa); recolher em combate e em
+instâncias (abre de novo depois, a não ser que o jogador tenha recolhido).
 Falta (marcado "em breve" no painel): Rastreador de missões, Dicas, Janelas da Blizzard,
 Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.

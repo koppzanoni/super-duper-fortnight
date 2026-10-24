@@ -267,5 +267,5 @@ def test_objective_tracker_moves_left_of_the_vertical_bars(lua, ns):
     g = lua.globals()
     g.ObjectiveTrackerFrame.SetPoint(g.ObjectiveTrackerFrame, "TOPRIGHT", None, "TOPRIGHT", 0, 0)  # Edit Mode
     point, x, _ = last_point(lua, "ObjectiveTrackerFrame")
-    assert point == "TOPRIGHT" and x == -10
+    assert point == "TOPRIGHT" and x == 0                    # back on its holder (placed in test_quests)
 
