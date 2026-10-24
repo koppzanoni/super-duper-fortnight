@@ -68,6 +68,21 @@ class Canvas:
         piece.paste(g, (0, 0), m)
         self.layers[layer].alpha_composite(piece, (x0, y0))
 
+    def hfade(self, box, layers=("body", "lines")):
+        """Fade the given layers to nothing from the left of box to its right (a soft end)."""
+        x0, y0, x1, y1 = [round(v) for v in self.s(box)]
+        ramp = Image.new("L", (x1 - x0, 1))
+        for x in range(ramp.width):
+            f = 1 - x / max(1, ramp.width - 1)
+            ramp.putpixel((x, 0), round(255 * f * f))
+        ramp = ramp.resize((x1 - x0, y1 - y0))
+        for k in layers:
+            img = self.layers[k]
+            m = Image.new("L", img.size, 255)
+            m.paste(ramp, (x0, y0))
+            m.paste(0, (x1, y0, img.width, y1))
+            img.putalpha(ImageChops.multiply(img.getchannel("A"), m))
+
     def cut(self, box, r=0, ellipse=False):
         """A see-through hole in every layer (portrait, icon, map show through)."""
         for img in self.layers.values():
@@ -194,18 +209,17 @@ def cast_bar():
     hairline_box(c, (ix0 - 4, iy0 - 4, ix1 + 4, iy1 + 4), 8, width=2.2)
     tip(c, ix0 - 7, (iy0 + iy1) / 2, -1, 7)
     tip(c, (ix0 + ix1) / 2, iy1 + 6, 2, 6)
-    # name tab: dark plate, hairline along its top and its rounded right end
+    # name tab: dark plate and a hairline along its top, both fading out to the right (no hard
+    # end); the groove below is drawn after the fade, so it stays whole
     tx0, ty0, tx1, ty1 = CASTBAR["tab"]
-    c.rrect((tx0, ty0, tx1, ty1 + 10), 14, fill=PANEL + (190,), layer="body")
-    c.draw("lines").arc(c.s((tx1 - 28, ty0, tx1, ty0 + 28)), 270, 360, fill=LINE_DIM + (255,), width=round(1.4 * SS))
-    c.line([(tx0 + 4, ty0), (tx1 - 14, ty0)], LINE_DIM + (255,), 1.4)
-    c.line([(tx1, ty0 + 14), (tx1, ty1)], LINE_DIM + (255,), 1.4)
-    # progress groove, pointed at the right end
     bx0, by0, bx1, by1 = CASTBAR["bar"]
+    c.rrect((tx0, ty0, tx1 + 60, ty1 + 10), 14, fill=PANEL + (190,), layer="body")
+    c.line([(tx0 + 10, ty0), (tx1 + 50, ty0)], LINE_DIM + (255,), 1.4)
+    c.hfade((tx0 + (tx1 - tx0) * 0.55, ty0 - 4, tx1 + 62, by0))
+    # progress groove, pointed at the right end
     c.rrect((bx0, by0, bx1, by1), (by1 - by0) / 2, fill=(1, 8, 14, 240), layer="body")
     hairline_box(c, (bx0, by0, bx1, by1), (by1 - by0) / 2)
     tip(c, bx1 + 1, (by0 + by1) / 2, 1, 8)
-    tip(c, (tx1 + 0), by1 + 2, 2, 5, LINE_DIM)
     c.cut((ix0, iy0, ix1, iy1), 5)
     return c.render()
 

@@ -450,7 +450,14 @@ local function placeCastbar(bar, f)
   bar:SetPoint("TOPLEFT", f.health, "BOTTOMLEFT", 0, -belowHealth(f) - 4 - debuffRow)
   local barH = math.max(10, f:GetHeight() * 0.11)
   bar:SetSize(underWidth(f), barH)
-  if bar.Text then setFontSize(bar.Text, barH * 0.85) end
+  if bar.Text then
+    -- a little smaller than the bar, with room at both ends; long names stop short of the edge
+    setFontSize(bar.Text, barH * 0.72)
+    bar.Text:ClearAllPoints()
+    bar.Text:SetPoint("LEFT", bar, "LEFT", 4, 0)
+    bar.Text:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
+    if bar.Text.SetWordWrap then bar.Text:SetWordWrap(false) end
+  end
   bar.obApplying = false
 end
 
@@ -465,15 +472,17 @@ local function adoptCastbar(key, f)
       if self.obApplying then return end
       placeCastbar(self, f)
     end)
-    -- Dark well with a thin bronze edge, like the other bars.
-    local edge = bar:CreateTexture(nil, "BACKGROUND", nil, -8)
-    edge:SetPoint("TOPLEFT", -2, 2)
-    edge:SetPoint("BOTTOMRIGHT", 2, -2)
-    edge:SetColorTexture(0.32, 0.34, 0.37, 1)
-    local well = bar:CreateTexture(nil, "BACKGROUND", nil, -7)
-    well:SetPoint("TOPLEFT", -1, 1)
-    well:SetPoint("BOTTOMRIGHT", 1, -1)
-    well:SetColorTexture(0.02, 0.024, 0.031, 1)
+    -- Dark rounded well with the panels' faint rim, like the other bars (no heavy grey edge).
+    local well = ns.Widgets.SoftTexture(bar, "BACKGROUND", 0.02, 0.024, 0.031, 0.9, -7)
+    well:SetPoint("TOPLEFT", -2, 2)
+    well:SetPoint("BOTTOMRIGHT", 2, -2)
+    local rim = ns.Widgets.SoftRim(bar, 1, 1, 1, 0.12)
+    for _, t in ipairs(rim) do
+      if not t.obSoft then break end -- the flat 1 px rim keeps its own edges
+      t:ClearAllPoints()
+      t:SetPoint("TOPLEFT", -2, 2)
+      t:SetPoint("BOTTOMRIGHT", 2, -2)
+    end
     if ns.CastBar and ns.CastBar.Reskin then
       ns.CastBar.Reskin(bar)
       bar:HookScript("OnEvent", ns.CastBar.Reskin)
