@@ -1,0 +1,54 @@
+"""Glass of the window panels and unit frame styles, chosen on the Visual page."""
+import sys
+
+from conftest import ROOT
+
+sys.path.insert(0, str(ROOT / "tools"))
+import preview_render  # noqa: E402
+
+
+def preview(db=None):
+    rt = preview_render.run_addon(vbars=False, db=dict({"installed": True}, **(db or {})))
+    return rt, rt.globals().PREVIEW_NS
+
+
+def inv_alpha(ns):
+    return ns.Inventory.frame.fill.color[4]
+
+
+def test_glass_makes_window_panels_see_through():
+    _, solid = preview({"glass": "solid"})
+    _, smoke = preview({"glass": "smoke"})
+    assert inv_alpha(smoke) < inv_alpha(solid) - 0.2
+    assert smoke.Inventory.frame.sheen.IsShown(smoke.Inventory.frame.sheen)
+
+
+def test_glass_changes_live_and_buttons_stay_solid():
+    _, ns = preview({"glass": "solid"})
+    before = inv_alpha(ns)
+    ns.db.glass = "crystal"
+    ns.Widgets.ApplyGlass()
+    assert inv_alpha(ns) < before
+    assert ns.Inventory.frame.inner is not None
+    ns.db.glass = "arcane"
+    ns.Widgets.ApplyGlass()
+    assert ns.Inventory.frame.gems[1].IsShown(ns.Inventory.frame.gems[1])
+
+
+def test_frame_styles():
+    _, ns = preview({"frameStyle": "flat"})
+    p = ns.UnitFrames.frames.player
+    assert not p.health.obShine.IsShown(p.health.obShine)
+    ns.db.frameStyle = "arcane"
+    ns.UnitFrames.ApplyStyle()
+    assert p.obRing.IsShown(p.obRing) and p.obGold.IsShown(p.obGold) and p.obDiamond.IsShown(p.obDiamond)
+    ns.db.frameStyle = "plate"
+    ns.UnitFrames.ApplyStyle()
+    assert p.obPlate.IsShown(p.obPlate) and not p.obRing.IsShown(p.obRing)
+
+
+def test_choices_on_the_visual_page():
+    _, ns = preview()
+    ns.Panel.Open("visual")
+    labels = [r.row.label for r in ns.Panel.rows.values() if r.row is not None]
+    assert "Vidro das janelas" in labels and "Quadros" in labels

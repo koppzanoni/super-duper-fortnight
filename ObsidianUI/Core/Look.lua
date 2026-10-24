@@ -66,6 +66,7 @@ end
 
 -- Everything again with the new look.
 function Look.Apply()
+  ns.Widgets.ApplyGlass()
   ns.RunOutOfCombat(function()
     ns.HUD.Layout()
     if ns.UnitFrames and ns.UnitFrames.RefreshAll then ns.UnitFrames.RefreshAll() end

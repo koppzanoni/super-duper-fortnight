@@ -112,7 +112,145 @@ local function buildModern(f, k, unit, mirror)
     setFontSize(self.levelText, spec.level.h * u * 0.42)
     setFontSize(self.hpText, spec.health.h * u * 0.62)
     setFontSize(self.powerText, spec.power.h * u * 0.62)
+    UnitFrames.Style(self)
   end
+end
+
+-- ------------------------------------------------------------------ frame style
+-- Setting "frameStyle": flat (the bars as drawn), gloss (light on the bars, a metal rim round the
+-- portrait, a glowing level badge), arcane (a blue glowing ring, a gold line under the bars, the
+-- level on a gold diamond), plate (portrait and bars on one glass plate).
+UnitFrames.STYLES = ns.Widgets.FRAME_STYLES
+local STYLE = {
+  flat = {},
+  gloss = { shine = 0.45, shade = 0.35, ring = "metal", badgeGlow = true },
+  arcane = { shine = 0.3, ring = "glow", goldLine = true, diamond = true },
+  plate = { shine = 0.15, plate = true },
+}
+
+local function gradient(t, r, g, b, bottom, top)
+  t:SetColorTexture(1, 1, 1, 1)
+  if t.SetGradient and CreateColor then
+    pcall(t.SetGradient, t, "VERTICAL", CreateColor(r, g, b, bottom), CreateColor(r, g, b, top))
+  else
+    t:SetColorTexture(r, g, b, (bottom + top) / 2)
+  end
+end
+
+-- A disc behind a region, out px larger all round, cut round by its own mask.
+local function disc(f, layer, sub)
+  local t = f:CreateTexture(nil, layer, nil, sub)
+  local mask = f:CreateMaskTexture()
+  mask:SetTexture(M.mask_circle.file, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+  mask:SetAllPoints(t)
+  t:AddMaskTexture(mask)
+  return t
+end
+local function around(t, region, out)
+  t:ClearAllPoints()
+  t:SetPoint("TOPLEFT", region, "TOPLEFT", -out, out)
+  t:SetPoint("BOTTOMRIGHT", region, "BOTTOMRIGHT", out, -out)
+end
+
+local function width(region)
+  local w = region and region.GetWidth and region:GetWidth()
+  return type(w) == "number" and w or 0
+end
+
+function UnitFrames.Style(f)
+  if not f.portrait then return end
+  local st = STYLE[ns.db and ns.db.frameStyle or "gloss"] or STYLE.gloss
+  local pw = width(f.portrait)
+  -- light on the top half of each bar, shade on the bottom quarter
+  for _, key in ipairs({ "health", "power" }) do
+    local bar = f[key]
+    if bar and not bar.obShine then
+      bar.obShine = bar:CreateTexture(nil, "ARTWORK", nil, 7)
+      bar.obShine:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, 0)
+      bar.obShine:SetPoint("BOTTOMRIGHT", bar, "RIGHT", 0, 0)
+      bar.obShade = bar:CreateTexture(nil, "ARTWORK", nil, 7)
+      bar.obShade:SetPoint("BOTTOMLEFT", bar, "BOTTOMLEFT", 0, 0)
+      bar.obShade:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", 0, 0)
+    end
+    if bar then
+      gradient(bar.obShine, 1, 1, 1, 0, st.shine or 0)
+      bar.obShine:SetShown((st.shine or 0) > 0)
+      bar.obShade:SetHeight(math.max(1, width(bar) > 0 and (bar.GetHeight and bar:GetHeight() or 4) * 0.3 or 2))
+      gradient(bar.obShade, 0, 0, 0, st.shade or 0, 0)
+      bar.obShade:SetShown((st.shade or 0) > 0)
+    end
+  end
+  -- the ring behind the portrait's edge
+  if st.ring and not f.obRing then f.obRing = disc(f, "BACKGROUND", -2) end
+  if f.obRing then
+    if st.ring == "metal" then
+      around(f.obRing, f.portrait, math.max(2, pw * 0.06))
+      f.obRing:SetBlendMode("BLEND")
+      gradient(f.obRing, 0.82, 0.85, 0.9, 0.25, 0.95)
+    elseif st.ring == "glow" then
+      around(f.obRing, f.portrait, math.max(3, pw * 0.1))
+      f.obRing:SetBlendMode("ADD")
+      gradient(f.obRing, 0.3, 0.55, 1, 0.55, 0.9)
+    end
+    f.obRing:SetShown(st.ring ~= nil)
+  end
+  -- the level badge: a gold glow, or a gold diamond under the number
+  if f.levelBadge then
+    if st.badgeGlow and not f.obBadgeGlow then f.obBadgeGlow = disc(f.levelBadge, "BACKGROUND", -1) end
+    if f.obBadgeGlow then
+      around(f.obBadgeGlow, f.levelBadge, math.max(2, width(f.levelBadge) * 0.18))
+      f.obBadgeGlow:SetBlendMode("ADD")
+      f.obBadgeGlow:SetColorTexture(0.95, 0.75, 0.3, 0.45)
+      f.obBadgeGlow:SetShown(st.badgeGlow == true)
+    end
+    if st.diamond and not f.obDiamond and M.mod_gem_on then
+      f.obDiamond = f.levelBadge:CreateTexture(nil, "ARTWORK")
+      f.obDiamond:SetTexture(M.mod_gem_on.file)
+      f.obDiamond:SetTexCoord(0, M.mod_gem_on.w / M.mod_gem_on.potW, 0, M.mod_gem_on.h / M.mod_gem_on.potH)
+    end
+    if f.obDiamond then
+      around(f.obDiamond, f.levelBadge, math.max(2, width(f.levelBadge) * 0.25))
+      f.obDiamond:SetShown(st.diamond == true)
+    end
+  end
+  -- a gold line under the bars, fading away from the portrait
+  if st.goldLine and not f.obGold and f.power then
+    f.obGold = f:CreateTexture(nil, "ARTWORK", nil, 2)
+    f.obGold:SetHeight(1)
+  end
+  if f.obGold then
+    f.obGold:ClearAllPoints()
+    f.obGold:SetPoint("TOPLEFT", f.power, "BOTTOMLEFT", 0, -3)
+    f.obGold:SetPoint("TOPRIGHT", f.power, "BOTTOMRIGHT", 0, -3)
+    f.obGold:SetColorTexture(1, 1, 1, 1)
+    if f.obGold.SetGradient and CreateColor then
+      local strong, faint = CreateColor(0.9, 0.76, 0.35, 0.9), CreateColor(0.9, 0.76, 0.35, 0)
+      if f.mirror then pcall(f.obGold.SetGradient, f.obGold, "HORIZONTAL", faint, strong)
+      else pcall(f.obGold.SetGradient, f.obGold, "HORIZONTAL", strong, faint) end
+    end
+    f.obGold:SetShown(st.goldLine == true)
+  end
+  -- one glass plate under portrait and bars
+  if st.plate and not f.obPlate then
+    f.obPlate = CreateFrame("Frame", nil, f)
+    f.obPlate:SetFrameLevel(math.max(0, f:GetFrameLevel() - 1))
+    ns.Widgets.Panel(f.obPlate, 0.6)
+  end
+  if f.obPlate then
+    local pad = math.max(3, pw * 0.08)
+    f.obPlate:ClearAllPoints()
+    -- as tall as the portrait, from its outer side to the bars' far end
+    local side, far = f.mirror and "RIGHT" or "LEFT", f.mirror and "LEFT" or "RIGHT"
+    local out = f.mirror and pad or -pad
+    f.obPlate:SetPoint("TOP" .. side, f.portrait, "TOP" .. side, out, pad)
+    f.obPlate:SetPoint("BOTTOM" .. side, f.portrait, "BOTTOM" .. side, out, -pad)
+    f.obPlate:SetPoint(far, f.power, far, -out * 2, 0)
+    f.obPlate:SetShown(st.plate == true)
+  end
+end
+
+function UnitFrames.ApplyStyle()
+  for _, f in pairs(UnitFrames.frames) do UnitFrames.Style(f) end
 end
 
 -- key: a second frame for the same unit (you inside the party) is filed under its own key; the

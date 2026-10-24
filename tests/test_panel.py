@@ -173,7 +173,7 @@ def test_every_control_of_every_built_page_works():
                 else:
                     click(c)
             checked.append(row.label)
-    assert len(checked) == 125
+    assert len(checked) == 127
     assert "OBSIDIANUI_RELOAD" in list(rt.globals().POPUPS.values())
 
 

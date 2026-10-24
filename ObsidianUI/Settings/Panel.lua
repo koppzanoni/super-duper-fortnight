@@ -132,6 +132,12 @@ Panel.SECTIONS = {
       choice("Números", "numFmt", "short", { { "short", "48.3K" }, { "full", "48.320" } }, function() ns.Look.Apply() end,
         "Vida e mana nos quadros."),
     } },
+    { "Estilo", {
+      choice("Vidro das janelas", "glass", "smoke", ns.Widgets.GLASS_ORDER, function() ns.Widgets.ApplyGlass() end,
+        "Inventário, painel, chat e janelas da Blizzard. Sólido é o painel preto de antes."),
+      choice("Quadros", "frameStyle", "gloss", ns.Widgets.FRAME_STYLES, function() ns.UnitFrames.ApplyStyle() end,
+        "Jogador, alvo, foco, pet e grupo."),
+    } },
     { "Barras", {
       choice("Textura das barras", "barTex", "gloss", { { "gloss", "Vidro" }, { "soft", "Suave" }, { "flat", "Lisa" }, { "blizzard", "Blizzard" } },
         function() ns.Look.Apply() end),
