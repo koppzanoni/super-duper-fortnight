@@ -279,3 +279,51 @@ def test_cell_debuffs_stay_clear_of_the_name():
     c = next(x for x in cells(ns) if x.unit == "raid5")
     name, icon = rect(c.name), rect(shown_icons(c)[0])
     assert icon[1] + icon[3] <= name[1] + 0.5                         # icons below the name line
+
+
+# ------------------------------------------------------------------ raid tools
+TOOLS = """
+  CALLS = {}
+  C_PartyInfo = { DoReadyCheck = function() CALLS[#CALLS + 1] = "ready" end,
+                  DoCountdown = function(s) CALLS[#CALLS + 1] = "count" .. s end }
+  function SetRaidTarget(u, i) CALLS[#CALLS + 1] = u .. i end
+  LEADER = true
+  function UnitIsGroupLeader(u) return u == "player" and LEADER end
+  function UnitIsGroupAssistant() return false end
+"""
+
+
+def tools_preview(db=None, group=None, n=0):
+    rt = preview_render.run_addon(vbars=False, db=dict({"installed": True}, **(db or {})), pre=TOOLS)
+    if group:
+        rt.execute(f'PREVIEW_ROSTER("{group}", {n})')
+    return rt, rt.globals().PREVIEW_NS
+
+
+def test_raid_tools_for_the_leader_only():
+    _, ns = tools_preview()
+    assert not visible(ns.RaidTools.frame)                            # solo
+    rt, ns = tools_preview(group="party", n=2)
+    assert visible(ns.RaidTools.frame)
+    rt.execute('LEADER = false; PREVIEW_FIRE("PARTY_LEADER_CHANGED")')
+    assert not visible(ns.RaidTools.frame)
+    _, ns = tools_preview({"raidTools": False}, group="raid", n=10)
+    assert not visible(ns.RaidTools.frame)
+
+
+def test_raid_tools_buttons():
+    rt, ns = tools_preview(group="raid", n=10)
+    T = ns.RaidTools
+    for b in (T.readyButton, T.countButton, T.markers[8], T.markers[1], T.clearButton):
+        b.GetScript(b, "OnClick")(b)
+    assert list(rt.globals().CALLS.values()) == ["ready", "count10", "target8", "target1", "target0"]
+    assert len(T.markers) == 8
+
+
+def test_raid_tools_in_test_mode_and_edit_mode():
+    _, ns = tools_preview()
+    ns.GroupFrames.Test("raid")
+    assert visible(ns.RaidTools.frame)
+    ns.GroupFrames.Test(None)
+    assert not visible(ns.RaidTools.frame)
+    assert ns.Movers['items']['raidtools'] is not None

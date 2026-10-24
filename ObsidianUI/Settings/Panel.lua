@@ -209,6 +209,8 @@ Panel.SECTIONS = {
         function() ns.GroupFrames.Refresh() end),
       toggle("Debuffs nos quadros", "groupDebuffs", true, function() ns.GroupFrames.Refresh() end,
         "Até três por membro, no raide e no grupo."),
+      toggle("Ferramentas de raide", "raidTools", true, function() ns.RaidTools.Update() end,
+        "Pronto?, contagem e marcadores do alvo. Só para quem lidera ou é assistente."),
     } },
     { "Tamanho", {
       steps("Largura", "raidW", 72, 40, 140, 4, int, function() ns.GroupFrames.Refresh() end),

@@ -172,7 +172,8 @@ end
 local function fakeExtras(owner, d)
   local list = {}
   if on("groupDebuffs") then
-    for i = 1, d.debuffs do list[i] = { icon = 136000 + i, applications = i } end
+    local icons = { "Interface\\Icons\\Spell_Shadow_ShadowWordPain", "Interface\\Icons\\Spell_Nature_Poisoncleansingtotem" }
+    for i = 1, d.debuffs do list[i] = { icon = icons[i], applications = i } end
   end
   showDebuffs(owner, list)
   showMarker(owner, d.marker)
@@ -475,6 +476,7 @@ local function apply()
   ns.Movers.Place("party")
   ns.Movers.Place("raid")
   if not test then GroupFrames.Update() end
+  if ns.RaidTools then ns.RaidTools.Update() end
 end
 
 -- Refill everything from the roster (names, classes, roles; bars follow their own events).

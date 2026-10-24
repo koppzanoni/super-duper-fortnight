@@ -49,8 +49,10 @@ mana, ícone de tanque/curador, Morto/Desconectado em cinza, borda na cor do deb
 apagado fora de alcance (UnitInRange é secreto: SetAlphaFromBoolean); largura/altura; modo de teste
 (painel, /obui teste [grupo|raide], o modo de edição mostra o grupo quando sozinho; combate encerra);
 esconde PartyFrame/CompactPartyFrame/CompactRaidFrameManager/Container quando ligados.
-Falta no grupo/raide: jogador dentro do grupo, estilo raide para o grupo, auras nos quadros,
-marcadores de raide e pronto/checagem (o gerenciador da Blizzard fica escondido).
+Também feito: você no grupo (opção), grupo em células do raide (opção), até 3 debuffs por membro
+(liga/desliga), marcador de raide, ícone da checagem de prontidão (some 6 s depois), ferramentas de
+raide (HUD/RaidTools.lua: Pronto?, contagem de 10 s, 8 marcadores + limpar; só líder/assistente;
+movível; liga/desliga). Ainda não: marcadores no chão (exigem macro segura).
 Falta (marcado "em breve" no painel): Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
 Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
@@ -106,3 +108,5 @@ Auras: moldura mod_slot (debuffs tingidos pelo tipo), tamanho, ícones por linha
 - Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
   UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.
+- Marcadores (UI-RaidTargetingIcons), ícones de prontidão, debuffs nos quadros; ferramentas de raide:
+  Pronto?, contagem e marcar o alvo funcionando sem erro.

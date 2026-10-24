@@ -7,7 +7,7 @@ from conftest import ROOT, load_pure
 sys.path.insert(0, str(ROOT / "tools"))
 import preview_render  # noqa: E402
 
-KEYS = {"player", "target", "targettarget", "focus", "pet", "bar", "cast", "map", "menu", "buffs", "vbars", "info", "res", "databars", "party", "raid"}
+KEYS = {"player", "target", "targettarget", "focus", "pet", "bar", "cast", "map", "menu", "buffs", "vbars", "info", "res", "databars", "party", "raid", "raidtools"}
 
 
 def preview(db=None, vbars=False):
