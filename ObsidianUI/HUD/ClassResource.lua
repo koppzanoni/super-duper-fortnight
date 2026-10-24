@@ -94,7 +94,10 @@ local function setLit(i, lit)
   litState[i] = lit
   local g = gems[i]
   ns.Media.Apply(g, lit and "mod_gem_on" or ns.ModernTex("mod_gem_off"))
-  if lit and current then g:SetVertexColor(color()) else g:SetVertexColor(1, 1, 1) end
+  if not (lit and current) then g:SetVertexColor(1, 1, 1) return end
+  local r, gr, b
+  if ClassResource.GemColor then r, gr, b = ClassResource.GemColor(i) end -- a class module's colour (rune types)
+  if r then g:SetVertexColor(r, gr, b) else g:SetVertexColor(color()) end
 end
 
 -- Out of combat and empty: hidden when the setting asks for it.

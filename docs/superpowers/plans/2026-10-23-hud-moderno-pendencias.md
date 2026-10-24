@@ -129,7 +129,10 @@ barra de mana depois de uma magia com custo de mana, C_Spell.GetSpellPowerCost; 
 Escudo/Alma Enfraquecida nos quadros (ícone no fim da barra de vida do grupo; linha branca/cinza no topo
 das células de raide; GroupFrames.AddIndicator), Fortitude faltando no grupo nos Lembretes (sozinho fica
 o lembrete geral de buff; contagem comum em Reminders.GroupMembers/CountMissing, usada pelo Paladino).
-Próximas classes, uma por commit: Cavaleiro da Morte, Xamã,
+Cavaleiro da Morte (FEITO: Classes/DeathKnight.lua): runas prontas na cor do tipo (GetRuneType; sem ele,
+a cor da especialização; gancho ClassResource.GemColor), segundos sobre as runas recarregando (só no
+estilo gemas), poder rúnico em barra fina sob as runas, Febre Gélida / Peste Sanguínea no alvo.
+Próximas classes, uma por commit: Xamã,
 Mago, Bruxo, Monge, Druida (opções de cada uma no protótipo, CLASS_OPTS).
 Falta: as outras classes na página Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
