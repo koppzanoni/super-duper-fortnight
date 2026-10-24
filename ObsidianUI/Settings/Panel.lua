@@ -280,7 +280,26 @@ Panel.SECTIONS = {
       steps("Tamanho", "curSize", 1, 0.5, 2, 0.1, pct, function() ns.Cursor.Refresh() end),
     } },
   } },
-  { id = "automation", group = "Qualidade de vida", name = "Automação", soon = true },
+  { id = "automation", group = "Qualidade de vida", name = "Automação", lead = "Pequenas coisas que o addon faz por você.", cards = {
+    { "Comerciantes", {
+      toggle("Vender lixo sozinho", "autoJunk", true, nil, "Itens cinzas, ao abrir um comerciante."),
+      choice("Reparar sozinho", "autoRepair", "guild", { { "off", "Não" }, { "self", "Com meu ouro" }, { "guild", "Guilda primeiro" } }),
+    } },
+    { "Social", {
+      toggle("Aceitar convite de amigos e guilda", "autoInvite", true),
+      toggle("Recusar duelos", "noDuel", false),
+      toggle("Aceitar ressurreição fora de combate", "autoRes", true, nil, "Ressurreição em combate fica para você decidir."),
+      toggle("Liberar o espírito sozinho em campo de batalha", "autoRelease", true, nil, "Não libera se tiver pedra da alma."),
+    } },
+    { "Jogo", {
+      toggle("Pular cinemáticas já vistas", "skipCine", true),
+      toggle("Saquear rápido", "fastLoot", true, nil, "Quando o saque automático está ligado."),
+      toggle("Ocultar erros vermelhos em combate", "hideErrors", false, function() ns.Automation.Refresh() end,
+        "\"Não está pronto\", \"Fora de alcance\"..."),
+      toggle("Tela de ausente", "afkScreen", true, function() ns.Automation.Refresh() end,
+        "A câmera gira em volta do personagem enquanto você está ausente."),
+    } },
+  } },
   { id = "cooldowns", group = "Qualidade de vida", name = "Recarga nos ícones", lead = "O tempo que falta em cima de cada ícone, desenhado pelo próprio jogo.", cards = {
     { "Mostrar", {
       toggle("Números de recarga", "cd_on", true, function() ns.Cooldowns.Refresh() end, "Barras de ação e itens das bolsas."),

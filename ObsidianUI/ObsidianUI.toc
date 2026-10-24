@@ -48,6 +48,7 @@ HUD\QuestTracker.lua
 HUD\Skins.lua
 HUD\Cooldowns.lua
 HUD\Cursor.lua
+HUD\Automation.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Stats.lua

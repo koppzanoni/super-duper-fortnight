@@ -41,8 +41,8 @@ def test_sidebar_lists_built_and_planned_modules_in_groups():
     names = [s.name for s in ns.Panel.SECTIONS.values()]
     assert names[0] == "Geral" and names[-1] == "Perfis"
     built = {s.id for s in ns.Panel.SECTIONS.values() if not s.soon}
-    assert built == {"general", "visual", "bar", "frames", "cast", "inventory", "profiles", "infobar", "resources", "auras", "databars", "party", "raid", "plates", "chat", "tooltip", "quests", "skins", "cooldowns", "cursor"}
-    for planned in ("automation", "reminders", "classes"):
+    assert built == {"general", "visual", "bar", "frames", "cast", "inventory", "profiles", "infobar", "resources", "auras", "databars", "party", "raid", "plates", "chat", "tooltip", "quests", "skins", "cooldowns", "cursor", "automation"}
+    for planned in ("reminders", "classes"):
         assert any(s.id == planned and s.soon for s in ns.Panel.SECTIONS.values())
 
 
@@ -102,7 +102,7 @@ def test_cast_toggles_hide_the_zone_parts():
 
 def test_planned_module_shows_em_breve():
     _, ns = preview()
-    ns.Panel.Open("automation")
+    ns.Panel.Open("reminders")
     assert "Em breve" in ns.Panel.lead.text and rows(ns) == []
 
 
@@ -166,7 +166,7 @@ def test_every_control_of_every_built_page_works():
                 else:
                     click(c)
             checked.append(row.label)
-    assert len(checked) == 83
+    assert len(checked) == 93
     assert "OBSIDIANUI_RELOAD" in list(rt.globals().POPUPS.values())
 
 

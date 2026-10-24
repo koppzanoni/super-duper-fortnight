@@ -91,7 +91,15 @@ Cursor (FEITO: HUD/Cursor.lua): anel em volta do cursor e rastro de pontos que s
 cursor_ring/cursor_dot geradas em export_textures.py), cor das cores prontas (padrão: roxo da HUD),
 só em combate (padrão), tamanho; some enquanto gira a câmera (IsMouselooking); por cima de tudo
 (TOOLTIP), sem pegar o mouse; o OnUpdate só roda com anel ou rastro ligado.
-Falta (marcado "em breve" no painel): Automação, Lembretes, Classes (+ modo de teste,
+Automação (FEITO: HUD/Automation.lua): vende lixo (C_MerchantFrame.SellAllJunkItems, avisa o valor)
+e repara (guilda primeiro se a cota cobre, senão o seu ouro); aceita convite de amigo/guilda/Battle.net
+(marca inviteAccepted antes de fechar a janela, senão ela recusa ao sumir); recusa duelos (opção);
+aceita ressurreição de quem está fora de combate (espera o atraso do corpo); libera o espírito em campo
+de batalha sem pedra da alma; pula cinemáticas e vídeos já vistos (seenCinematics é dado da conta, fora
+dos perfis); saque rápido quando o saque automático vale; erros vermelhos escondidos em combate (opção,
+UIErrorsFrame UI_ERROR_MESSAGE); tela de ausente (UIParent escondido, câmera girando, faixa preta com
+modelo, nome, nível/classe/guilda, tempo; sai com tecla, combate, ou fim do ausente; nunca em instância).
+Falta (marcado "em breve" no painel): Lembretes, Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
 
 ## Perfis (FEITO: Core/Serialize.lua + Core/Profiles.lua, página Perfis)
@@ -156,6 +164,9 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
 - Recarga nos ícones: números aparecendo nas barras, sem número na recarga global, décimos no fim.
 - Cursor: reiniciar o jogo (texturas novas); anel seguindo o mouse sem atraso, some ao girar a
   câmera com o botão direito, rastro sumindo quando o mouse para.
+- Automação: vender lixo e reparar (mensagem no chat), convite de amigo entrando no grupo sem a
+  janela recusar, ressurreição, cinemática pulada na segunda vez, saque rápido, tela de ausente
+  (/afk) saindo com tecla e voltando a interface inteira.
 - Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
   UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.
