@@ -5,6 +5,19 @@ Nada foi testado no jogo ainda (servidor do Forever fechado). Design:
 `docs/superpowers/specs/2026-10-23-hud-moderno-design.md`. Protótipo aprovado: sketch HTML
 (scratchpad `sketch/index.html`, servido em http://127.0.0.1:8766).
 
+## Direção das configurações (aprovada 2026-10-23)
+Modelo: NaowhUI (instalador guiado) + EllesmereUI (painel próprio modular, Unlock Mode, perfis).
+Sem copiar o visual deles. Ordem: modo de edição -> painel -> perfis -> instalador; antes de
+codar, protótipo do painel e do instalador no sketch.
+- Painel próprio (janela no estilo do addon): barra lateral com módulos (Geral, Barras de ação,
+  Quadros, Cast, Minimapa, Menu, Inventário, Perfis), liga/desliga por módulo, busca, mudanças ao vivo.
+- Modo de edição estilo Unlock Mode: arrastar, redimensionar, snap em grade e em outros elementos,
+  ancorar um no outro, igualar largura/altura, ajuste fino com as setas.
+- Perfis: por personagem e por especialização (troca automática), presets, exportar/importar texto
+  (completo ou por módulo).
+- Instalador no primeiro login (/obui install): estilo (Pedra/Moderno), resolução/escala, função
+  (DPS/tank/healer), classe, concluir com recarregar. Outro personagem: perfil carrega sozinho.
+
 ## Fase 2 — Modo de edição (próximo)
 - Botão nas configurações (e /obui editar) que mostra uma caixa tracejada com nome em cada elemento:
   jogador, alvo, alvo do alvo, foco, pet, barra de ações, barra de cast, minimapa, menu, barras
