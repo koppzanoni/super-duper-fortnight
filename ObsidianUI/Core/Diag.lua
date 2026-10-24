@@ -86,12 +86,14 @@ SlashCmdList.OBSIDIANUI = function(msg)
     out("modelo:", dist, height)
   elseif msg == "atalhos" then
     ns.KeybindMode.Start()
+  elseif msg == "instalar" or msg == "install" then
+    ns.Installer.Open()
   elseif msg == "editar" then
     ns.EditMode.Start()
   elseif msg == "reset" then
     ns.ResetPositions()
     out("posições restauradas.")
   else
-    out("comandos: /obui (configurações), /obui editar, /obui atalhos, /obui reset, /obui diag, /obui modelo")
+    out("comandos: /obui (configurações), /obui editar, /obui instalar, /obui atalhos, /obui reset, /obui diag, /obui modelo")
   end
 end

@@ -154,6 +154,11 @@ def test_every_control_of_every_built_page_works():
                     assert not visible(ns.Panel.frame), row.label     # the panel gives way to the mode
                     ns.EditMode.Stop(); ns.KeybindMode.Stop()
                     ns.Panel.Open(sec.id)
+                elif row.label == "Instalador":
+                    click(c)
+                    assert visible(ns.Installer.frame) and not visible(ns.Panel.frame)
+                    ns.Installer.frame.Hide(ns.Installer.frame)
+                    ns.Panel.Open(sec.id)
                 elif row.label == "Abrir inventário":
                     click(c)
                     assert ns.Inventory.frame.IsShown(ns.Inventory.frame)
@@ -161,7 +166,7 @@ def test_every_control_of_every_built_page_works():
                 else:
                     click(c)
             checked.append(row.label)
-    assert len(checked) == 33
+    assert len(checked) == 34
     assert "OBSIDIANUI_RELOAD" in list(rt.globals().POPUPS.values())
 
 

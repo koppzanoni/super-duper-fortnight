@@ -41,7 +41,7 @@ Barra lateral em grupos, busca, mudanças ao vivo; opções já ligadas: cor (re
 modo de edição, teclas, restaurar posições, linhas/colunas, números das teclas, barras verticais,
 anel arcano, zona de latência / ms / marca da fila, tamanho do inventário.
 Falta (marcado "em breve" no painel): Recursos de classe, Auras, Barras de dados, Grupo, Raide, Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
-Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste, instalador,
+Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
 
 ## Perfis (FEITO: Core/Serialize.lua + Core/Profiles.lua, página Perfis)
@@ -58,6 +58,10 @@ neutro, aliado e mana (cores prontas; seletor livre precisaria da janela de core
 ## Barra de informações (FEITO: HUD/InfoBar.lua)
 FPS, ms, durabilidade, bolsas, ouro, amigos, guilda, hora; cada item liga/desliga; cores de alerta;
 acima do menu por padrão, movível no modo de edição; atualiza por eventos e a cada 1 s.
+
+## Instalador (FEITO: Settings/Installer.lua, /obui instalar)
+Abre no primeiro login: boas-vindas, tamanho (1080p/1440p/4K -> escala), função (Cura = preset
+Healer), cor (recarga só se mudar), concluir; Pular mantém tudo. Reabre pelo painel.
 
 ## Fase 3 — Inventário Moderno
 - Janela larga, preto fosco translúcido: personagem à esquerda (modelo, 8+8 slots, 3 armas, nível

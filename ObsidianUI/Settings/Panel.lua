@@ -69,6 +69,7 @@ Panel.SECTIONS = {
       button("Modo de edição", "Abrir", function() Panel.Close(); ns.EditMode.Start() end, "Mover, grudar e redimensionar cada elemento."),
       button("Teclas de atalho da barra", "Definir teclas", function() Panel.Close(); ns.KeybindMode.Start() end,
         "Passe o mouse num botão e aperte a tecla. Backspace limpa, Esc sai."),
+      button("Instalador", "Abrir", function() Panel.Close(); ns.Installer.Open() end, "Refazer a configuração guiada (tamanho, função, cor)."),
       button("Restaurar posições", "Restaurar", function() ns.ResetPositions() end, "Tudo volta para o lugar padrão."),
     } },
   } },

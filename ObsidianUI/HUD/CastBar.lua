@@ -181,7 +181,7 @@ local function layout()
     bar.Icon:Show()
   end
   for _, t in ipairs({ bar.Text or false, ns.CastBar.time or false, ns.CastBar.lagText or false }) do
-    if t then ns.Look.SetFont(t, t == bar.Text and barH * 0.95 or barH * 0.7) end
+    if t then ns.Look.SetFont(t, t == bar.Text and S.name.h * u * 0.55 or barH * 0.6) end
   end
   if ns.CastBar.time then
     -- the time sits left of the queue mark, the latency under the bar's end

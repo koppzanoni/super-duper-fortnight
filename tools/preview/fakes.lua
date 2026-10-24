@@ -134,3 +134,8 @@ function GetHaste() return 0 end
 function GetMasteryEffect() return 0 end
 function GetSpellBonusDamage() return 0 end
 function GetSpellCritChance() return 0 end
+
+-- FPS, network and the clock for the info bar
+function GetFramerate() return 60 end
+function GetNetStats() return 0, 0, 32, 45 end
+function date(f) return "10:24" end
