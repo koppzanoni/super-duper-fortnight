@@ -70,6 +70,15 @@ function Timers:Update(unit, enabled)
       end
     end
   end
+  -- the bars that show stack from the top, without gaps for the missing ones
+  local y = 0
+  for _, b in ipairs(self.bars) do
+    if b:IsShown() then
+      b:ClearAllPoints()
+      b:SetPoint("TOP", self.frame, "TOP", 0, -y)
+      y = y + BAR_H + BAR_GAP
+    end
+  end
 end
 
 -- Each frame: seconds left (and the fill when the game's timer does not drive the bar).

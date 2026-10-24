@@ -55,24 +55,9 @@ local function happinessUpdate()
   happy:Show()
 end
 
-local petHealth = CreateFrame("StatusBar", nil, UIParent)
-petHealth:SetHeight(4)
-ns.Widgets.Panel(petHealth)
-petHealth:Hide()
-Hunter.petHealth = petHealth
-
-local function petHealthUpdate()
-  local power = ns.UnitFrames.frames.player and ns.UnitFrames.frames.player.power
-  if not (mine() and on("c_hun_pethp") and power and UnitExists("pet")) then petHealth:Hide() return end
-  petHealth:ClearAllPoints()
-  petHealth:SetPoint("TOPLEFT", power, "BOTTOMLEFT", 0, -2)
-  petHealth:SetPoint("TOPRIGHT", power, "BOTTOMRIGHT", 0, -2)
-  petHealth:SetStatusBarTexture(ns.Look.BarTexture())
-  petHealth:SetStatusBarColor(0.38, 0.84, 0.2)
-  petHealth:SetMinMaxValues(0, UnitHealthMax("pet")) -- status bars take secret values
-  petHealth:SetValue(UnitHealth("pet"))
-  petHealth:Show()
-end
+local pet = ns.Classes.NewPetBars(false)
+Hunter.petHealth = pet.health
+local function petHealthUpdate() pet:Update(mine() and on("c_hun_pethp")) end
 
 -- Reminders: ammo and aspect ------------------------------------------------------------------------
 ns.Reminders.AddSource(function(add, buffs)

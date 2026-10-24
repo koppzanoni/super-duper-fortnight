@@ -53,6 +53,7 @@ HUD\Reminders.lua
 Classes\Classes.lua
 Classes\Timers.lua
 Classes\FiveSecond.lua
+Classes\Pet.lua
 Classes\Rogue.lua
 Classes\Warrior.lua
 Classes\Paladin.lua
