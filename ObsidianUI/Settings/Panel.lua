@@ -40,6 +40,12 @@ Panel.COLORS = {
   { "yellow", "Amarelo", { 0.95, 0.8, 0.15 } }, { "green", "Verde", { 0.25, 0.75, 0.25 } }, { "teal", "Azul-petróleo", { 0.13, 0.6, 0.7 } },
   { "blue", "Azul", { 0.09, 0.52, 0.96 } }, { "purple", "Roxo", { 0.6, 0.3, 0.9 } }, { "grey", "Cinza", { 0.55, 0.57, 0.6 } },
 }
+-- The token of the player's class resource (for its colour), or a stand-in.
+function Panel.ResourceToken()
+  local _, classToken = UnitClass("player")
+  local r = ns.Data.ClassResourceFor(classToken, GetSpecialization and GetSpecialization(), (UnitPowerType("player")))
+  return r and r.token or "COMBO_POINTS"
+end
 function Panel.ColorOptions() local o = {}; for _, c in ipairs(Panel.COLORS) do o[#o + 1] = { c[1], c[2] } end; return o end
 function Panel.ColorGet(key)
   local c = ns.db.colors and ns.db.colors[key]
@@ -133,8 +139,31 @@ Panel.SECTIONS = {
         set = function(v) Panel.ColorSet("MANA", v) end, help = "Escolha entre cores prontas; \"Padrão\" volta à original." },
     } },
   } },
-  { id = "resources", group = "HUD", name = "Recursos de classe", soon = true },
-  { id = "auras", group = "HUD", name = "Auras", soon = true },
+  { id = "resources", group = "HUD", name = "Recursos de classe",
+    lead = "Pontos de combo, poder sagrado, runas, fragmentos, chi e cargas arcanas. Posição e tamanho: modo de edição.", cards = {
+    { "Visual", {
+      toggle("Mostrar o recurso", "res_on", true, function() ns.ClassResource.Redraw() end),
+      choice("Estilo", "resStyle", "gems", { { "gems", "Gemas" }, { "bar", "Barra" } }, function() ns.ClassResource.Redraw() end,
+        "A barra continua aparecendo em combate mesmo quando o jogo esconde os números."),
+      toggle("Esconder fora de combate quando vazio", "resHide", false, function() ns.ClassResource.Redraw() end),
+    } },
+    { "Cor", {
+      { kind = "cycle", label = "Cor do recurso", options = function() return Panel.ColorOptions() end,
+        get = function() return Panel.ColorGet(Panel.ResourceToken()) end,
+        set = function(v) Panel.ColorSet(Panel.ResourceToken(), v); ns.ClassResource.Redraw() end,
+        help = "Vale para o recurso da sua classe." },
+    } },
+  } },
+  { id = "auras", group = "HUD", name = "Auras", lead = "Buffs e debuffs do jogador. Posição: modo de edição.", cards = {
+    { "Mostrar", {
+      toggle("Buffs", "buffs_on", true, function() ns.Auras.Update() end),
+      toggle("Debuffs", "debuffs_on", true, function() ns.Auras.Update() end, "A borda pega a cor do tipo: magia, maldição, doença, veneno."),
+    } },
+    { "Tamanho", {
+      steps("Tamanho dos ícones", "buffSize", 26, 18, 48, 2, int, function() ns.HUD.Layout() end),
+      steps("Ícones por linha", "buffRow", 16, 4, 24, 1, int, function() ns.HUD.Layout() end),
+    } },
+  } },
   { id = "databars", group = "HUD", name = "Barras de dados", soon = true },
   { id = "infobar", group = "HUD", name = "Barra de informações", lead = "FPS, latência, durabilidade, bolsas, ouro, amigos, guilda e hora numa faixa.",
     build = function()

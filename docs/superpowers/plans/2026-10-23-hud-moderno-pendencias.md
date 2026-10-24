@@ -40,7 +40,7 @@ no sistema de movers (hoje tem o arrastar próprio).
 Barra lateral em grupos, busca, mudanças ao vivo; opções já ligadas: cor (recarrega), escala,
 modo de edição, teclas, restaurar posições, linhas/colunas, números das teclas, barras verticais,
 anel arcano, zona de latência / ms / marca da fila, tamanho do inventário.
-Falta (marcado "em breve" no painel): Recursos de classe, Auras, Barras de dados, Grupo, Raide, Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
+Falta (marcado "em breve" no painel): Barras de dados, Grupo, Raide, Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
 Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
 
@@ -62,6 +62,11 @@ acima do menu por padrão, movível no modo de edição; atualiza por eventos e 
 ## Instalador (FEITO: Settings/Installer.lua, /obui instalar)
 Abre no primeiro login: boas-vindas, tamanho (1080p/1440p/4K -> escala), função (Cura = preset
 Healer), cor (recarga só se mudar), concluir; Pular mantém tudo. Reabre pelo painel.
+
+## Recursos de classe e Auras (FEITO)
+Recursos: gemas Moderno (mod_gem_on/off), estilo barra com marcas (funciona com valores secretos),
+cor por recurso, esconder fora de combate quando vazio, liga/desliga, movível/redimensionável.
+Auras: moldura mod_slot (debuffs tingidos pelo tipo), tamanho, ícones por linha, buffs/debuffs liga/desliga.
 
 ## Fase 3 — Inventário Moderno
 - Janela larga, preto fosco translúcido: personagem à esquerda (modelo, 8+8 slots, 3 armas, nível

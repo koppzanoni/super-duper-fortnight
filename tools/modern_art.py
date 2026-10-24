@@ -495,3 +495,31 @@ def blackify(img, alpha=0.72):
     dark = (rgba[..., :3].max(axis=2) < 40) & (rgba[..., 3] > 0)
     rgba[..., 3] = np.where(dark, rgba[..., 3] * alpha, rgba[..., 3])
     return Image.fromarray(rgba.astype(np.uint8), "RGBA")
+
+
+GEM_TEX = 96
+
+
+def gem_socket():
+    """Class resource point, empty: a dark diamond with the teal hairline."""
+    c = Canvas(GEM_TEX, GEM_TEX)
+    m = GEM_TEX / 2
+    r = m - 8
+    c.poly([(m, m - r), (m + r, m), (m, m + r), (m - r, m)], EDGE + (255,), layer="body")
+    c.poly([(m, m - r + 3), (m + r - 3, m), (m, m + r - 3), (m - r + 3, m)], (52, 92, 108, 255))
+    c.poly([(m, m - r + 7), (m + r - 7, m), (m, m + r - 7), (m - r + 7, m)], (4, 10, 16, 245), layer="top")
+    return c.render(glow=0.4, shadow=0.5)
+
+
+def gem_lit():
+    """Class resource point, full: a bright faceted diamond, greyscale (tinted by the resource's
+    colour in game), with a soft glow around it."""
+    c = Canvas(GEM_TEX, GEM_TEX)
+    m = GEM_TEX / 2
+    r = m - 10
+    c.poly([(m, m - r - 4), (m + r + 4, m), (m, m + r + 4), (m - r - 4, m)], (200, 200, 200, 160))
+    c.poly([(m, m - r), (m + r, m), (m, m + r), (m - r, m)], (215, 215, 215, 255), layer="top")
+    c.poly([(m, m - r), (m + r, m), (m, m)], (255, 255, 255, 255), layer="top")
+    c.poly([(m, m), (m + r, m), (m, m + r)], (165, 165, 165, 255), layer="top")
+    c.poly([(m, m - r * 0.55), (m + r * 0.3, m - r * 0.1), (m, m), (m - r * 0.3, m - r * 0.1)], (255, 255, 255, 255), layer="top")
+    return c.render(glow=1.4, shadow=0.4)

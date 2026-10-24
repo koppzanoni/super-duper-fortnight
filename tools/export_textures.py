@@ -150,6 +150,9 @@ def export_all(out_dir=MEDIA):
         img = piece()
         save(name, img)
         save(name + "_black", modern_art.blackify(img))
+    save("mod_gem_off", modern_art.gem_socket())
+    save("mod_gem_off_black", modern_art.blackify(modern_art.gem_socket()))
+    save("mod_gem_on", modern_art.gem_lit())
     save("mod_arcane", modern_art.arcane_ring())
     save("mod_gloss", modern_art.gloss())
 
