@@ -96,3 +96,70 @@ function Timers:Place()
   end)
   ns.Movers.Place(self.key)
 end
+
+-- Swing-style bar (melee swing, Auto Shot): fills from one attack to the next and shows the
+-- seconds left; a finished bar stays LINGER seconds when no new attack comes. window: seconds at
+-- the end shaded darker (the Auto Shot cast, when moving delays the shot).
+local LINGER = 3
+local Swing = {}
+Swing.__index = Swing
+
+function ns.Classes.NewSwing(name, key, label, color, window)
+  local bar = CreateFrame("StatusBar", name, UIParent)
+  bar:SetSize(BAR_W, 9)
+  W.Panel(bar)
+  bar.time = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  bar.time:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
+  if window then
+    bar.window = bar:CreateTexture(nil, "OVERLAY")
+    bar.window:SetColorTexture(0, 0, 0, 0.45)
+    bar.window:SetPoint("TOPRIGHT", bar, "TOPRIGHT", 0, 0)
+    bar.window:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", 0, 0)
+  end
+  bar:Hide()
+  return setmetatable({ key = key, label = label, bar = bar, color = color, window = window }, Swing)
+end
+
+function Swing:Stop()
+  self.start = nil
+  self.bar:Hide()
+end
+
+-- A new attack now; it takes `speed` seconds (secret or missing: the bar hides).
+function Swing:Start(speed)
+  local b = self.bar
+  if (issecretvalue and issecretvalue(speed)) or not speed or speed <= 0 then self:Stop() return end
+  self.start, self.dur = GetTime(), speed
+  b:SetStatusBarTexture(ns.Look.BarTexture())
+  b:SetStatusBarColor(self.color[1], self.color[2], self.color[3])
+  b:SetMinMaxValues(0, speed)
+  b:SetValue(0)
+  if b.window then b.window:SetWidth(BAR_W * math.min(1, self.window / speed)) end
+  ns.Look.SetFont(b.time, 10)
+  b:Show()
+end
+
+-- Haste changed mid-attack: same fraction done at the new speed.
+function Swing:Rescale(speed)
+  if not self.start or (issecretvalue and issecretvalue(speed)) or not speed or speed <= 0 then return end
+  local done = (GetTime() - self.start) / self.dur
+  self.dur, self.start = speed, GetTime() - done * speed
+  self.bar:SetMinMaxValues(0, speed)
+  if self.bar.window then self.bar.window:SetWidth(BAR_W * math.min(1, self.window / speed)) end
+end
+
+function Swing:Tick()
+  if not self.start then return end
+  local t = GetTime() - self.start
+  if t > self.dur + LINGER then self:Stop() return end
+  self.bar:SetValue(math.min(t, self.dur))
+  self.bar.time:SetText(string.format("%.1f", math.max(0, self.dur - t)))
+end
+
+function Swing:Place()
+  ns.Movers.Register(self.key, self.label, self.bar, function(f)
+    f:ClearAllPoints()
+    f:SetPoint("BOTTOM", ns.CastBar.art or ns.Stack.Anchor(), "TOP", 0, 8)
+  end)
+  ns.Movers.Place(self.key)
+end

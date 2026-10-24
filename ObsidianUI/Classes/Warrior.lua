@@ -9,11 +9,9 @@ local Warrior = {}
 ns.Warrior = Warrior
 
 local W = ns.Widgets
-local BAR_W, BAR_H = 220, 9
 local NEXT_SWING = { [78] = true, [845] = true } -- Heroic Strike, Cleave
 local OVERPOWER = { 7384 }
 local EXECUTE = { 5308, 163201, 280735 }
-local LINGER = 3 -- seconds a finished swing bar stays when no new swing comes
 
 local function db() return ns.db or {} end
 local function on(key) return db()[key] ~= false end
@@ -24,35 +22,15 @@ local frame = CreateFrame("Frame", nil, UIParent)
 Warrior.frame = frame
 
 -- Swing timer -----------------------------------------------------------------------------------
-local swing = CreateFrame("StatusBar", "ObsidianUIWarriorSwing", UIParent)
-swing:SetSize(BAR_W, BAR_H)
-W.Panel(swing)
-swing.time = swing:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-swing.time:SetPoint("RIGHT", swing, "RIGHT", -4, 0)
-swing:Hide()
-Warrior.swing = swing
-local swingStart, swingDur
+local swing = ns.Classes.NewSwing("ObsidianUIWarriorSwing", "warswing", "Ataque automático (Guerreiro)", { 0.85, 0.85, 0.88 })
+Warrior.swing = swing.bar
 
 local function restricted()
   return C_CombatLog and C_CombatLog.IsCombatLogRestricted and C_CombatLog.IsCombatLogRestricted()
 end
 
-local function stopSwing()
-  swingStart = nil
-  swing:Hide()
-end
-
-local function startSwing()
-  local speed = UnitAttackSpeed("player")
-  if secret(speed) or not speed or speed <= 0 then stopSwing() return end
-  swingStart, swingDur = GetTime(), speed
-  swing:SetStatusBarTexture(ns.Look.BarTexture())
-  swing:SetStatusBarColor(0.85, 0.85, 0.88)
-  swing:SetMinMaxValues(0, speed)
-  swing:SetValue(0)
-  ns.Look.SetFont(swing.time, 10)
-  swing:Show()
-end
+local function stopSwing() swing:Stop() end
+local function startSwing() swing:Start(UnitAttackSpeed("player")) end
 
 local function combatLog()
   if not (mine() and on("c_war_swing")) then return end
@@ -67,25 +45,6 @@ local function combatLog()
   elseif (sub == "SPELL_DAMAGE" or sub == "SPELL_MISSED") and NEXT_SWING[info[12]] then
     startSwing()
   end
-end
-
-local function swingTick()
-  if not swingStart then return end
-  local t = GetTime() - swingStart
-  if t > swingDur + LINGER then stopSwing() return end
-  swing:SetValue(math.min(t, swingDur))
-  swing.time:SetText(string.format("%.1f", math.max(0, swingDur - t)))
-end
-
--- Haste changes mid-swing: keep the same fraction done.
-local function speedChanged()
-  if not swingStart then return end
-  local speed = UnitAttackSpeed("player")
-  if secret(speed) or not speed or speed <= 0 then return end
-  local done = (GetTime() - swingStart) / swingDur
-  swingDur = speed
-  swingStart = GetTime() - done * speed
-  swing:SetMinMaxValues(0, speed)
 end
 
 -- Overpower / Execute -------------------------------------------------------------------------
@@ -139,12 +98,8 @@ end
 -- Setup -----------------------------------------------------------------------------------------
 function Warrior.Refresh()
   if not mine() then return end
-  ns.Movers.Register("warswing", "Ataque automático (Guerreiro)", swing, function(f)
-    f:ClearAllPoints()
-    f:SetPoint("BOTTOM", ns.CastBar.art or ns.Stack.Anchor(), "TOP", 0, 8)
-  end)
-  ns.Movers.Place("warswing")
-  frame:SetScript("OnUpdate", swingTick)
+  swing:Place()
+  frame:SetScript("OnUpdate", function() swing:Tick() end)
   ns.RunOutOfCombat(ns.Stack.PlaceStance) -- the stance bar is protected
   if not on("c_war_swing") then stopSwing() end
   alertUpdate()
@@ -157,7 +112,7 @@ ns.On("PLAYER_LOGIN", function() Warrior.Refresh() end)
 table.insert(ns.HUD.onResize, function() ns.RunOutOfCombat(Warrior.Refresh) end)
 ns.On("COMBAT_LOG_EVENT_UNFILTERED", combatLog)
 ns.On("PLAYER_REGEN_ENABLED", stopSwing)
-ns.On("UNIT_ATTACK_SPEED", function(_, unit) if unit == "player" then speedChanged() end end)
+ns.On("UNIT_ATTACK_SPEED", function(_, unit) if unit == "player" then swing:Rescale(UnitAttackSpeed("player")) end end)
 ns.On("SPELL_ACTIVATION_OVERLAY_GLOW_SHOW", function(_, id) glow(true, id) end)
 ns.On("SPELL_ACTIVATION_OVERLAY_GLOW_HIDE", function(_, id) glow(false, id) end)
 ns.On("SPELL_UPDATE_USABLE", alertUpdate)
