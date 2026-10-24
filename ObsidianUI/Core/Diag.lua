@@ -102,3 +102,32 @@ SlashCmdList.OBSIDIANUI = function(msg)
     out("comandos: /obui (configurações), /obui editar, /obui teste [grupo|raide], /obui instalar, /obui atalhos, /obui reset, /obui diag, /obui modelo")
   end
 end
+
+-- "ObsidianUI has been blocked from an action": the game names the protected function it
+-- refused. Said once in chat per function and kept (with the open windows) in the saved
+-- variables, so the cause can be found without the player typing anything.
+local WATCHED = { "BankFrame", "MerchantFrame", "GossipFrame", "QuestFrame", "CharacterFrame", "WorldMapFrame",
+  "MailFrame", "CollectionsJournal", "PlayerSpellsFrame", "GameMenuFrame", "ObsidianUIInventory", "ObsidianUIPanel",
+  "ContainerFrameCombinedBags", "SettingsPanel", "StaticPopup1" }
+local told = {}
+local function blocked(kind, addon, fn)
+  if addon ~= ns.name then return end
+  local open = {}
+  for _, name in ipairs(WATCHED) do
+    local f = rawget(_G, name)
+    if type(f) == "table" and f.IsShown and f:IsShown() then open[#open + 1] = name end
+  end
+  local entry = string.format("%s %s %s combate=%s abertas=%s", date("%H:%M:%S"), kind, tostring(fn),
+    tostring(InCombatLockdown()), table.concat(open, ","))
+  if ns.db then
+    ns.db.blockLog = ns.db.blockLog or {}
+    table.insert(ns.db.blockLog, entry)
+    while #ns.db.blockLog > 30 do table.remove(ns.db.blockLog, 1) end
+  end
+  if not told[fn] then
+    told[fn] = true
+    out("ação bloqueada:", tostring(fn), "(guardado para correção)")
+  end
+end
+ns.On("ADDON_ACTION_BLOCKED", function(_, addon, fn) blocked("BLOCKED", addon, fn) end)
+ns.On("ADDON_ACTION_FORBIDDEN", function(_, addon, fn) blocked("FORBIDDEN", addon, fn) end)
