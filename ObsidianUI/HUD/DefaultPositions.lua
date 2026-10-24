@@ -45,11 +45,15 @@ local function apply()
   end
 end
 
--- /obui reset: forget the dragged inventory spot and put the default frames back.
+-- /obui reset: forget the dragged inventory spot and the edit mode's positions, put the default
+-- frames back.
 function ns.ResetPositions()
   if not ns.db then return end
   ns.db.invPos = nil
+  ns.db.layout = nil -- what the edit mode saved
   ns.RunOutOfCombat(function()
+    ns.HUD.Layout()
+    for _, key in ipairs(ns.Movers.order) do ns.Movers.Place(key) end
     apply()
     ns.db.positioned = true
     moveChat()

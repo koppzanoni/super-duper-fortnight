@@ -147,3 +147,13 @@ def test_slash_command_starts_it():
     rt, ns = preview()
     rt.globals().SlashCmdList.OBSIDIANUI("editar")
     assert ns.EditMode.active
+
+
+def test_reset_command_forgets_the_edit_mode_positions():
+    rt, ns = preview()
+    ns.EditMode.Start()
+    ns.EditMode.MoveTo("map", 1000, 700)
+    ns.EditMode.Stop()
+    rt.globals().SlashCmdList.OBSIDIANUI("reset")
+    assert ns.db.layout is None
+    assert rect(ns.Minimap.frame)[0] + rect(ns.Minimap.frame)[2] > 1880
