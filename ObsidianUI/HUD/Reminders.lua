@@ -134,6 +134,50 @@ Reminders.sources = {}
 function Reminders.AddSource(source) Reminders.sources[#Reminders.sources + 1] = source end
 Reminders.Knows, Reminders.SpellName = knows, spellName
 
+-- Lower-case names of the spells in `ids`, as a set (to compare with aura names).
+function Reminders.Names(ids)
+  local out = {}
+  for _, id in ipairs(ids) do
+    local n = spellName(id)
+    if n then out[n:lower()] = true end
+  end
+  return out
+end
+
+-- The group members a "missing buff" count looks at: alive, online, in sight; withSelf adds you.
+function Reminders.GroupMembers(withSelf)
+  local list = withSelf and { "player" } or {}
+  if IsInRaid() then
+    for i = 1, GetNumGroupMembers() do
+      local u = "raid" .. i
+      if UnitExists(u) and not UnitIsUnit(u, "player") then list[#list + 1] = u end
+    end
+  elseif IsInGroup() then
+    for i = 1, 4 do if UnitExists("party" .. i) then list[#list + 1] = "party" .. i end end
+  end
+  local out = {}
+  for _, u in ipairs(list) do
+    if UnitIsConnected(u) and not UnitIsDeadOrGhost(u) and UnitIsVisible(u) then out[#out + 1] = u end
+  end
+  return out
+end
+
+-- Whether `unit` has a buff named in `names` (a set from Reminders.Names).
+function Reminders.UnitHasAny(unit, names)
+  for _, a in ipairs(ns.Data.UnitAuraList(unit, "HELPFUL", 40)) do
+    local n = a.name
+    if type(n) == "string" and not (issecretvalue and issecretvalue(n)) and names[n:lower()] then return true end
+  end
+  return false
+end
+
+-- How many of `units` lack every buff in `names`.
+function Reminders.CountMissing(units, names)
+  local missing = 0
+  for _, u in ipairs(units) do if not Reminders.UnitHasAny(u, names) then missing = missing + 1 end end
+  return missing
+end
+
 -- Frame ---------------------------------------------------------------------------------------
 local frame = CreateFrame("Frame", "ObsidianUIReminders", UIParent)
 frame:SetSize(240, CHIP_H)

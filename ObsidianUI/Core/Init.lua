@@ -24,7 +24,8 @@ local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, sh
   c_rog_tick = true, c_rog_ontarget = false, c_rog_snd = true, c_rog_poison = true,
   c_war_swing = true, c_war_proc = true, c_war_stance = false, c_war_text = true,
   c_pal_aura = true, c_pal_judge = true, c_pal_bless = true,
-  c_hun_auto = true, c_hun_happy = true, c_hun_pethp = true, c_hun_ammo = true, c_hun_aspect = true }
+  c_hun_auto = true, c_hun_happy = true, c_hun_pethp = true, c_hun_ammo = true, c_hun_aspect = true,
+  c_pri_5sr = true, c_pri_shield = true, c_pri_fort = true }
 
 -- A Moderno texture in the chosen colour: the black theme, or the concept's blue.
 function ns.ModernTex(name)

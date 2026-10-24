@@ -163,10 +163,18 @@ local function updateReady(owner)
   if tex then owner.ready:SetTexture(tex) end
 end
 
+-- Indicators the class modules add to each member (the priest's shield...): fn(owner), owner.unit.
+GroupFrames.indicators = {}
+function GroupFrames.AddIndicator(fn) GroupFrames.indicators[#GroupFrames.indicators + 1] = fn end
+local function updateIndicators(owner)
+  for _, fn in ipairs(GroupFrames.indicators) do fn(owner) end
+end
+
 local function updateExtras(owner)
   updateDebuffs(owner)
   updateMarker(owner)
   updateReady(owner)
+  updateIndicators(owner)
 end
 
 local function fakeExtras(owner, d)
@@ -574,6 +582,7 @@ ns.On("UNIT_AURA", function(_, unit)
   for _, o in ipairs(ownersFor(unit)) do
     if o.isCell then updateDispel(o) end
     updateDebuffs(o)
+    updateIndicators(o)
   end
 end)
 ns.On("RAID_TARGET_UPDATE", function()

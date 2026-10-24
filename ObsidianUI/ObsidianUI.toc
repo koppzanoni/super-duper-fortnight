@@ -52,10 +52,12 @@ HUD\Automation.lua
 HUD\Reminders.lua
 Classes\Classes.lua
 Classes\Timers.lua
+Classes\FiveSecond.lua
 Classes\Rogue.lua
 Classes\Warrior.lua
 Classes\Paladin.lua
 Classes\Hunter.lua
+Classes\Priest.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Stats.lua

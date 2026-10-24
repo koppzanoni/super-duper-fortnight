@@ -21,45 +21,11 @@ local function firstKnown(list)
   for _, id in ipairs(list) do if ns.Reminders.Knows(id) then return id end end
 end
 
--- Lower-case names of the spells in `list` (for comparing with aura names).
-local function names(list)
-  local out = {}
-  for _, id in ipairs(list) do
-    local n = ns.Reminders.SpellName(id)
-    if n then out[n:lower()] = true end
-  end
-  return out
-end
+local names = ns.Reminders.Names
 
 -- Reminders: aura and blessings (out of combat) -------------------------------------------------
 local function hasAny(buffs, wanted)
   for n in pairs(buffs) do if wanted[n] then return true end end
-  return false
-end
-
--- The group members (you included) the blessing check looks at: alive, online, in sight.
-local function members()
-  local list = { "player" }
-  if IsInRaid() then
-    for i = 1, GetNumGroupMembers() do
-      local u = "raid" .. i
-      if UnitExists(u) and not UnitIsUnit(u, "player") then list[#list + 1] = u end
-    end
-  elseif IsInGroup() then
-    for i = 1, 4 do if UnitExists("party" .. i) then list[#list + 1] = "party" .. i end end
-  end
-  local out = {}
-  for _, u in ipairs(list) do
-    if UnitIsConnected(u) and not UnitIsDeadOrGhost(u) and UnitIsVisible(u) then out[#out + 1] = u end
-  end
-  return out
-end
-
-local function unitHas(unit, wanted)
-  for _, a in ipairs(ns.Data.UnitAuraList(unit, "HELPFUL", 40)) do
-    local n = a.name
-    if type(n) == "string" and not (issecretvalue and issecretvalue(n)) and wanted[n:lower()] then return true end
-  end
   return false
 end
 
@@ -72,8 +38,7 @@ ns.Reminders.AddSource(function(add, buffs)
   if on("c_pal_bless") then
     local blessing = firstKnown(BLESSINGS)
     if blessing then
-      local wanted, missing = names(BLESSINGS), 0
-      for _, u in ipairs(members()) do if not unitHas(u, wanted) then missing = missing + 1 end end
+      local missing = ns.Reminders.CountMissing(ns.Reminders.GroupMembers(true), names(BLESSINGS))
       if missing > 0 then
         add("bless", C_Spell.GetSpellTexture(blessing),
           IsInGroup() and ("Bênção faltando em " .. missing) or "Sem bênção")

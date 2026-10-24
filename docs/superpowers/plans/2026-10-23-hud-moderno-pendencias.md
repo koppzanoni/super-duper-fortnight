@@ -124,7 +124,12 @@ Caçador (FEITO: Classes/Hunter.lua): timer do Tiro Automático enquanto atira (
 UnitRangedDamage; último 0,5 s escurecido; Classes.NewSwing, comum com o Guerreiro), felicidade do pet
 ao lado do quadro do pet (GetPetHappiness, só onde existe), vida do pet em barra fina sob a barra de
 recurso do jogador, munição < 200 e aspecto faltando (só aspectos duradouros) nos Lembretes.
-Próximas classes, uma por commit: Sacerdote, Cavaleiro da Morte, Xamã,
+Sacerdote (FEITO: Classes/Priest.lua + Classes/FiveSecond.lua): regra dos 5 segundos (marca cruzando a
+barra de mana depois de uma magia com custo de mana, C_Spell.GetSpellPowerCost; comum: Classes.fiveKeys),
+Escudo/Alma Enfraquecida nos quadros (ícone no fim da barra de vida do grupo; linha branca/cinza no topo
+das células de raide; GroupFrames.AddIndicator), Fortitude faltando no grupo nos Lembretes (sozinho fica
+o lembrete geral de buff; contagem comum em Reminders.GroupMembers/CountMissing, usada pelo Paladino).
+Próximas classes, uma por commit: Cavaleiro da Morte, Xamã,
 Mago, Bruxo, Monge, Druida (opções de cada uma no protótipo, CLASS_OPTS).
 Falta: as outras classes na página Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
@@ -204,6 +209,8 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
   daqui não tem selos nem bênçãos, esses avisos simplesmente não aparecem.
 - Caçador: carinha do pet (textura Interface\PetPaperDollFrame\UI-PetHappiness) aparecendo; munição no
   espaço 0; o Tiro Automático reiniciando a cada tiro.
+- Sacerdote: Escudo nos outros membros em combate (GetUnitAuraBySpellID pode não responder auras secretas);
+  a marca dos 5 s só depois de magias com custo de mana.
 - Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
   UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.
