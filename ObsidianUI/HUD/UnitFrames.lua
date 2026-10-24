@@ -1,6 +1,7 @@
 local _, ns = ...
 
--- Target (large), focus (small), target-of-target and pet (tiny). Static 2D portraits (user's choice).
+-- Player, target (mirrored), target of target (small, mirrored), focus and pet: the Moderno frames.
+-- Static 2D portraits (user's choice).
 local M = ns.MediaManifest
 local UnitFrames = { frames = {} }
 ns.UnitFrames = UnitFrames
@@ -11,12 +12,8 @@ local KINDS = {
   modern = { spec = ns.Data.MODERN_UNIT, width = 1 / 3, modern = true },
   modernSmall = { spec = ns.Data.MODERN_UNIT, width = 0.2, modern = true },
   modernTiny = { spec = ns.Data.MODERN_UNIT, width = 1 / 6, modern = true, tiny = true },
-  large = { spec = ns.Data.UNIT, tex = "unit_frame", width = 0.29 },
-  small = { spec = ns.Data.UNIT, tex = "unit_frame", width = 0.16 },
-  tiny = { spec = ns.Data.UNIT, tex = "unit_frame", width = 0.14 },
 }
 UnitFrames.KINDS = KINDS
-local CLASS_LABEL = { elite = "Elite", worldboss = "Chefe", rare = "Raro", rareelite = "Raro Elite" }
 
 local function statusBar(parent)
   local bar = CreateFrame("StatusBar", nil, parent)
@@ -36,62 +33,6 @@ local function setRect(region, owner, spec, rect, w, h)
   region:ClearAllPoints()
   region:SetPoint("TOPLEFT", owner, "TOPLEFT", x, y)
   region:SetSize(rw, rh)
-end
-
--- Stone style: the party frame B art, name plate with level, bars in its grooves.
-local function buildStone(f, k, kind)
-  f.art = f:CreateTexture(nil, "ARTWORK")
-  f.art:SetAllPoints(f)
-  ns.Media.Apply(f.art, k.tex)
-
-  f.health = statusBar(f)
-  f.health:SetFrameLevel(f:GetFrameLevel() + 2)
-  f.health:SetStatusBarColor(0.78, 0.16, 0.12)
-  f.power = statusBar(f)
-  f.power:SetFrameLevel(f:GetFrameLevel() + 2)
-
-  f.name = f.health:CreateFontString(nil, "OVERLAY", kind == "large" and "GameFontNormal" or "GameFontNormalSmall")
-  f.name:SetTextColor(0.91, 0.77, 0.42)
-  f.name:SetJustifyH("LEFT")
-  f.name:SetWordWrap(false) -- a long name is cut, never wraps out of the plate
-  -- Target: level and classification at the right end of the name plate.
-  if kind == "large" then
-    f.levelText = f.health:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    f.levelText:SetTextColor(0.73, 0.68, 0.58)
-    f.levelText:SetJustifyH("RIGHT")
-    f.levelText:SetWordWrap(false)
-  end
-  f.hpText = f.health:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  f.hpText:SetPoint("CENTER", f.health)
-  if kind ~= "large" then f.hpText:Hide() end
-
-  function f:Resize(screenH)
-    local w = k.width * screenH
-    local h = w * k.spec.h / k.spec.w
-    self:SetSize(w, h)
-    setRect(self.portrait, self, k.spec, k.spec.portrait, w, h)
-    self.portraitMask:SetAllPoints(self.portrait)
-    setRect(self.health, self, k.spec, k.spec.health, w, h)
-    setRect(self.power, self, k.spec, k.spec.power, w, h)
-    local n = k.spec.name
-    local x, y, rw, rh = ns.Layout.Rect(k.spec.w, k.spec.h, w, h, n.x, n.y, n.w, n.h)
-    local pad = rh * 0.25
-    self.name:ClearAllPoints()
-    self.name:SetPoint("TOPLEFT", self, "TOPLEFT", x + pad, y)
-    self.name:SetHeight(rh)
-    setFontSize(self.name, rh * 0.52)
-    if self.levelText then
-      self.levelText:ClearAllPoints()
-      self.levelText:SetPoint("TOPRIGHT", self, "TOPLEFT", x + rw - pad, y)
-      self.levelText:SetHeight(rh)
-      setFontSize(self.levelText, rh * 0.42)
-      self.name:SetPoint("RIGHT", self.levelText, "LEFT", -pad, 0)
-    else
-      self.name:SetWidth(rw - 2 * pad)
-    end
-    local hp = k.spec.health
-    setFontSize(self.hpText, h * hp.h / k.spec.h * 0.62)
-  end
 end
 
 -- Moderno (spec 2026-10-23-hud-moderno): round portrait, the name above two framed bars, the level
@@ -189,7 +130,7 @@ function UnitFrames.Create(unit, kind, mirror)
   f.portrait:AddMaskTexture(mask)
   f.portraitMask = mask
 
-  if k.modern then buildModern(f, k, unit, mirror) else buildStone(f, k, kind) end
+  buildModern(f, k, unit, mirror)
 
   f:SetScript("OnEnter", function(self)
     GameTooltip_SetDefaultAnchor(GameTooltip, self)
@@ -230,25 +171,15 @@ local function updateValues(f)
   f.power:SetMinMaxValues(0, UnitPowerMax(unit, pType))
   f.power:SetValue(UnitPower(unit, pType))
   f.power:SetStatusBarColor(ns.Data.PowerColor(token))
-  if KINDS[f.kind].modern then
-    -- Values may be secret in combat: they only go into the text API, inside pcall.
-    if KINDS[f.kind].tiny then
-      local curve = CurveConstants and CurveConstants.ScaleTo100
-      if not (UnitHealthPercent and pcall(function()
-        f.hpText:SetFormattedText("%.0f%%", UnitHealthPercent(unit, true, curve))
-      end)) then f.hpText:SetText("") end
-    else
-      barText(f.hpText, UnitHealth(unit), UnitHealthMax(unit))
-      barText(f.powerText, UnitPower(unit, pType), UnitPowerMax(unit, pType))
-    end
-  elseif f.kind == "large" then
-    local curveTo100 = CurveConstants and CurveConstants.ScaleTo100
-    local ok = UnitHealthPercent and pcall(function()
-      f.hpText:SetFormattedText("%.0f%% · %s", UnitHealthPercent(unit, true, curveTo100), AbbreviateNumbers(UnitHealth(unit)))
-    end)
-    if not ok and not pcall(function() f.hpText:SetText(AbbreviateNumbers(UnitHealth(unit))) end) then
-      f.hpText:SetText("")
-    end
+  -- Values may be secret in combat: they only go into the text API, inside pcall.
+  if KINDS[f.kind].tiny then
+    local curve = CurveConstants and CurveConstants.ScaleTo100
+    if not (UnitHealthPercent and pcall(function()
+      f.hpText:SetFormattedText("%.0f%%", UnitHealthPercent(unit, true, curve))
+    end)) then f.hpText:SetText("") end
+  else
+    barText(f.hpText, UnitHealth(unit), UnitHealthMax(unit))
+    barText(f.powerText, UnitPower(unit, pType), UnitPowerMax(unit, pType))
   end
 end
 
@@ -257,19 +188,9 @@ local function updateAll(f)
   if not UnitExists(unit) then return end
   SetPortraitTexture(f.portrait, unit)
   local name = UnitName(unit) or ""
-  if KINDS[f.kind].modern then
-    local level = UnitLevel(unit)
-    f.name:SetText(f.unit == "focus" and ("Foco: " .. name) or name)
-    f.levelText:SetText(level and level > 0 and level or "??")
-  elseif f.kind == "large" then
-    local class = UnitClassification(unit)
-    local level = UnitLevel(unit)
-    local label = CLASS_LABEL[class]
-    f.name:SetText(name)
-    f.levelText:SetText("Nv " .. (level and level > 0 and level or "??") .. (label and (" · " .. label) or ""))
-  else
-    f.name:SetText(f.unit == "focus" and ("Foco: " .. name) or name)
-  end
+  local level = UnitLevel(unit)
+  f.name:SetText(f.unit == "focus" and ("Foco: " .. name) or name)
+  f.levelText:SetText(level and level > 0 and level or "??")
   updateValues(f)
 end
 UnitFrames.Update = updateAll
@@ -290,7 +211,7 @@ local DEBUFF_SIZE = 0.22 -- of the target frame's height
 local function underWidth(f)
   local w = f.health:GetWidth()
   local tot = UnitFrames.frames.targettarget
-  if f.unit == "target" and KINDS[f.kind].modern and tot then
+  if f.unit == "target" and tot then
     w = math.min(w, (tot:GetLeft() or 0) - (f.health:GetLeft() or 0) - 8)
   end
   return math.max(0, w)
@@ -374,7 +295,7 @@ local function adoptCastbar(key, f)
     local edge = bar:CreateTexture(nil, "BACKGROUND", nil, -8)
     edge:SetPoint("TOPLEFT", -2, 2)
     edge:SetPoint("BOTTOMRIGHT", 2, -2)
-    if KINDS[f.kind].modern then edge:SetColorTexture(0.32, 0.34, 0.37, 1) else edge:SetColorTexture(0.54, 0.43, 0.23, 1) end
+    edge:SetColorTexture(0.32, 0.34, 0.37, 1)
     local well = bar:CreateTexture(nil, "BACKGROUND", nil, -7)
     well:SetPoint("TOPLEFT", -1, 1)
     well:SetPoint("BOTTOMRIGHT", 1, -1)
@@ -388,7 +309,7 @@ local function adoptCastbar(key, f)
   placeCastbar(bar, f)
 end
 
-local function layoutModern()
+local function layout()
   local _, H = UIParent:GetSize()
   local s = H / 1080
   local f = UnitFrames.frames
@@ -402,23 +323,6 @@ local function layoutModern()
   adoptCastbar("focuscastbar", f.focus)
 end
 
-local function layout()
-  if ns.HUD.modern then return layoutModern() end
-  local W, H = UIParent:GetSize()
-  local s = H / 900
-  local target, focus = UnitFrames.frames.target, UnitFrames.frames.focus
-  local tot, pet = UnitFrames.frames.targettarget, UnitFrames.frames.pet
-  for _, f in pairs(UnitFrames.frames) do f:Resize(H) end
-  target:ClearAllPoints(); target:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0.012 * W, -0.02 * H)
-  -- Lined up: focus under the target on the same left edge, target-of-target beside it at mid
-  -- height, pet on the same left edge above the orb cap's crest.
-  focus:ClearAllPoints(); focus:SetPoint("TOPLEFT", target, "BOTTOMLEFT", 0, -48 * s)
-  tot:ClearAllPoints(); tot:SetPoint("LEFT", target, "RIGHT", 8 * s, 0)
-  pet:ClearAllPoints(); pet:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0.012 * W, (ns.HUD.h or 0) + 24 * s)
-  adoptCastbar("targetcastbar", target)
-  adoptCastbar("focuscastbar", focus)
-end
-
 -- Fill every frame now: after /reload or a zone change no "target changed" event comes.
 local function refreshAll()
   for _, f in pairs(UnitFrames.frames) do updateAll(f) end
@@ -427,18 +331,11 @@ end
 
 ns.On("PLAYER_LOGIN", function()
   ns.RunOutOfCombat(function()
-    if ns.HUD.modern then
-      UnitFrames.Create("player", "modern")
-      UnitFrames.Create("target", "modern", true)
-      UnitFrames.Create("focus", "modernSmall")
-      UnitFrames.Create("targettarget", "modernTiny", true)
-      UnitFrames.Create("pet", "modernSmall")
-    else
-      UnitFrames.Create("target", "large")
-      UnitFrames.Create("focus", "small")
-      UnitFrames.Create("targettarget", "tiny")
-      UnitFrames.Create("pet", "tiny")
-    end
+    UnitFrames.Create("player", "modern")
+    UnitFrames.Create("target", "modern", true)
+    UnitFrames.Create("focus", "modernSmall")
+    UnitFrames.Create("targettarget", "modernTiny", true)
+    UnitFrames.Create("pet", "modernSmall")
     layout()
     refreshAll()
     table.insert(ns.HUD.onResize, function() ns.RunOutOfCombat(layout) end)

@@ -1,7 +1,7 @@
 local _, ns = ...
 
--- Level and state icons (combat or resting, group leader) at the top of the health orb,
--- standing in for the hidden player frame.
+-- State icons (combat or resting, group leader) at the top of the player's portrait. The level is
+-- in the player frame's gold badge.
 local ICONS = {
   combat = { file = "Interface\\CharacterFrame\\UI-StateIcon", coords = { 0.5, 1, 0, 0.49 } },
   rest = { file = "Interface\\CharacterFrame\\UI-StateIcon", coords = { 0, 0.5, 0, 0.421875 } },
@@ -11,21 +11,15 @@ local ICONS = {
 local PlayerStatus = {}
 ns.PlayerStatus = PlayerStatus
 
-local well = ns.Orbs.health.well
 local holder = CreateFrame("Frame", nil, ns.HUD.over)
+holder:SetFrameStrata("MEDIUM")
 PlayerStatus.holder = holder
-holder:SetAllPoints(well)
-local level = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-PlayerStatus.level = level
-level:SetTextColor(0.91, 0.77, 0.42)
-level:SetShadowOffset(1, -1)
 local slots = {}
 for i = 1, 3 do slots[i] = holder:CreateTexture(nil, "OVERLAY") end
 
--- Where the icons go: the health orb, or the Moderno player portrait (its badge shows the level).
-local function anchor()
-  local player = ns.HUD.modern and ns.UnitFrames and ns.UnitFrames.frames.player
-  return player and player.portrait or well
+local function portrait()
+  local player = ns.UnitFrames and ns.UnitFrames.frames.player
+  return player and player.portrait
 end
 
 function PlayerStatus.Current()
@@ -33,11 +27,10 @@ function PlayerStatus.Current()
   return ns.Data.PlayerStatusIcons(UnitAffectingCombat("player") == true, IsResting() == true, leader == true)
 end
 
-local function update(newLevel)
-  level:SetText("Nv " .. (tonumber(newLevel) or UnitLevel("player")))
+local function update()
   local list = PlayerStatus.Current()
-  local h = anchor():GetHeight()
-  local size, gap = 0.09 * h, 2
+  local h = holder:GetHeight()
+  local size, gap = 0.16 * h, 2
   for i, t in ipairs(slots) do
     local key = list[i]
     if key then
@@ -46,7 +39,7 @@ local function update(newLevel)
       t:SetTexCoord(icon.coords[1], icon.coords[2], icon.coords[3], icon.coords[4])
       t:SetSize(size, size)
       t:ClearAllPoints()
-      t:SetPoint("TOP", holder, "TOP", (i - (#list + 1) / 2) * (size + gap), -0.22 * h)
+      t:SetPoint("TOP", holder, "TOP", (i - (#list + 1) / 2) * (size + gap), -0.04 * h)
       t:Show()
     else
       t:Hide()
@@ -54,20 +47,22 @@ local function update(newLevel)
   end
 end
 
+-- The player frame is made at login, after the first layout: placed again once it exists.
 local function layout()
+  local p = portrait()
+  if not p then return end
   holder:ClearAllPoints()
-  holder:SetAllPoints(anchor())
-  level:SetShown(not ns.HUD.modern)
-  if ns.HUD.modern then holder:SetFrameStrata("MEDIUM") end
-  level:ClearAllPoints()
-  level:SetPoint("TOP", holder, "TOP", 0, -0.11 * well:GetHeight())
+  holder:SetAllPoints(p)
   update()
 end
 
 table.insert(ns.HUD.onResize, layout)
 ns.On("PLAYER_ENTERING_WORLD", layout)
-ns.On("PLAYER_LEVEL_UP", function(_, newLevel) update(newLevel) end)
+ns.On("PLAYER_LEVEL_UP", function()
+  local player = ns.UnitFrames and ns.UnitFrames.frames.player
+  if player then ns.UnitFrames.Update(player) end
+end)
 for _, ev in ipairs({ "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED", "PLAYER_UPDATE_RESTING",
   "GROUP_ROSTER_UPDATE", "PARTY_LEADER_CHANGED" }) do
-  ns.On(ev, function() update() end)
+  ns.On(ev, update)
 end

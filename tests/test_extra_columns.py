@@ -1,4 +1,4 @@
-"""Hotkey text always visible, extra action bar columns in freed HUD space, more settings."""
+"""Hotkey text always visible, action button texts and template pieces fit the button."""
 from conftest import load_addon_file, load_pure, toc_files
 
 
@@ -64,73 +64,6 @@ def test_hotkeys_can_be_turned_off(lua, ns):
     assert b.HotKey.shown is False
 
 
-# Pure layout: extra columns sit between the bar's outer end and its first slots.
-def test_max_extra_columns_fit_the_free_space(pure):
-    ns = load_pure(pure, "Core/Layout.lua")
-    L = ns.Layout
-    u = 0.5
-    assert L.MaxExtraColumns(0, u) == 0
-    assert L.MaxExtraColumns(L.EXTRA_PITCH * u * 2.5, u) == 2
-    assert L.MaxExtraColumns(10000, u) == L.MAX_EXTRA
-
-
-def test_mapx_shifts_only_the_bar_part_outside_the_split(pure):
-    ns = load_pure(pure, "Core/Layout.lua")
-    L = ns.Layout
-    W, u, extra = 2000, 0.5, 100
-    assert L.MapX(100, W, u, extra) == L.MapX(100, W, u) - extra             # cap: moves out with the bar end
-    assert L.MapX(L.BAR_SPLIT, W, u, extra) == L.MapX(L.BAR_SPLIT, W, u)     # inner bar: pinned center
-    assert L.MapX(680, W, u, extra) == L.MapX(680, W, u) - extra             # outer end: moves out
-    assert L.MapX(710, W, u, extra) == L.MapX(710, W, u) - extra             # with the first column's art
-    assert L.MapX(782, W, u, extra) == L.MapX(782, W, u)                     # the rest stays
-
-
-# In game, at a small HUD scale the side caps stayed on the screen edges, far from the bar, with
-# a hole in the middle. The caps hug the bar; the free space goes to the screen edges.
-def test_side_caps_hug_the_bar_at_small_scale(lua, ns):
-    boot(lua, ns, db={"scale": 0.6, "extraCols": 2})
-    u, W, extraW = ns.HUD.u, ns.HUD.W, ns.HUD.extraW
-    assert extraW > 0
-    f = lua.eval("CreateFrame('Frame')")
-    ns.HUD.Place(f, 62, 48, 260, 264)  # the health orb
-    assert abs(f.obLeft - (W / 2 - (1340 - 62) * u - extraW)) < 0.01
-    assert abs(ns.HUD.capX - (W / 2 - 1340 * u - extraW)) < 0.01
-    assert ns.HUD.capX > 50  # off the screen edge
-
-
-def enabled_extras(ns):
-    return sum(1 for b in ns.ActionBars.extra.values() if b.obEnabled)
-
-
-def test_extra_columns_enable_four_buttons_each(lua, ns):
-    boot(lua, ns, db={"extraCols": 2, "scale": 0.6})
-    assert ns.HUD.extra == 2
-    assert enabled_extras(ns) == 8
-    assert len(ns.ActionBars.extra) == ns.Layout.MAX_EXTRA * 4
-
-
-def test_extra_columns_limited_by_space(lua, ns):
-    boot(lua, ns, db={"extraCols": 6, "scale": 1.0})  # 1920 wide at full scale: almost no free space
-    _, u, stretch = ns.Layout.HudSize(1920, 1080, 1.0)
-    assert ns.HUD.extra == ns.Layout.MaxExtraColumns(stretch, u)
-    assert enabled_extras(ns) == ns.HUD.extra * 4
-
-
-def test_extra_buttons_use_action_bars_6_and_7(lua, ns):
-    boot(lua, ns)
-    ids = sorted(b.binding for b in ns.ActionBars.extra.values())
-    assert ids[0].startswith("MULTIACTIONBAR5BUTTON") and ids[-1].startswith("MULTIACTIONBAR6BUTTON")
-    assert all(not b.obEnabled for b in ns.ActionBars.extra.values())
-
-
-def test_orb_numbers_can_be_hidden(lua, ns):
-    boot(lua, ns, db={"orbText": False})
-    lua.execute("SHOWN = nil")
-    ns.Orbs.health.pct.SetShown = lua.eval("function(_, v) SHOWN = v end")
-    ns.Orbs.ApplyTextVisibility()
-    assert lua.globals().SHOWN is False
-
-
 def test_media_apply_range(pure):
     pure.execute("""
       function fakeTexture()
@@ -147,27 +80,6 @@ def test_media_apply_range(pure):
     assert list(t.coords.values()) == [0.125, 0.25, 0, 0.5]
     ns.Media.ApplyRange(t, "bar", True, 0.25, 0.5)
     assert list(t.coords.values()) == [0.25, 0.125, 0, 0.5]
-
-
-# In-game: the copied column carried the bar end's bracket and the XP groove's cap, so pieces of
-# them showed between the extra slots. The copy comes from a plain middle column instead.
-def test_extra_column_art_is_copied_from_a_plain_middle_column(pure):
-    ns = load_pure(pure, "Core/Layout.lua")
-    L = ns.Layout
-    assert L.SLICE_SRC >= 845                       # past the first two columns and the groove cap
-    assert L.BAR_SPLIT == 774                       # between columns 1 and 2
-
-
-# The 36 main buttons stay together: the first main column takes the slot next to column 2,
-# the extra columns take the outer slots.
-def test_main_buttons_stay_contiguous_with_extra_columns(lua, ns):
-    boot(lua, ns, db={"extraCols": 2, "scale": 0.6})
-    u = ns.HUD.u
-    first_main = ns.ActionBars.buttons[1]       # row 1, column 1
-    second_main = ns.ActionBars.buttons[2]
-    extra1 = [b for b in ns.ActionBars.extra.values() if b.obColumn == 1][0]
-    assert abs((second_main.obLeft - first_main.obLeft) - 71 * u) < 1.5 * u
-    assert abs((first_main.obLeft - extra1.obLeft) - 72 * u) < 1.5 * u
 
 
 # In-game (small HUD): key text and stack count overlapped, icons covered the slot frames.
@@ -259,72 +171,3 @@ CHECKBOX_STUB = """
   }
   MinimalSliderWithSteppersMixin = { Label = { Right = 1 } }
 """
-
-
-def test_action_bar_always_floats_free(lua, ns):
-    boot(lua, ns, pre=CHECKBOX_STUB, db={"scale": 0.7, "connectBar": True})
-    used = []
-    apply = ns.Media.Apply
-    def recording(tex, key, *rest):
-        used.append(key)
-        return apply(tex, key, *rest)
-    ns.Media.Apply = recording
-    ns.HUD.Layout()
-    assert "hud_connector" not in used
-    assert lua.globals().CHECKBOXES["connectBar"] is None
-    assert lua.globals().CHECKBOXES["showHotkeys"] is True
-
-
-# In game a strip of the world showed between the orb panels and the screen edges: the stone
-# backing of the wing is stretched out to the edge, with the panel's bronze trim at the edge.
-def test_orb_panels_reach_the_screen_edges(lua, ns):
-    boot(lua, ns, pre=SHOWN_PRE, db={"scale": 1.0, "extraCols": 1})
-    W, capX = ns.HUD.W, ns.HUD.capX
-    assert capX > 0
-    for side, lo, hi in (("left", 0, capX), ("right", W - capX, W)):
-        pieces = [p for p in ns.HUD.capFill[side].values() if p.shown]
-        spans = sorted((p.obLeft, p.obLeft + p.obWidth) for p in pieces)
-        assert spans[0][0] <= lo + 0.01 and spans[-1][1] >= hi - 0.01, side
-        for (_, a1), (b0, _) in zip(spans, spans[1:]):
-            assert b0 <= a1 + 0.01  # no gap between pieces
-
-
-# The user found the wide stretched stone ugly on a small HUD: only a narrow gap is closed; a
-# small HUD floats with its own trimmed ends.
-def test_small_hud_is_not_stretched_to_the_edges(lua, ns):
-    boot(lua, ns, pre=SHOWN_PRE, db={"scale": 0.7})
-    for side in ("left", "right"):
-        assert not any(p.shown for p in ns.HUD.capFill[side].values())
-
-
-# The "Relicário" orb caps are an option: bone claws on the health orb, a dragon on the mana orb
-# (mirrored), each with an overlay over its orb. The classic caps stay the default.
-def recorded_caps(lua, ns, style):
-    boot(lua, ns, pre=SHOWN_PRE, db={"capStyle": style} if style else None)
-    seen, name = {}, lua.eval("tostring")  # Lua tables are keyed by their Lua identity
-    apply_range = ns.Media.ApplyRange
-    def recording(tex, key, mirror, *rest):
-        seen[name(tex)] = (key, bool(mirror))
-        return apply_range(tex, key, mirror, *rest)
-    ns.Media.ApplyRange = recording
-    ns.HUD.Layout()
-    return lambda tex: seen[name(tex)]
-
-
-def test_classic_orb_caps_by_default(lua, ns):
-    used = recorded_caps(lua, ns, None)
-    caps, over = ns.HUD.caps, ns.HUD.capOver
-    assert used(caps.left) == ("hud_cap", False) and used(caps.right) == ("hud_cap", True)
-    assert over.left.shown is False and over.right.shown is False
-
-
-def test_relic_orb_caps(lua, ns):
-    used = recorded_caps(lua, ns, "relic")
-    caps, over = ns.HUD.caps, ns.HUD.capOver
-    assert used(caps.left) == ("hud_cap_claws", False)
-    assert used(caps.right) == ("hud_cap_dragon", True)
-    assert used(over.left) == ("hud_cap_claws_over", False) and over.left.shown is True
-    assert used(over.right) == ("hud_cap_dragon_over", True) and over.right.shown is True
-    # the stone out to the screen edges comes from the same art
-    for side, key in (("left", "hud_cap_claws"), ("right", "hud_cap_dragon")):
-        assert all(used(p)[0] == key for p in ns.HUD.capFill[side].values() if p.shown)

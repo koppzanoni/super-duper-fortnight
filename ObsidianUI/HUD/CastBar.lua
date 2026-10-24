@@ -1,18 +1,16 @@
 local _, ns = ...
 
 -- Blizzard's player cast bar (keeps its secret-aware timing), moved above the action bar and
--- dressed with the Meshy cast bar frame (spec 7.1), or the Moderno one: blue fill, the spell name
--- on the tab above the groove, the time, the latency zone and the spell queue mark.
+-- dressed in the Moderno frame: blue fill, the spell name on the tab above the groove, the time,
+-- the latency zone and the spell queue mark.
 local M = ns.MediaManifest
 local art
 local barW, barH
-local WIDTH = 0.28 -- of the screen height
-local MODERN_WIDTH = 470 / 1080
+local WIDTH = 470 / 1080 -- of the screen height
 ns.CastBar = { latency = 0 }
 
-local function modern() return ns.HUD.modern end
-local function spec() return modern() and ns.Data.MODERN_CAST or ns.Data.CASTBAR end
-local function width(H) return (modern() and MODERN_WIDTH or WIDTH) * H end
+local function spec() return ns.Data.MODERN_CAST end
+local function width(H) return WIDTH * H end
 
 -- Half the cast bar art width, for frames placed beside it.
 function ns.CastBar.HalfWidth()
@@ -29,15 +27,9 @@ local HIDDEN_REGIONS = { "Border", "BorderShield", "Background", "TextBorder", "
   "ChargeFlash", "StandardGlow", "CraftGlow", "ChannelShadow", "BaseGlow", "WispGlow", "EnergyGlow" }
 
 local function reskin(bar)
-  bar:SetStatusBarTexture(modern() and M.mod_gloss.file or M.bar_fill.file)
+  bar:SetStatusBarTexture(M.mod_gloss.file)
   local interrupted = bar.barType == "interrupted" or bar.barType == "uninterruptable"
-  if interrupted then
-    bar:SetStatusBarColor(0.77, 0.15, 0.11)
-  elseif modern() then
-    bar:SetStatusBarColor(0.17, 0.67, 0.87)
-  else
-    bar:SetStatusBarColor(1.0, 0.75, 0.30)
-  end
+  if interrupted then bar:SetStatusBarColor(0.77, 0.15, 0.11) else bar:SetStatusBarColor(0.17, 0.67, 0.87) end
   for _, key in ipairs(HIDDEN_REGIONS) do
     local region = bar[key]
     if region and region.SetAlpha then region:SetAlpha(0) end
@@ -45,21 +37,15 @@ local function reskin(bar)
 end
 ns.CastBar.Reskin = reskin
 
--- The StatusBar fills exactly our groove. The spell name: centered on it (stone), or on the tab
--- above it (Moderno).
+-- The StatusBar fills exactly our groove; the spell name sits on the tab above it.
 local function fit(bar)
   if not barW then return end
   bar:SetSize(barW, barH)
   if bar.Text then
     local S, u = spec(), barW / spec().bar.w
     bar.Text:ClearAllPoints()
-    if modern() then
-      bar.Text:SetPoint("LEFT", bar, "TOPLEFT", (S.name.x - S.bar.x) * u, (S.bar.y - S.name.y - S.name.h / 2) * u)
-      bar.Text:SetJustifyH("LEFT")
-    else
-      bar.Text:SetPoint("CENTER", bar, "CENTER", 0, 0)
-      bar.Text:SetJustifyH("CENTER")
-    end
+    bar.Text:SetPoint("LEFT", bar, "TOPLEFT", (S.name.x - S.bar.x) * u, (S.bar.y - S.name.y - S.name.h / 2) * u)
+    bar.Text:SetJustifyH("LEFT")
   end
 end
 
@@ -83,7 +69,7 @@ end
 
 local function showZone()
   local lag = ns.CastBar.lag
-  if not (modern() and lag and barW) then return end
+  if not (lag and barW) then return end
   local ok, duration = pcall(function()
     local _, _, _, startMS, endMS = UnitCastingInfo("player")
     return (endMS - startMS) / 1000
@@ -156,7 +142,7 @@ local function layout()
     art:SetFrameLevel(math.max(0, bar:GetFrameLevel() - 1))
     local t = art:CreateTexture(nil, "BACKGROUND")
     t:SetAllPoints(art)
-    ns.Media.Apply(t, modern() and ns.ModernTex("mod_cast") or "castbar")
+    ns.Media.Apply(t, ns.ModernTex("mod_cast"))
     ns.CastBar.art = t
     bar:HookScript("OnEvent", reskin)
     -- Blizzard's SetLook (PlayerFrame) resizes the bar to 11 px and puts the text under it.
@@ -167,15 +153,8 @@ local function layout()
     if bar.Icon then
       hooksecurefunc(bar.Icon, "Hide", function(icon) icon:Show() end)
       hooksecurefunc(bar.Icon, "SetShown", function(icon, shown) if not shown then icon:Show() end end)
-      -- round, like the stone frame's socket (the Moderno socket is square)
-      if not modern() then
-        local mask = bar:CreateMaskTexture()
-        mask:SetTexture(M.mask_circle.file, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-        mask:SetAllPoints(bar.Icon)
-        bar.Icon:AddMaskTexture(mask)
-      end
     end
-    if modern() then modernParts(bar) end
+    modernParts(bar)
   end
   -- The StatusBar itself fills exactly the groove; the frame art sits around it. Pinned:
   -- Blizzard re-anchors the bar on some casts, in combat too (the bar is not protected).

@@ -9,7 +9,8 @@ see-through panels with thin neutral lines, round portraits with straight bars. 
 like WoW's Edit Mode.
 
 ## Decided by the user
-- Never replace the other designs: "Moderno" is a setting (`hudTheme`), stone stays the default.
+- 2026-10-23 update: the other HUDs are retired, Moderno is the only HUD (stone, Relicário and orbs
+  removed; git tag `hud-pedra-final` keeps them). The old inventory stays until phase 3.
 - Black see-through theme everywhere (blue only as an alternative colour, setting `modernColor`).
 - Player frame top left; target beside it, mirrored; target of target small, mirrored, under the
   target's portrait; health and mana bars each in their own thick rim (no extra space between).

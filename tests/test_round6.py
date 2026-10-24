@@ -224,11 +224,6 @@ def test_reputation_and_currency_click_the_blizzard_tabs(lua, ns):
         assert same(b.attrs.clickbutton, tab)
 
 
-def test_target_frame_width_reduced(lua, ns):
-    boot(lua, ns)
-    assert ns.UnitFrames.KINDS.large.width <= 0.37
-
-
 # In-game: the map stayed offset inside the ring. Anchored with zero offsets to a frame placed
 # on the ring opening, so the Minimap's own scale cannot shift or shrink it.
 def test_minimap_anchored_without_offsets(lua, ns):
@@ -518,15 +513,6 @@ def test_addon_registers_no_title_changed_event():
         assert "PLAYER_TITLE_CHANGED" not in f.read_text(encoding="utf-8"), f
 
 
-# In game the user found the unit frames and the cast bar too big: about 20% smaller.
-def test_unit_frames_and_castbar_about_20_percent_smaller(lua, ns):
-    boot(lua, ns)
-    K = ns.UnitFrames.KINDS
-    assert K.large.width <= 0.29 and K.small.width <= 0.16 and K.tiny.width <= 0.14
-    H = lua.eval("select(2, UIParent:GetSize())")
-    assert ns.CastBar.HalfWidth() <= 0.38 * H / 2
-
-
 # In game the Reputation and Currency buttons did nothing: in this client (camelot) the
 # character frame's pages are side tabs, plain Frames named CharacterFrameModeTab2/5 that open
 # their page on mouse up, which a secure click cannot press. While the character frame is
@@ -582,27 +568,6 @@ def test_reputation_and_currency_lend_the_real_character_tabs(lua, ns):
         assert same(tab.parent, ns.Inventory[key]) and tab.alpha == 0
 
 
-# With the new unit frame art, the target's debuffs sit under the frame (not on its bottom
-# edge) and the target's cast bar under the debuffs.
-def test_target_debuffs_and_castbar_sit_under_the_frame(lua, ns):
-    boot(lua, ns, pre="""
-      local cf = CreateFrame
-      function CreateFrame(...)
-        local f = cf(...)
-        f.SetPoint = function(self, p, rel, rp, x, y) self.point = { p, rel, rp, x, y } end
-        return f
-      end
-      TargetFrameSpellBar = CreateFrame()
-    """)
-    t = ns.UnitFrames.frames.target
-    D = ns.Data.UNIT
-    below = t.GetHeight(t) * (D.h - D.health.y - D.health.h) / D.h  # health bottom to frame bottom
-    b = ns.UnitFrames.debuffs[1]
-    assert b.point[1] == "TOPLEFT" and -b.point[5] >= below
-    bar = lua.globals().TargetFrameSpellBar
-    assert -bar.point[5] >= below + t.GetHeight(t) * 0.22  # the debuff row
-
-
 POINTS_PRE = """
   local cf = CreateFrame
   function CreateFrame(...)
@@ -619,17 +584,6 @@ def test_elite_target_has_no_glow_ring(lua, ns):
     boot(lua, ns, pre='function UnitClassification() return "elite" end function UnitExists() return true end')
     lua.execute('STUB_FIRE("PLAYER_TARGET_CHANGED")')
     assert lua.eval("rawget")(ns.UnitFrames.frames.target, "ring") is None  # stubs invent missing fields
-
-
-def test_unit_frames_line_up(lua, ns):
-    boot(lua, ns, pre=POINTS_PRE)
-    same = lua.eval("rawequal")
-    F = ns.UnitFrames.frames
-    focus, tot, pet = F.focus.point, F.targettarget.point, F.pet.point
-    assert (focus[1], focus[3], focus[4]) == ("TOPLEFT", "BOTTOMLEFT", 0) and same(focus[2], F.target)
-    assert (tot[1], tot[3], tot[5]) == ("LEFT", "RIGHT", 0) and same(tot[2], F.target)
-    s = 1080 / 900
-    assert pet[1] == "BOTTOMLEFT" and pet[5] >= ns.HUD.h + 20 * s  # clear of the orb cap's crest
 
 
 # In the preview the target's name, level and classification ran out of the name plate: the
@@ -660,21 +614,3 @@ FONTS_PRE = """
   function UnitExists() return true end
 """
 
-
-def test_target_name_and_level_fit_the_name_plate(lua, ns):
-    boot(lua, ns, pre=FONTS_PRE)
-    lua.execute('STUB_FIRE("PLAYER_TARGET_CHANGED")')
-    t = ns.UnitFrames.frames.target
-    assert t.name.text == "Ravenfang Alpha"
-    assert "62" in t.levelText.text and "Elite" in t.levelText.text and t.levelText.justify == "RIGHT"
-    assert t.name.wrap is False
-    plate = t.name.h
-    assert 0.45 * plate <= t.name.size <= 0.7 * plate
-    assert t.levelText.size <= t.name.size
-
-
-# The user found the new cast bar too long.
-def test_castbar_is_shorter(lua, ns):
-    boot(lua, ns)
-    H = lua.eval("select(2, UIParent:GetSize())")
-    assert ns.CastBar.HalfWidth() <= 0.29 * H / 2

@@ -2,14 +2,9 @@ local addonName, ns = ...
 
 ns.name = addonName
 
-local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, extraCols = 0, showHotkeys = true,
-  orbText = true, orbStyle = "a", capStyle = "classic",
-  -- HUD style "Moderno": an option next to the stone HUD, which stays the default
-  hudTheme = "obsidian", modernColor = "black", arcaneRing = true, modernRows = 2, modernCols = 12 }
-
--- HUD style: "obsidian" (stone, the default) or "modern". Saved variables arrive with
--- ADDON_LOADED, after every file ran: read it at login or later, never at file load.
-function ns.IsModern() return ns.db ~= nil and ns.db.hudTheme == "modern" end
+local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, showHotkeys = true,
+  -- the HUD (the stone HUD retired: git tag hud-pedra-final)
+  modernColor = "black", arcaneRing = true, modernRows = 2, modernCols = 12 }
 
 -- A Moderno texture in the chosen colour: the black theme, or the concept's blue.
 function ns.ModernTex(name)

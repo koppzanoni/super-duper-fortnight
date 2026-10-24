@@ -1,41 +1,25 @@
 local _, ns = ...
 
--- Pure data: texture coordinates from the design spec, colors, class rules and slot maps.
+-- Pure data: texture coordinates of the HUD art, colors, class rules and slot maps.
 local Data = {}
 ns.Data = Data
 
--- Bottom HUD (full virtual texture 2692x381; left half is mirrored to the right). Spec 4.2.
-Data.HUD = {
-  width = 2692, height = 381, half = 1346,
-  -- Ring opening is x 66-317, y 52-307; the orb tucks 4px under the ring so no gap shows.
-  orb = { x = 62, y = 48, w = 260, h = 264 },
-  menuCols = { 429, 488, 547 }, menuRows = { 143, 202, 262 }, menuSlot = { w = 35, h = 41 },
-  barCols = { 710, 782, 853, 925, 997, 1069, 1140, 1211, 1283 }, barRows = { 114, 215 },
-  barSlot = { w = 56, h = 61 },
-  xp = { x = 730, y = 341, h = 16 },
+-- Resource colours (bars, fills).
+Data.POWER_COLORS = {
+  HEALTH = { r = 0.78, g = 0.16, b = 0.12 },
+  MANA = { r = 0.18, g = 0.39, b = 0.84 },
+  RAGE = { r = 0.62, g = 0.08, b = 0.05 },
+  ENERGY = { r = 0.95, g = 0.80, b = 0.10 },
+  FOCUS = { r = 0.95, g = 0.50, b = 0.12 },
+  RUNIC_POWER = { r = 0.00, g = 0.78, b = 0.92 },
 }
 
--- Vertical bars. Spec 4.5.
--- Only the slots of the Meshy vertical bar art, by tools/vbar_art.py (12 rows; one or two columns).
-Data.VBAR1 = { w = 64, h = 935, cols = { 4 }, slot = { w = 56, h = 59 },
-  rows = { 4, 84, 164, 244, 323, 401, 481, 559, 637, 716, 793, 871 } }
-Data.VBAR2 = { w = 138, h = 935, cols = { 4, 78 }, slot = { w = 56, h = 59 }, rows = Data.VBAR1.rows }
+function Data.PowerColor(token)
+  local c = Data.POWER_COLORS[token] or (PowerBarColor and PowerBarColor[token]) or Data.POWER_COLORS.MANA
+  return c.r, c.g, c.b
+end
 
--- Unit frames (target, focus, target-of-target, pet): the chosen party frame B art
--- (tools/unit_art.py). Ring opening x 50-186, y 20-156: the portrait tucks 3px under the ring.
--- Name plate x 208-518 y 30-70, health groove x 214-516 y 82-112, mana groove x 214-516 y 126-148.
-Data.UNIT = { w = 530, h = 177, portrait = { x = 47, y = 17, w = 142, h = 142 },
-  name = { x = 216, y = 32, w = 296, h = 36 }, health = { x = 214, y = 82, w = 302, h = 30 },
-  power = { x = 214, y = 126, w = 302, h = 22 } }
--- Player cast bar in the unit frame style (tools/unit_art.py castbar): round icon socket x 48-173
--- y 17-143 (the icon sits just inside it, masked round), thin groove x 197-1135 y 43-124.
-Data.CASTBAR = { w = 1151, h = 161, icon = { x = 50, y = 19, w = 121, h = 122 }, bar = { x = 197, y = 43, w = 938, h = 81 } }
--- Ring opening is x 85-922, y 87-925; the map tucks 3px under the ring.
-Data.MINIMAP = { w = 1008, h = 1012, map = { x = 82, y = 84, w = 844, h = 844 },
-  plate = { x = 350, y = 10, w = 310, h = 66 },
-  sockets = { { 180, 824 }, { 348, 932 }, { 660, 932 }, { 826, 824 } }, socketSize = 56 }
-
--- HUD style "Moderno" (tools/modern_art.py; spec docs/superpowers/specs/2026-10-23-hud-moderno-design.md).
+-- HUD (tools/modern_art.py; spec docs/superpowers/specs/2026-10-23-hud-moderno-design.md).
 -- Unit frame: portrait opening inside the ring, the bar grooves, name and level spots.
 Data.MODERN_UNIT = { w = 720, h = 250, ring = { x = 12, y = 12, w = 220, h = 220 },
   portrait = { x = 28, y = 28, w = 188, h = 188 }, name = { x = 250, y = 26, w = 454, h = 54 },
@@ -48,7 +32,7 @@ Data.MODERN_CAST = { w = 940, h = 124, icon = { x = 14, y = 14, w = 96, h = 96 }
 Data.MODERN_MAP = { w = 340, h = 360, hole = { x = 26, y = 72, w = 288, h = 286 },
   plate = { x = 10, y = 4, w = 260, h = 46 }, button = { x = 282, y = 4, w = 48, h = 48 } }
 Data.MODERN_MAP.map = Data.MODERN_MAP.hole
--- Socket centers like Data.MINIMAP's (clock, mail, tracking, calendar): the clock under the ring,
+-- Socket centers (clock, mail, tracking, calendar): the clock under the ring,
 -- mail and tracking on its lower edge, the calendar in the round button beside the zone plate.
 Data.MODERN_MAP.sockets = { { 170, 378 }, { 62, 318 }, { 278, 318 }, { 306, 28 } }
 Data.MODERN_MAP.socketSize = 44
@@ -78,70 +62,6 @@ Data.INV = { w = 690, h = 1334,
     rows = { x0 = 52, x1 = 340, top = 104, row = 36, header = 46, gap = 14 },
     search = { x = 44, y = 1170, w = 296, h = 44 },
     buttons = { x0 = 44, x1 = 340, gap = 10, y = 1236, h = 50 } } }
-
--- Orb colors (Global Constraints of the plan).
-Data.ORB_COLORS = {
-  HEALTH = { r = 0.78, g = 0.16, b = 0.12 },
-  MANA = { r = 0.18, g = 0.39, b = 0.84 },
-  RAGE = { r = 0.62, g = 0.08, b = 0.05 },
-  ENERGY = { r = 0.95, g = 0.80, b = 0.10 },
-  FOCUS = { r = 0.95, g = 0.50, b = 0.12 },
-  RUNIC_POWER = { r = 0.00, g = 0.78, b = 0.92 },
-}
-
-function Data.PowerColor(token)
-  local c = Data.ORB_COLORS[token] or (PowerBarColor and PowerBarColor[token]) or Data.ORB_COLORS.MANA
-  return c.r, c.g, c.b
-end
-
--- Orb liquid styles (setting "orbStyle"; spec docs/superpowers/specs/2026-10-22-orbes-liquido-design.md).
--- sheet: flipbook texture; fps: flipbook speed; wisp/wisp2: strength of the wisp layers;
--- spin/spin2: their turn speed (rad/s); core: pulsing core glow; sparks: rising bubbles;
--- still: no animation, shows stillFrame.
--- Orb cap art, per side (the right one is mirrored); over: drawn above the orb liquid.
-Data.CAP_STYLE_ORDER = { "classic", "relic" }
-Data.CAP_STYLES = {
-  classic = { label = "Clássico", left = "hud_cap", right = "hud_cap" },
-  relic = { label = "Relicário", left = "hud_cap_claws", right = "hud_cap_dragon",
-    overLeft = "hud_cap_claws_over", overRight = "hud_cap_dragon_over" },
-}
-Data.ORB_STYLE_ORDER = { "a", "b", "c", "d" }
-Data.ORB_STYLE_LABELS = { a = "Redemoinho", b = "Energia", c = "Névoa", d = "Parado" }
-Data.ORB_STYLES = {
-  a = { sheet = "fluid_a", fps = 7, wisp = 0.62, wisp2 = 0.22, spin = 0.05, spin2 = -0.03, core = 0, sparks = false },
-  b = { sheet = "fluid_b", fps = 7, wisp = 0.70, wisp2 = 0.30, spin = 0.08, spin2 = -0.045, core = 0.5, sparks = true },
-  c = { sheet = "fluid_c", fps = 7, wisp = 0.55, wisp2 = 0, spin = 0.02, spin2 = 0, core = 0, sparks = false },
-  d = { sheet = "fluid_a", fps = 0, wisp = 0.62, wisp2 = 0.22, spin = 0, spin2 = 0, core = 0, sparks = false,
-    still = true, stillFrame = 21 },
-}
-
-function Data.OrbStyle(key)
-  if Data.ORB_STYLES[key] then return key end
-  return "a"
-end
-
--- Texture coordinates of flipbook frame i (0-based, wraps) in an 8x8 sheet.
-local FLIP_GRID, FLIP_FRAMES = 8, 64
-function Data.FlipbookCoords(i)
-  i = math.floor(i) % FLIP_FRAMES
-  local col, row = i % FLIP_GRID, math.floor(i / FLIP_GRID)
-  return col / FLIP_GRID, (col + 1) / FLIP_GRID, row / FLIP_GRID, (row + 1) / FLIP_GRID
-end
-
--- Liquid tones: deep (bottom), body, wisps and surface line. Health and mana are tuned by
--- hand; other resources are derived from their color.
-local function rgb(r, g, b) return { r / 255, g / 255, b / 255 } end
-local PALETTES = {
-  HEALTH = { deep = rgb(12, 0, 2), body = rgb(62, 2, 7), wisp = rgb(230, 46, 30), line = rgb(255, 150, 110) },
-  MANA = { deep = rgb(0, 3, 16), body = rgb(5, 22, 80), wisp = rgb(44, 130, 245), line = rgb(170, 220, 255) },
-}
-function Data.OrbPalette(token)
-  if PALETTES[token] then return PALETTES[token] end
-  local r, g, b = Data.PowerColor(token)
-  local function scale(k) return { r * k, g * k, b * k } end
-  local function lift(k) return { r + (1 - r) * k, g + (1 - g) * k, b + (1 - b) * k } end
-  return { deep = scale(0.08), body = scale(0.35), wisp = lift(0.10), line = lift(0.55) }
-end
 
 -- Unit frame health: grey when tapped by someone else, class color for players, else reaction.
 local HOSTILE, NEUTRAL, FRIENDLY = { 0.78, 0.16, 0.12 }, { 0.85, 0.70, 0.15 }, { 0.20, 0.62, 0.18 }

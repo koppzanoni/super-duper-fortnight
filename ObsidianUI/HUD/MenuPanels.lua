@@ -1,8 +1,7 @@
 local _, ns = ...
 
--- 3x3 menu panels beside the orbs (spec 4.4). Left: game windows via Blizzard's micro buttons
--- (secure "click" so protected panels still open). Right: bags, then social / LFG / PvP.
-local D = ns.Data.HUD
+-- Menu buttons: game windows via Blizzard's micro buttons (secure "click" so protected panels
+-- still open), the bags and the character window. The Moderno row (Data.MODERN_MENU) shows them.
 local HUD = ns.HUD
 local M = ns.MediaManifest
 local GOLD = { 0.91, 0.77, 0.42 }
@@ -130,11 +129,10 @@ end
 -- with its own art hidden under our icon.
 local MICRO_ART = { "MainMenuBarPerformanceBar", "Background", "PushedBackground", "FlashBorder", "FlashContent",
   "NotificationOverlay" }
-local function realMicroButton(entry, x, y, w, h)
+local function realMicroButton(entry)
   local micro = ns.Resolve.First(entry.candidates)
   if not micro then return end
   local slot = CreateFrame("Frame", nil, HUD.over)
-  HUD.Place(slot, x, y, w, h)
   local icon = micro:CreateTexture(nil, "OVERLAY", nil, 7)
   setInset(icon, micro, INSET)
   setIcon(icon, entry, micro)
@@ -202,23 +200,15 @@ local function updateBagIcons()
 end
 
 local function build()
-  for i, entry in ipairs(ns.Data.MENU_LEFT) do
-    local r, c = math.floor((i - 1) / 3) + 1, (i - 1) % 3 + 1
-    local x, y, w, h = D.menuCols[c], D.menuRows[r], D.menuSlot.w, D.menuSlot.h
+  for _, entry in ipairs(ns.Data.MENU_LEFT) do
     if entry.id == "gamemenu" then
-      MenuPanels.byId[entry.id] = realMicroButton(entry, x, y, w, h)
+      MenuPanels.byId[entry.id] = realMicroButton(entry)
     else
-      local b = entry.id == "character" and characterButton(entry) or microButton(entry)
-      HUD.Place(b, x, y, w, h)
-      MenuPanels.byId[entry.id] = b
+      MenuPanels.byId[entry.id] = entry.id == "character" and characterButton(entry) or microButton(entry)
     end
   end
-  for i, entry in ipairs(ns.Data.MENU_RIGHT) do
-    local r, c = math.floor((i - 1) / 3) + 1, (i - 1) % 3 + 1
-    local b = entry.bag and bagButton(entry) or microButton(entry)
-    -- Right panel is the mirror of the left one; keep reading order left to right.
-    HUD.Place(b, ns.Layout.MirrorX(D.width, D.menuCols[4 - c], D.menuSlot.w), D.menuRows[r], D.menuSlot.w, D.menuSlot.h)
-    MenuPanels.byId[entry.id] = b
+  for _, entry in ipairs(ns.Data.MENU_RIGHT) do
+    MenuPanels.byId[entry.id] = entry.bag and bagButton(entry) or microButton(entry)
   end
   updateBagIcons()
   MenuPanels.LayoutModern()
@@ -251,7 +241,7 @@ local function updateMoney()
 end
 
 function MenuPanels.LayoutModern()
-  if not HUD.modern or not next(MenuPanels.byId) then return end
+  if not next(MenuPanels.byId) then return end
   local _, H = UIParent:GetSize()
   local s = H / 1080 * (ns.db.scale or 1)
   local list = ns.Data.MODERN_MENU

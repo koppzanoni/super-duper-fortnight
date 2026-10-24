@@ -60,14 +60,6 @@ def loaded(lua, ns, db=None):
     return ns
 
 
-def test_stone_stays_the_default(lua, ns):
-    loaded(lua, ns)
-    assert ns.db.hudTheme == "obsidian"
-    assert ns.db.modernColor == "black"
-    assert ns.db.arcaneRing is True
-    assert (ns.db.modernRows, ns.db.modernCols) == (2, 12)
-
-
 # ------------------------------------------------------------------ action bar grid
 import preview_render  # noqa: E402
 
@@ -81,7 +73,7 @@ def rect(region):
     return tuple(region.Rect(region).values())
 
 
-MODERN = {"hudTheme": "modern"}
+MODERN = {}
 
 
 def test_bar_geometry(pure):
@@ -93,18 +85,6 @@ def test_bar_geometry(pure):
     assert L.ModernBar(1080, 1, 4, 18).rows == 2               # 36 buttons at most
     small = L.ModernBar(1080, 0.5, 3, 4)
     assert small.slot == 27 and small.height == 9 + 3 * 27 + 2 * 3.5
-
-
-def test_stone_hud_stays_as_it_was():
-    _, ns = preview()
-    assert ns.HUD.art.shown and ns.HUD.under.shown
-    assert not ns.HUD.modern
-
-
-def test_modern_hides_the_stone_hud():
-    _, ns = preview(MODERN)
-    assert ns.HUD.modern
-    assert not ns.HUD.art.shown and not ns.HUD.under.shown
 
 
 def test_modern_bar_is_a_grid_in_reading_order():
@@ -131,7 +111,7 @@ def test_buttons_outside_the_grid_are_hidden_and_unbound():
 
 
 def test_rows_and_columns_come_from_the_settings():
-    _, ns = preview({"hudTheme": "modern", "modernRows": 3, "modernCols": 12})
+    _, ns = preview({"modernRows": 3, "modernCols": 12})
     b = ns.ActionBars.buttons
     assert all(b[i].obEnabled for i in range(1, 37))
     assert rect(b[13])[1] < rect(b[19])[1]                    # bottom left bar is the third row
@@ -141,7 +121,7 @@ def test_slots_have_frames_in_the_chosen_colour():
     _, ns = preview(MODERN)
     slot = ns.ActionBars.buttons[1].obModernSlot
     assert slot.IsVisible(slot) and str(slot.file).endswith("mod_slot_black")
-    _, ns = preview({"hudTheme": "modern", "modernColor": "blue"})
+    _, ns = preview({"modernColor": "blue"})
     assert str(ns.ActionBars.buttons[1].obModernSlot.file).endswith("mod_slot")
 
 
@@ -155,14 +135,6 @@ def test_key_numbers_sit_above_the_first_row():
 # ------------------------------------------------------------------ the rest of the stone HUD
 def visible(region):
     return bool(region.IsVisible(region))
-
-
-def test_orb_numbers_and_orb_status_icons_are_hidden():
-    _, ns = preview(MODERN)
-    assert not visible(ns.Orbs.health.pct) and not visible(ns.Orbs.power.val)
-    assert not visible(ns.PlayerStatus.level)                 # the player frame's badge shows it
-    _, ns = preview()
-    assert visible(ns.Orbs.health.pct) and visible(ns.PlayerStatus.level)
 
 
 def test_xp_bar_runs_under_the_action_bar():
@@ -188,14 +160,6 @@ def test_menu_is_one_row_at_the_bottom_right():
 # ------------------------------------------------------------------ unit frames
 def frames(ns):
     return ns.UnitFrames.frames
-
-
-def test_stone_has_no_player_frame_the_modern_one_does():
-    _, ns = preview()
-    assert frames(ns).player is None
-    _, ns = preview(MODERN)
-    f = frames(ns).player
-    assert f is not None and visible(f) and str(f.art.file).endswith("mod_unit_black")
 
 
 def test_player_top_left_target_beside_it_mirrored():
@@ -240,7 +204,7 @@ def test_arcane_ring_is_a_setting():
     _, ns = preview(MODERN)
     a = frames(ns).player.arcane
     assert a is not None and visible(a) and str(a.file).endswith("mod_arcane")
-    _, ns = preview({"hudTheme": "modern", "arcaneRing": False})
+    _, ns = preview({"arcaneRing": False})
     assert not visible(frames(ns).player.arcane)
 
 
@@ -337,30 +301,20 @@ def test_secret_cast_times_hide_the_zone_instead_of_erroring():
     assert not visible(ns.CastBar.lag) and not visible(ns.CastBar.queue)
 
 
-def test_stone_cast_bar_has_no_latency_zone():
-    rt, ns = preview()
-    cast(rt)
-    assert ns.CastBar.lag is None or not visible(ns.CastBar.lag)
-
-
 # ------------------------------------------------------------------ minimap
 def test_minimap_in_the_modern_ring():
     _, ns = preview(MODERN)
     m = ns.Minimap
     assert str(m.ring.file).endswith("mod_map_black")
-    assert not visible(m.rim)                                  # the stone inner rim
     c = rect(m.frame)
     assert c[0] + c[2] <= 1920 and c[1] + c[3] <= 1080
-    assert c[2] < 0.21 * 1080                                  # thinner and smaller than the stone ring
-    _, ns = preview()
-    assert str(ns.Minimap.ring.file).endswith("minimap_ring") and visible(ns.Minimap.rim)
+    assert c[2] < 0.21 * 1080
 
 
 # ------------------------------------------------------------------ vertical bars, settings
 def test_vertical_bars_are_slot_columns_in_modern():
-    _, ns = preview({"hudTheme": "modern", "vbar1": True, "vbar2": True}, vbars=True)
+    _, ns = preview({"vbar1": True, "vbar2": True}, vbars=True)
     vb = ns.VerticalBars
-    assert not visible(vb.art)
     first, last = vb.bars[1][1], vb.bars[1][12]
     assert visible(first.obModernSlot)
     top, bottom = rect(first), rect(last)

@@ -1,6 +1,8 @@
 # HUD "Moderno" — o que ainda falta
 
-Estado em 2026-10-23: fase 1 implementada (commits 19cc6e6..7dee33b, 278 testes passando).
+Estado em 2026-10-23: fase 1 implementada (commits 19cc6e6..7dee33b). Depois o usuário aposentou
+as outras HUDs: a Moderna é a única (pedra, Relicário e orbes removidos; recuperáveis pela tag
+`hud-pedra-final`). O inventário antigo fica até o inventário Moderno substituí-lo.
 Nada foi testado no jogo ainda (servidor do Forever fechado). Design:
 `docs/superpowers/specs/2026-10-23-hud-moderno-design.md`. Protótipo aprovado: sketch HTML
 (scratchpad `sketch/index.html`, servido em http://127.0.0.1:8766).
@@ -46,7 +48,7 @@ codar, protótipo do painel e do instalador no sketch.
 
 ## Verificar no jogo quando o servidor voltar
 - Reiniciar o jogo uma vez (texturas novas não carregam com /reload).
-- Trocar para o Moderno e aceitar a recarga; voltar para Pedra.
+- Trocar a cor (Preto/Azul) e aceitar a recarga.
 - Barra de ações: atalhos 1–=, segunda linha, linhas/colunas mudando ao vivo, botões fora da grade
   sem atalho.
 - Barra de cast: zona verde do ping, marca da fila, tempo; em combate não pode dar erro.

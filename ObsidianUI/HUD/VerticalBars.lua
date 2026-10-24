@@ -1,17 +1,13 @@
 local _, ns = ...
 
--- Optional vertical bars on the right edge (spec 4.5). One enabled: single column art;
--- both enabled: the joined two-column art, with no frame between the columns.
--- Placed in the gap between the minimap (bottom at 0.242 H) and the bottom HUD.
+-- Optional vertical bars on the right edge: one or two columns of 12 slot frames, in the gap
+-- between the minimap and the bottom HUD.
 local VerticalBars = { TOP = 0.255, GAP = 0.012 }
 ns.VerticalBars = VerticalBars
 
 local container = CreateFrame("Frame", "ObsidianUIVerticalBars", UIParent, "SecureHandlerBaseTemplate")
 VerticalBars.container = container
 container:SetFrameStrata("LOW")
-local art = container:CreateTexture(nil, "ARTWORK")
-art:SetAllPoints(container)
-VerticalBars.art = art
 
 local bars = { {}, {} }
 VerticalBars.bars = bars
@@ -26,25 +22,16 @@ for bar = 1, 2 do
   end
 end
 
-local function placeColumn(buttons, spec, col, height)
-  local u = height / spec.h
-  for i, b in ipairs(buttons) do
-    b:ClearAllPoints()
-    b:SetPoint("TOPLEFT", container, "TOPLEFT", spec.cols[col] * u, -spec.rows[i] * u)
-    b:SetSize(spec.slot.w * u, spec.slot.h * u)
-    b.obEnabled = true
-    b:Show()
-  end
-end
-
--- Moderno: columns of slot frames, no art; slots as big as the action bar's when they fit.
+-- Slots as big as the action bar's when they fit.
 local function placeModern(on, height)
-  local g = ns.HUD.modernBar
+  -- the action bar's geometry, or the same numbers when it was not laid out yet
+  local db = ns.db or {}
+  local _, screenH = UIParent:GetSize()
+  local g = ns.HUD.modernBar or ns.Layout.ModernBar(screenH, db.scale or 1, db.modernRows or 2, db.modernCols or 12)
   local pitch = math.min(g.slot + g.gap, height / 12)
   local slot = pitch - g.gap
   local inset = slot * ns.Data.MODERN_SLOT.inset / ns.Data.MODERN_SLOT.size
   container:SetSize(#on * pitch - g.gap, 12 * pitch - g.gap)
-  art:Hide()
   for col, buttons in ipairs(on) do
     for i, b in ipairs(buttons) do
       b:ClearAllPoints()
@@ -69,20 +56,12 @@ function VerticalBars.Refresh()
     if #on == 0 then
       container:Hide()
     else
-      local spec = #on == 1 and ns.Data.VBAR1 or ns.Data.VBAR2
       local _, screenH = UIParent:GetSize()
       local hudH = ns.HUD.h or 0.25 * screenH
       local height = screenH * (1 - VerticalBars.TOP - VerticalBars.GAP) - hudH
       container:ClearAllPoints()
       container:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -4, -VerticalBars.TOP * screenH)
-      if ns.HUD.modern then
-        placeModern(on, height)
-      else
-        container:SetSize(spec.w * height / spec.h, height)
-        ns.Media.Apply(art, #on == 1 and "vbar1" or "vbar2")
-        art:Show()
-        for col, buttons in ipairs(on) do placeColumn(buttons, spec, col, height) end
-      end
+      placeModern(on, height)
       container:Show()
     end
     ns.ActionBars.UpdateBindings()

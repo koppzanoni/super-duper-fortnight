@@ -2,8 +2,7 @@
 
 Usage: python tools/preview_render.py OUT_DIR [--scene path.jpg]
 Writes OUT_DIR/preview_hud.png (vertical bars on), OUT_DIR/preview_inventory.png (inventory open) and
-OUT_DIR/preview_extra.png (smaller HUD with 3 extra action columns) and OUT_DIR/preview_relic.png
-(the Relicário orb caps) and OUT_DIR/preview_modern.png (the Moderno HUD style).
+OUT_DIR/preview_blue.png (the HUD in its blue colour).
 Icons and portraits come from the reference art (the game provides real ones).
 """
 import argparse
@@ -297,9 +296,7 @@ def main():
     scene = scene_image(pathlib.Path(args.scene))
     print(render(run_addon(vbars=True), scene, out / "preview_hud.png"))
     print(render(run_addon(vbars=True, inventory=True), scene, out / "preview_inventory.png"))
-    print(render(run_addon(vbars=False, db={"scale": 0.7, "extraCols": 3}), scene, out / "preview_extra.png"))
-    print(render(run_addon(vbars=True, db={"capStyle": "relic"}), scene, out / "preview_relic.png"))
-    print(render(run_addon(vbars=False, db={"hudTheme": "modern"}), scene, out / "preview_modern.png"))
+    print(render(run_addon(vbars=False, db={"modernColor": "blue"}), scene, out / "preview_blue.png"))
 
 
 if __name__ == "__main__":

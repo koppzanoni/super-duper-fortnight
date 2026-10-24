@@ -133,20 +133,6 @@ def test_reset_command_forgets_positions(lua, ns):
     assert ns.db.positioned is True
 
 
-# In-game: the HUD art has transparent rows at the bottom; it must sit flush with the screen.
-def test_hud_sinks_transparent_bottom_rows_below_screen(lua, ns):
-    boot(lua, ns)
-    lua.execute("ROOT_Y = nil")
-    ns.HUD.frame.SetPoint = lua.eval("function(_, _, _, _, x, y) ROOT_Y = y end")
-    ns.HUD.Layout()
-    full, u, _ = ns.Layout.HudSize(1920, 1080, 1)
-    pad = ns.HUD.BOTTOM_PAD * u
-    assert ns.HUD.BOTTOM_PAD == 19
-    assert abs(lua.globals().ROOT_Y + pad) < 1e-6
-    assert abs(ns.HUD.h - (full - pad)) < 1e-6
-    assert abs(ns.Stack.BarTop() - (ns.HUD.h - 87 * u)) < 1e-6
-
-
 # In-game: action bars 6-8 of the modern client showed up over the HUD.
 def test_extra_action_bars_are_hidden(lua, ns):
     boot(lua, ns, pre="""
@@ -159,19 +145,6 @@ def test_extra_action_bars_are_hidden(lua, ns):
     """)
     for n in ("MultiBar5", "MultiBar6", "MultiBar7"):
         assert lua.globals().HIDDEN[n], n
-
-
-# In-game: the target frame art was cut at the bottom; its spec must match the exported art.
-# The user then replaced the old unit frames: every one uses the chosen party frame B art.
-def test_unit_frames_use_the_party_frame_art(lua, ns):
-    boot(lua, ns)
-    m = ns.MediaManifest.unit_frame
-    assert (ns.Data.UNIT.w, ns.Data.UNIT.h) == (m.w, m.h)
-    same = lua.eval("rawequal")
-    for kind in ("large", "small", "tiny"):
-        k = ns.UnitFrames.KINDS[kind]
-        assert k.tex == "unit_frame" and same(k.spec, ns.Data.UNIT), kind
-    assert ns.MediaManifest.target_frame is None  # the old art is gone
 
 
 # In-game: the menu panel buttons did nothing.
@@ -296,47 +269,3 @@ def test_objective_tracker_moves_left_of_the_vertical_bars(lua, ns):
     point, x, _ = last_point(lua, "ObjectiveTrackerFrame")
     assert point == "TOPRIGHT" and x == -10
 
-
-def test_castbar_text_centered(lua, ns):
-    boot(lua, ns, pre="""
-      TEXT_POINT = nil
-      PlayerCastingBarFrame = CreateFrame()
-      PlayerCastingBarFrame.Text = setmetatable({}, { __index = function() return function() end end })
-      PlayerCastingBarFrame.Text.SetPoint = function(_, p) TEXT_POINT = p end
-    """)
-    assert lua.globals().TEXT_POINT == "CENTER"
-
-
-# In-game: Blizzard's SetLook("CLASSIC") shrank the bar to 11 px under the top of our groove and
-# moved the spell name below it. Our size and centered text come back after it.
-def test_castbar_keeps_its_size_and_text_after_blizzard_set_look(lua, ns):
-    boot(lua, ns, pre="""
-      TEXT_POINT, BAR_W, BAR_H = nil, nil, nil
-      local f = CreateFrame()
-      PlayerCastingBarFrame = f
-      f.Text = setmetatable({}, { __index = function() return function() end end })
-      f.Text.SetPoint = function(_, p) TEXT_POINT = p end
-      f.SetSize = function(_, w, h) BAR_W, BAR_H = w, h end
-      f.SetWidth = function(_, w) BAR_W = w end
-      f.SetHeight = function(_, h) BAR_H = h end
-      function f:SetLook(look)
-        self:SetWidth(208); self:SetHeight(11)
-        self.Text:ClearAllPoints(); self.Text:SetPoint("TOP", 0, -10)
-      end
-    """)
-    g = lua.globals()
-    ours = (g.BAR_W, g.BAR_H)
-    assert ours[1] > 11
-    f = g.PlayerCastingBarFrame
-    f.SetLook(f, "CLASSIC")
-    assert (g.BAR_W, g.BAR_H) == ours
-    assert g.TEXT_POINT == "CENTER"
-
-
-# The new cast bar art has a round icon socket: the spell icon is masked to a circle.
-def test_castbar_icon_is_round(lua, ns):
-    boot(lua, ns, pre=CASTBAR_PRE + """
-      MASKS = {}
-      PlayerCastingBarFrame.Icon.AddMaskTexture = function(_, m) table.insert(MASKS, m) end
-    """)
-    assert len(lua.globals().MASKS) == 1

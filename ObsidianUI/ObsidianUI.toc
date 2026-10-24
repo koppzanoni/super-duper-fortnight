@@ -1,6 +1,6 @@
 ## Interface: 16001, 120105
 ## Title: ObsidianUI
-## Notes: HUD e inventário em pedra e bronze, estilo Path of Exile 2.
+## Notes: HUD moderna e configurável, inventário unificado.
 ## Author: Arthur
 ## Version: 0.1.0
 ## SavedVariables: ObsidianUIDB
@@ -17,7 +17,6 @@ Core\HideBlizzard.lua
 Core\Pin.lua
 HUD\Bottom.lua
 HUD\XPBar.lua
-HUD\Orbs.lua
 HUD\ActionBars.lua
 HUD\VerticalBars.lua
 HUD\KeybindMode.lua

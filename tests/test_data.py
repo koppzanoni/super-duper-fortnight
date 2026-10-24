@@ -65,7 +65,7 @@ def test_power_colors(D):
     assert D.PowerColor("MANA") == pytest.approx((0.18, 0.39, 0.84))
     assert D.PowerColor("RAGE") == pytest.approx((0.62, 0.08, 0.05))
     assert D.PowerColor("FURY") == pytest.approx((0.79, 0.26, 0.99))
-    assert D.ORB_COLORS.HEALTH.r == pytest.approx(0.78)
+    assert D.POWER_COLORS.HEALTH.r == pytest.approx(0.78)
 
 
 def test_menus(D):
@@ -82,12 +82,3 @@ def test_equip_slots(D):
     assert D.EQUIP_LEFT[1] == "HeadSlot"
     assert D.WEAPONS[3] == "RangedSlot"
 
-
-def test_hud_coordinates_from_spec(D):
-    H = D.HUD
-    assert (H.width, H.height) == (2692, 381)
-    assert (H.orb.x, H.orb.y, H.orb.w, H.orb.h) == (62, 48, 260, 264)
-    assert list(H.barCols.values()) == [710, 782, 853, 925, 997, 1069, 1140, 1211, 1283]
-    assert list(H.barRows.values()) == [114, 215]
-    assert list(H.menuCols.values()) == [429, 488, 547]
-    assert (H.xp.x, H.xp.y, H.xp.h) == (730, 341, 16)

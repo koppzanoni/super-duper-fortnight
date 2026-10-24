@@ -1,30 +1,25 @@
 local _, ns = ...
 
--- Round minimap in the thin stone ring (spec 7.1), top-right corner.
-local WIDTH, MODERN_WIDTH = 0.222, 0.195 -- of the screen height
-local function spec() return ns.HUD.modern and ns.Data.MODERN_MAP or ns.Data.MINIMAP end
+-- Round minimap in the thin Moderno ring, top-right corner.
+local WIDTH = 0.195 -- of the screen height
+local function spec() return ns.Data.MODERN_MAP end
 local container = CreateFrame("Frame", "ObsidianUIMinimap", UIParent)
 container:SetFrameStrata("LOW")
 ns.Minimap = { frame = container }
 
 function ns.Minimap.Width()
   local _, H = UIParent:GetSize()
-  return (ns.HUD.modern and MODERN_WIDTH or WIDTH) * H
+  return WIDTH * H
 end
 local ringFrame = CreateFrame("Frame", nil, container)
 local ring = ringFrame:CreateTexture(nil, "ARTWORK")
 ns.Minimap.ring = ring
 ring:SetAllPoints(container)
 local zone = ringFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-zone:SetTextColor(0.91, 0.77, 0.42)
+zone:SetTextColor(0.93, 0.95, 0.97)
 -- The ring opening; the map is anchored to it with zero offsets, so the Minimap's own scale
 -- (offsets are in its units) cannot shift or shrink it.
 local hole = CreateFrame("Frame", nil, container)
--- A thicker inner rim over the map's edge: the terrain did not reach the ring evenly in game.
-local rim = ringFrame:CreateTexture(nil, "ARTWORK", nil, -1)
-rim:SetAllPoints(hole)
-rim:SetTexture(ns.MediaManifest.map_rim and ns.MediaManifest.map_rim.file)
-ns.Minimap.rim = rim
 local sockets = {}
 for i = 1, 4 do sockets[i] = CreateFrame("Frame", nil, ringFrame) end
 
@@ -55,10 +50,7 @@ local function layout()
   container:ClearAllPoints()
   container:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -0.012 * H, -0.02 * H)
   container:SetSize(w, S.h * u)
-  ns.Media.Apply(ring, ns.HUD.modern and ns.ModernTex("mod_map") or "minimap_ring")
-  -- Moderno: a thin ring, no stone rim over the map's edge, a white zone name
-  rim:SetShown(not ns.HUD.modern)
-  if ns.HUD.modern then zone:SetTextColor(0.93, 0.95, 0.97) else zone:SetTextColor(0.91, 0.77, 0.42) end
+  ns.Media.Apply(ring, ns.ModernTex("mod_map"))
 
   Minimap:SetParent(container)
   -- Both corners on the ring opening, pinned: Blizzard re-anchors Minimap to its old container,

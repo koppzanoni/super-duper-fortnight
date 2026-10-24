@@ -1,8 +1,8 @@
 local _, ns = ...
 
--- Central action bar: 2 rows x 18 columns (spec 4.2). Built on Blizzard's ActionBarButtonTemplate
--- so cooldowns, charges, range and usability come from the game's own (secret-aware) code.
-local D = ns.Data.HUD
+-- Central action bar: a grid of up to 36 buttons (spec 2026-10-23-hud-moderno). Built on Blizzard's
+-- ActionBarButtonTemplate so cooldowns, charges, range and usability come from the game's own
+-- (secret-aware) code.
 local HUD = ns.HUD
 local ActionBars = { buttons = {} }
 ns.ActionBars = ActionBars
@@ -106,52 +106,15 @@ header:SetAttribute("_onstate-page", [[
   end
 ]])
 
-local cols = {}
-for _, x in ipairs(D.barCols) do cols[#cols + 1] = x end
-for i = #D.barCols, 1, -1 do cols[#cols + 1] = ns.Layout.MirrorX(D.width, D.barCols[i], D.barSlot.w) end
-
+-- 36 buttons: main bar, bottom left and bottom right bars (Data.ACTION_LAYOUT); the Moderno grid
+-- below places them.
 for r = 1, 2 do
   for c = 1, 18 do
     local entry = ns.Data.ACTION_LAYOUT[r][c]
     local b = ActionBars.CreateButton(header, "ObsidianUIActionButton" .. ((r - 1) * 18 + c), entry.actionID, entry.binding)
-    -- Column 1 stays next to column 2 when extra columns open between them (its art moves out).
-    HUD.Place(b, cols[c], D.barRows[r], D.barSlot.w, D.barSlot.h, c == 1 or c == 18)
     if r == 1 and c <= 12 then header:SetFrameRef("paged" .. c, b) end
   end
 end
-
--- Extra columns, in the HUD space a smaller HUD frees (setting "extraCols"): the game's action
--- bars 6 and 7. Column k holds rows 1-2 on each side; left uses buttons k, right 6 + k. Each
--- column lives in its own holder, hidden when unused, so Blizzard's grid can't show its buttons.
-ActionBars.extra = {}
-local holders = {}
-for k = 1, ns.Layout.MAX_EXTRA do
-  holders[k] = CreateFrame("Frame", nil, header)
-  holders[k]:SetAllPoints(header)
-  holders[k]:Hide()
-  for r = 1, 2 do
-    local bar = r == 1 and 5 or 6
-    for _, index in ipairs({ k, ns.Layout.MAX_EXTRA + k }) do
-      local b = ActionBars.CreateButton(holders[k], "ObsidianUIExtra" .. bar .. "Button" .. index,
-        (r == 1 and 144 or 156) + index, "MULTIACTIONBAR" .. bar .. "BUTTON" .. index)
-      local x = D.barCols[1] - k * ns.Layout.EXTRA_PITCH
-      if index > ns.Layout.MAX_EXTRA then x = ns.Layout.MirrorX(D.width, x, D.barSlot.w) end
-      HUD.Place(b, x, D.barRows[r], D.barSlot.w, D.barSlot.h, true)
-      b.obEnabled, b.obColumn = false, k
-      ActionBars.extra[#ActionBars.extra + 1] = b
-    end
-  end
-end
-
-function ActionBars.RefreshExtras()
-  ns.RunOutOfCombat(function()
-    local n = HUD.extra or 0
-    for k, holder in ipairs(holders) do holder:SetShown(k <= n) end
-    for _, b in ipairs(ActionBars.extra) do b.obEnabled = b.obColumn <= n end
-    ActionBars.UpdateBindings()
-  end)
-end
-table.insert(HUD.onResize, ActionBars.RefreshExtras)
 
 -- Route the standard key bindings (1-0, -, =, multibar bindings) to our buttons.
 function ActionBars.UpdateBindings()
@@ -208,7 +171,6 @@ local function diamond(i)
 end
 
 function ActionBars.LayoutModern()
-  if not HUD.modern then return end
   local g = HUD.modernBar
   modernFrame:ClearAllPoints()
   modernFrame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, g.bottom)
