@@ -47,6 +47,11 @@ Data.MODERN_CAST = { w = 940, h = 124, icon = { x = 14, y = 14, w = 96, h = 96 }
 -- Minimap: the ring's opening, the zone plate and the round button beside it.
 Data.MODERN_MAP = { w = 340, h = 360, hole = { x = 26, y = 72, w = 288, h = 286 },
   plate = { x = 10, y = 4, w = 260, h = 46 }, button = { x = 282, y = 4, w = 48, h = 48 } }
+Data.MODERN_MAP.map = Data.MODERN_MAP.hole
+-- Socket centers like Data.MINIMAP's (clock, mail, tracking, calendar): the clock under the ring,
+-- mail and tracking on its lower edge, the calendar in the round button beside the zone plate.
+Data.MODERN_MAP.sockets = { { 170, 378 }, { 62, 318 }, { 278, 318 }, { 306, 28 } }
+Data.MODERN_MAP.socketSize = 44
 -- One action slot frame (the icon sits 10 px inside it).
 Data.MODERN_SLOT = { size = 104, inset = 10 }
 

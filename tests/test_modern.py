@@ -340,3 +340,16 @@ def test_stone_cast_bar_has_no_latency_zone():
     rt, ns = preview()
     cast(rt)
     assert ns.CastBar.lag is None or not visible(ns.CastBar.lag)
+
+
+# ------------------------------------------------------------------ minimap
+def test_minimap_in_the_modern_ring():
+    _, ns = preview(MODERN)
+    m = ns.Minimap
+    assert str(m.ring.file).endswith("mod_map_black")
+    assert not visible(m.rim)                                  # the stone inner rim
+    c = rect(m.frame)
+    assert c[0] + c[2] <= 1920 and c[1] + c[3] <= 1080
+    assert c[2] < 0.21 * 1080                                  # thinner and smaller than the stone ring
+    _, ns = preview()
+    assert str(ns.Minimap.ring.file).endswith("minimap_ring") and visible(ns.Minimap.rim)

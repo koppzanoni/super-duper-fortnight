@@ -1,18 +1,19 @@
 local _, ns = ...
 
 -- Round minimap in the thin stone ring (spec 7.1), top-right corner.
-local S = ns.Data.MINIMAP
-local WIDTH = 0.222 -- of the screen height
+local WIDTH, MODERN_WIDTH = 0.222, 0.195 -- of the screen height
+local function spec() return ns.HUD.modern and ns.Data.MODERN_MAP or ns.Data.MINIMAP end
 local container = CreateFrame("Frame", "ObsidianUIMinimap", UIParent)
 container:SetFrameStrata("LOW")
 ns.Minimap = { frame = container }
 
 function ns.Minimap.Width()
   local _, H = UIParent:GetSize()
-  return WIDTH * H
+  return (ns.HUD.modern and MODERN_WIDTH or WIDTH) * H
 end
 local ringFrame = CreateFrame("Frame", nil, container)
 local ring = ringFrame:CreateTexture(nil, "ARTWORK")
+ns.Minimap.ring = ring
 ring:SetAllPoints(container)
 local zone = ringFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 zone:SetTextColor(0.91, 0.77, 0.42)
@@ -47,13 +48,17 @@ local function refreshZoom()
 end
 
 local function layout()
+  local S = spec()
+  local w = ns.Minimap.Width()
   local _, H = UIParent:GetSize()
-  local w = WIDTH * H
   local u = w / S.w
   container:ClearAllPoints()
   container:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -0.012 * H, -0.02 * H)
   container:SetSize(w, S.h * u)
-  ns.Media.Apply(ring, "minimap_ring")
+  ns.Media.Apply(ring, ns.HUD.modern and ns.ModernTex("mod_map") or "minimap_ring")
+  -- Moderno: a thin ring, no stone rim over the map's edge, a white zone name
+  rim:SetShown(not ns.HUD.modern)
+  if ns.HUD.modern then zone:SetTextColor(0.93, 0.95, 0.97) else zone:SetTextColor(0.91, 0.77, 0.42) end
 
   Minimap:SetParent(container)
   -- Both corners on the ring opening, pinned: Blizzard re-anchors Minimap to its old container,
