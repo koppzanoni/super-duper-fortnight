@@ -270,7 +270,17 @@ Panel.SECTIONS = {
   } },
   { id = "cursor", group = "Interface", name = "Cursor", soon = true },
   { id = "automation", group = "Qualidade de vida", name = "Automação", soon = true },
-  { id = "cooldowns", group = "Qualidade de vida", name = "Recarga nos ícones", soon = true },
+  { id = "cooldowns", group = "Qualidade de vida", name = "Recarga nos ícones", lead = "O tempo que falta em cima de cada ícone, desenhado pelo próprio jogo.", cards = {
+    { "Mostrar", {
+      toggle("Números de recarga", "cd_on", true, function() ns.Cooldowns.Refresh() end, "Barras de ação e itens das bolsas."),
+      toggle("Também nos buffs e debuffs", "cdAuras", true, function() ns.Cooldowns.Refresh() end, "Os seus e os debuffs no alvo."),
+      toggle("Décimos nos últimos 3 segundos", "cdDecimals", true, function() ns.Cooldowns.Refresh() end),
+    } },
+    { "Quando", {
+      steps("Só a partir de", "cdMin", 1.5, 0, 10, 0.5, function(v) return string.format("%.1f s", v) end,
+        function() ns.Cooldowns.Refresh() end, "Recargas mais curtas (como a global) ficam sem número."),
+    } },
+  } },
   { id = "reminders", group = "Qualidade de vida", name = "Lembretes", soon = true },
   { id = "classes", group = "Classes", name = "Classes", soon = true },
   { id = "profiles", name = "Perfis", lead = "Salve layouts, um por especialização ou por conteúdo, e compartilhe por texto.",

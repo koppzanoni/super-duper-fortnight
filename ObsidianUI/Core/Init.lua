@@ -16,7 +16,7 @@ local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, sh
   chat_on = true, chatButtons = false, chatFade = 120,
   tip_on = true, tipAnchor = "default", tipCombat = true,
   quest_on = true, questCombat = true, questInstance = false,
-  skins_on = true }
+  skins_on = true, cd_on = true, cdAuras = true, cdMin = 1.5, cdDecimals = true }
 
 -- A Moderno texture in the chosen colour: the black theme, or the concept's blue.
 function ns.ModernTex(name)

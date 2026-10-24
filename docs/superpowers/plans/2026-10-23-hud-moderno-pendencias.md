@@ -82,6 +82,11 @@ comerciante, correio, provador, troca, banco, addons...) e as carregadas depois 
 coleções, guia de masmorras, comunidades, profissões, macros, leilão, inspecionar, mapa) no
 ADDON_LOADED. Conquistas ficam com a arte delas. Falta: botões e barras de rolagem dentro das
 janelas ainda no estilo do jogo.
+Recarga nos ícones (FEITO: HUD/Cooldowns.lua): os números do próprio jogo em cada Cooldown
+(SetHideCountdownNumbers por quadro, sem mexer em configuração), mínimo de 1,5 s
+(SetMinimumCountdownDuration), décimos nos últimos 3 s, fonte da HUD no tamanho do ícone; barras
+de ação, itens das bolsas, seus buffs/debuffs e debuffs no alvo; só estiliza os quadros novos
+entre uma mudança de ajuste e outra.
 Falta (marcado "em breve" no painel): Rastreador de missões, Dicas, Janelas da Blizzard,
 Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
@@ -145,6 +150,7 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
   abrir (Enter) e depois de arrastar o chat, botão de copiar, janela de sussurro nova com o visual.
 - Janelas da Blizzard: abrir cada uma e ver se nenhuma ficou sem fundo ou com conteúdo escondido
   atrás do painel; abas trocando de cor; o mapa.
+- Recarga nos ícones: números aparecendo nas barras, sem número na recarga global, décimos no fim.
 - Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
   UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.

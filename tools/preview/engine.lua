@@ -252,6 +252,18 @@ function Region:SetStatusBarTexture(file) self:GetStatusBarTexture():SetTexture(
 function Region:SetStatusBarColor(r, g, b, a) self:GetStatusBarTexture():SetVertexColor(r, g, b, a) end
 
 -- Frames & templates ----------------------------------------------------------------------------
+-- Cooldown frames: the countdown settings the game offers, and its countdown text.
+function Region:SetHideCountdownNumbers(v) self.hideNumbers = v end
+function Region:SetMinimumCountdownDuration(ms) self.minCountdown = ms end
+function Region:SetCountdownMillisecondsThreshold(s) self.msThreshold = s end
+function Region:GetCountdownFontString()
+  if not self.countdownText then
+    self.countdownText = self:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    self.countdownText:SetPoint("CENTER", self, "CENTER")
+  end
+  return self.countdownText
+end
+
 function CreateFrame(ftype, name, parent, template)
   local f = newRegion("frame", parent or UIParent)
   f.ftype, f.name, f.template = ftype, name, template
@@ -260,11 +272,13 @@ function CreateFrame(ftype, name, parent, template)
   if ftype == "ScrollFrame" then f.clips = true end
   if template and template:find("ActionBarButtonTemplate") then
     f.icon = f:CreateTexture(nil, "ARTWORK"); f.icon:SetAllPoints(f)
+    f.cooldown = CreateFrame("Cooldown", name and (name .. "Cooldown") or nil, f); f.cooldown:SetAllPoints(f)
     f.HotKey = f:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
     f.HotKey:SetPoint("TOPRIGHT", f, "TOPRIGHT", -2, -2); f.HotKey.justify = "RIGHT"
     f.UpdateAction = function(self) self.icon:SetTexture(GetActionTexture(self.attrs.action)) end
   elseif template and template:find("ContainerFrameItemButtonTemplate") then
     f.icon = f:CreateTexture(nil, "ARTWORK"); f.icon:SetAllPoints(f)
+    f.Cooldown = CreateFrame("Cooldown", name and (name .. "Cooldown") or nil, f); f.Cooldown:SetAllPoints(f)
     f.Count = f:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
     f.Count:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -2, 2); f.Count.justify = "RIGHT"
   elseif template and template:find("SecureAuraHeaderTemplate") then
