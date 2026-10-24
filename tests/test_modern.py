@@ -159,9 +159,9 @@ def visible(region):
 def test_orb_numbers_and_orb_status_icons_are_hidden():
     _, ns = preview(MODERN)
     assert not visible(ns.Orbs.health.pct) and not visible(ns.Orbs.power.val)
-    assert not visible(ns.PlayerStatus.holder)
+    assert not visible(ns.PlayerStatus.level)                 # the player frame's badge shows it
     _, ns = preview()
-    assert visible(ns.Orbs.health.pct) and visible(ns.PlayerStatus.holder)
+    assert visible(ns.Orbs.health.pct) and visible(ns.PlayerStatus.level)
 
 
 def test_xp_bar_runs_under_the_action_bar():
@@ -182,3 +182,77 @@ def test_menu_is_one_row_at_the_bottom_right():
     assert rects[-1][0] + rects[-1][2] <= 1920 and rects[0][0] > 1300
     assert not visible(ns.MenuPanels.byId["bag1"])
     assert visible(ns.MenuPanels.band) and str(ns.MenuPanels.band.file).endswith("mod_menu_black")
+
+
+# ------------------------------------------------------------------ unit frames
+def frames(ns):
+    return ns.UnitFrames.frames
+
+
+def test_stone_has_no_player_frame_the_modern_one_does():
+    _, ns = preview()
+    assert frames(ns).player is None
+    _, ns = preview(MODERN)
+    f = frames(ns).player
+    assert f is not None and visible(f) and str(f.art.file).endswith("mod_unit_black")
+
+
+def test_player_top_left_target_beside_it_mirrored():
+    _, ns = preview(MODERN)
+    p, t = frames(ns).player, frames(ns).target
+    pr, tr = rect(p), rect(t)
+    assert pr[0] < 40 and pr[1] + pr[3] > 1040                # top left
+    assert tr[0] > pr[0] + pr[2] and abs(tr[1] - pr[1]) < 1   # beside it, same height
+    tc = list(t.art.tc.values())
+    assert tc[0] > tc[1]                                      # art flipped
+    assert rect(t.portrait)[0] > rect(t.health)[0]            # portrait on the right
+    assert t.health.reverse                                   # fills from the portrait side
+
+
+def test_bars_start_at_the_ring_edge():
+    _, ns = preview(MODERN)
+    p = frames(ns).player
+    ring_right = rect(p.portrait)[0] + rect(p.portrait)[2]
+    assert rect(p.health)[0] >= ring_right - 1
+
+
+def test_target_of_target_small_under_the_target_portrait():
+    _, ns = preview(MODERN)
+    t, tot = frames(ns).target, frames(ns).targettarget
+    tr, sr = rect(t), rect(tot)
+    assert sr[2] < tr[2] * 0.6                                # smaller
+    assert sr[1] + sr[3] < tr[1] + tr[3] * 0.2                # below it
+    assert abs((sr[0] + sr[2]) - (tr[0] + tr[2])) < tr[2] * 0.1  # right edges lined up
+    assert list(tot.art.tc.values())[0] > list(tot.art.tc.values())[1]
+
+
+def test_texts_numbers_and_level_badge():
+    _, ns = preview(MODERN)
+    p = frames(ns).player
+    assert "/" in p.hpText.text and "/" in p.powerText.text
+    assert p.levelText.text == "58"
+    lv, badge = rect(p.levelText), rect(p.levelBadge)
+    assert abs((lv[0] + lv[2] / 2) - (badge[0] + badge[2] / 2)) < 2
+
+
+def test_arcane_ring_is_a_setting():
+    _, ns = preview(MODERN)
+    a = frames(ns).player.arcane
+    assert a is not None and visible(a) and str(a.file).endswith("mod_arcane")
+    _, ns = preview({"hudTheme": "modern", "arcaneRing": False})
+    assert not visible(frames(ns).player.arcane)
+
+
+def test_target_cast_bar_under_its_debuffs_left_of_its_target():
+    _, ns = preview(MODERN)
+    t, tot = frames(ns).target, frames(ns).targettarget
+    bar = ns.Resolve.First(ns.Data.FRAME_CANDIDATES.targetcastbar)[0]  # (frame, name)
+    debuff = ns.UnitFrames.debuffs[1]
+    assert rect(bar)[1] + rect(bar)[3] <= rect(debuff)[1] + 0.5      # cast bar below the debuffs
+    assert rect(bar)[0] + rect(bar)[2] <= rect(tot)[0]               # stops before the target's target
+
+
+def test_player_health_is_green():
+    _, ns = preview(MODERN)
+    vc = list(frames(ns).player.health.GetStatusBarTexture(frames(ns).player.health).vc.values())
+    assert vc[1] > vc[0] and vc[1] > vc[2]

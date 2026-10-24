@@ -16,10 +16,17 @@ local holder = CreateFrame("Frame", nil, ns.HUD.over)
 PlayerStatus.holder = holder
 holder:SetAllPoints(well)
 local level = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+PlayerStatus.level = level
 level:SetTextColor(0.91, 0.77, 0.42)
 level:SetShadowOffset(1, -1)
 local slots = {}
 for i = 1, 3 do slots[i] = holder:CreateTexture(nil, "OVERLAY") end
+
+-- Where the icons go: the health orb, or the Moderno player portrait (its badge shows the level).
+local function anchor()
+  local player = ns.HUD.modern and ns.UnitFrames and ns.UnitFrames.frames.player
+  return player and player.portrait or well
+end
 
 function PlayerStatus.Current()
   local leader = UnitIsGroupLeader and UnitIsGroupLeader("player")
@@ -29,7 +36,7 @@ end
 local function update(newLevel)
   level:SetText("Nv " .. (tonumber(newLevel) or UnitLevel("player")))
   local list = PlayerStatus.Current()
-  local h = well:GetHeight()
+  local h = anchor():GetHeight()
   local size, gap = 0.09 * h, 2
   for i, t in ipairs(slots) do
     local key = list[i]
@@ -48,14 +55,17 @@ local function update(newLevel)
 end
 
 local function layout()
-  holder:SetShown(not ns.HUD.modern) -- Moderno: no orb; the player frame shows the level
+  holder:ClearAllPoints()
+  holder:SetAllPoints(anchor())
+  level:SetShown(not ns.HUD.modern)
+  if ns.HUD.modern then holder:SetFrameStrata("MEDIUM") end
   level:ClearAllPoints()
   level:SetPoint("TOP", holder, "TOP", 0, -0.11 * well:GetHeight())
   update()
 end
 
 table.insert(ns.HUD.onResize, layout)
-ns.On("PLAYER_ENTERING_WORLD", function() update() end)
+ns.On("PLAYER_ENTERING_WORLD", layout)
 ns.On("PLAYER_LEVEL_UP", function(_, newLevel) update(newLevel) end)
 for _, ev in ipairs({ "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED", "PLAYER_UPDATE_RESTING",
   "GROUP_ROSTER_UPDATE", "PARTY_LEADER_CHANGED" }) do
