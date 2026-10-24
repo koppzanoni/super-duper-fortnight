@@ -52,7 +52,9 @@ esconde PartyFrame/CompactPartyFrame/CompactRaidFrameManager/Container quando li
 Também feito: você no grupo (opção), grupo em células do raide (opção), até 3 debuffs por membro
 (liga/desliga), marcador de raide, ícone da checagem de prontidão (some 6 s depois), ferramentas de
 raide (HUD/RaidTools.lua: Pronto?, contagem de 10 s, 8 marcadores + limpar; só líder/assistente;
-movível; liga/desliga). Ainda não: marcadores no chão (exigem macro segura).
+movível; liga/desliga). Marcadores no chão (FEITO): segunda linha "Chão" com 8 botões seguros /wm n (o jogo
+pede o lugar no chão; nomes dos comandos do próprio cliente) e /cwm all; a faixa só aparece/some fora de
+combate; grupo e raide desceram 26 px por padrão para caber as duas linhas.
 Nameplates (FEITO: HUD/Nameplates.lua): por cima das placas do jogo (UnitFrame com alpha 0, hook
 em SetAlpha), barra fina com cor por reação/classe, nome, % de vida, marcador, até 4 debuffs seus,
 cast azul / cinza (não interrompível) — SetTimerDuration(UnitCastingDuration) quando aceitar, senão
@@ -151,7 +153,7 @@ Ladino), pontos de combo só em Felino ou em todas as formas (gancho ClassResour
 dos 5 s na forma humana. Página Classes COMPLETA: as 11 classes do protótipo.
 Todos os módulos do painel estão feitos (nenhum "em breve"). Ainda falta: visibilidade por elemento,
 ancorar elementos um no outro / X e Y digitados no modo de edição, clicar para curar nos quadros de raide,
-marcadores no chão (macro segura), banco; e conferir tudo no jogo quando o servidor voltar.
+banco; e conferir tudo no jogo quando o servidor voltar.
 
 ## Perfis (FEITO: Core/Serialize.lua + Core/Profiles.lua, página Perfis)
 Perfil por personagem, criar/copiar/excluir, troca ao vivo (cor pede recarga), um por
@@ -235,6 +237,7 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.
 - Marcadores (UI-RaidTargetingIcons), ícones de prontidão, debuffs nos quadros; ferramentas de raide:
   Pronto?, contagem e marcar o alvo funcionando sem erro.
+- Marcadores no chão: clicar mostra o círculo para escolher o lugar; o X limpa todos ("all" no idioma do jogo).
 
 ## Opções das classes (do protótipo, CLASS_OPTS)
 ```js

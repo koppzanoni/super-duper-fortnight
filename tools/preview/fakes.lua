@@ -205,6 +205,7 @@ end
 
 function GetRaidTargetIndex(u) return ROSTER[u] and ROSTER[u].marker end
 function SetRaidTargetIconTexture(tex, i) tex.markerIndex = i; tex:SetTexCoord(0, 1, 0, 1) end
+SLASH_WORLD_MARKER1, SLASH_CLEAR_WORLD_MARKER1, ALL = "/wm", "/cwm", "all" -- localized by the game
 READY = {}
 function GetReadyCheckStatus(u) return READY[u] end
 READY_CHECK_READY_TEXTURE, READY_CHECK_NOT_READY_TEXTURE, READY_CHECK_WAITING_TEXTURE = "READY", "NOTREADY", "WAITING"

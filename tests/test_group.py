@@ -327,3 +327,31 @@ def test_raid_tools_in_test_mode_and_edit_mode():
     ns.GroupFrames.Test(None)
     assert not visible(ns.RaidTools.frame)
     assert ns.Movers['items']['raidtools'] is not None
+
+
+def test_world_markers_are_secure_macro_buttons():
+    rt, ns = tools_preview(group="raid", n=10)
+    T = ns.RaidTools
+    assert len(T.ground) == 8
+    b = T.ground[1]
+    assert b.template == "SecureActionButtonTemplate"
+    assert b.attrs.type == "macro" and b.attrs.macrotext == "/wm 1"         # the game asks where on the ground
+    assert T.ground[8].attrs.macrotext == "/wm 8"
+    assert T.groundClear.attrs.macrotext == "/cwm all"
+    assert visible(b) and visible(T.groundClear)
+
+
+def test_world_marker_icons_follow_the_games_order():
+    _, ns = tools_preview(group="raid", n=10)
+    # world marker 1 is the blue square (raid icon 6), 4 the red cross (7), 8 the skull (8)
+    icons = [b.icon.markerIndex for b in ns.RaidTools.ground.values()]
+    assert icons == [6, 4, 3, 7, 1, 2, 5, 8]
+
+
+def test_raid_tools_wait_for_combat_to_show_or_hide():
+    rt, ns = tools_preview(group="party", n=2)
+    assert visible(ns.RaidTools.frame)
+    rt.execute('function InCombatLockdown() return true end; LEADER = false; PREVIEW_FIRE("PARTY_LEADER_CHANGED")')
+    assert visible(ns.RaidTools.frame)                                  # protected buttons inside: not now
+    rt.execute('function InCombatLockdown() return false end; PREVIEW_FIRE("PLAYER_REGEN_ENABLED")')
+    assert not visible(ns.RaidTools.frame)

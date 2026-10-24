@@ -475,11 +475,11 @@ local function apply()
   layoutParty()
   ns.Movers.Register("party", "Grupo", partyHolder, function(f)
     f:ClearAllPoints()
-    f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 18 * scale(), -380 * scale())
+    f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 18 * scale(), -406 * scale()) -- under the two-row raid tools
   end)
   ns.Movers.Register("raid", "Raide", raidHolder, function(f)
     f:ClearAllPoints()
-    f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 18 * scale(), -380 * scale())
+    f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 18 * scale(), -406 * scale()) -- under the two-row raid tools
   end)
   ns.Movers.Place("party")
   ns.Movers.Place("raid")
