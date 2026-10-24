@@ -217,3 +217,65 @@ def test_health_event_updates_you_in_the_party():
     rt.execute('HP_SET = true')
     me = ns.GroupFrames.me
     assert me.health.value == 28400
+
+
+# ------------------------------------------------------------------ debuffs, markers, ready check
+def shown_icons(owner):
+    return [d for d in owner.debuffs.values() if visible(d)]
+
+
+def test_cells_show_debuffs():
+    _, ns = preview(group="raid", n=10)
+    c = {x.unit: x for x in cells(ns)}
+    assert len(shown_icons(c["raid5"])) == 2 and shown_icons(c["raid1"]) == []
+    assert c["raid5"].debuffs[1].icon.file == "ICON:3"
+    _, ns = preview({"groupDebuffs": False}, group="raid", n=10)
+    assert all(shown_icons(x) == [] for x in cells(ns))
+
+
+def test_party_frames_show_debuffs_beside_them():
+    _, ns = preview(group="party", n=5)
+    p = {x.unit: x for x in ns.GroupFrames.party.values()}
+    assert shown_icons(p["party4"]) == []
+    rt, ns = preview(group="party", n=4)
+    rt.execute('ROSTER.party2.debuffs = 2; PREVIEW_FIRE("UNIT_AURA", "party2")')
+    f = {x.unit: x for x in ns.GroupFrames.party.values()}["party2"]
+    icons = shown_icons(f)
+    assert len(icons) == 2 and rect(icons[0])[0] >= rect(f)[0] + rect(f)[2] - 0.5      # right of the frame
+
+
+def test_raid_markers():
+    rt, ns = preview(group="raid", n=10)
+    c = {x.unit: x for x in cells(ns)}
+    assert visible(c["raid1"].marker) and c["raid1"].marker.markerIndex == 8
+    assert visible(c["raid2"].marker) and not visible(c["raid3"].marker)
+    rt.execute('ROSTER.raid1.marker = nil; PREVIEW_FIRE("RAID_TARGET_UPDATE")')
+    assert not visible(c["raid1"].marker)
+    p = {x.unit: x for x in preview(group="party", n=2)[1].GroupFrames.party.values()}
+    assert visible(p["party1"].marker)
+
+
+def test_ready_check_icons_then_gone():
+    rt, ns = preview(group="raid", n=5)
+    rt.execute('READY = { raid1 = "ready", raid2 = "notready", raid3 = "waiting" }; PREVIEW_FIRE("READY_CHECK", "raid1", 30)')
+    c = {x.unit: x for x in cells(ns)}
+    assert c["raid1"].ready.file == "READY" and c["raid2"].ready.file == "NOTREADY"
+    assert visible(c["raid3"].ready) and not visible(c["raid4"].ready)
+    rt.execute('READY.raid3 = "ready"; PREVIEW_FIRE("READY_CHECK_CONFIRM", "raid3", true)')
+    assert c["raid3"].ready.file == "READY"
+    rt.execute('PREVIEW_FIRE("READY_CHECK_FINISHED")')
+    assert not visible(c["raid1"].ready)
+
+
+def test_test_mode_shows_markers_and_debuffs():
+    _, ns = preview()
+    ns.GroupFrames.Test("raid")
+    c = cells(ns)
+    assert any(visible(x.marker) for x in c) and any(shown_icons(x) for x in c)
+
+
+def test_cell_debuffs_stay_clear_of_the_name():
+    _, ns = preview(group="raid", n=10)
+    c = next(x for x in cells(ns) if x.unit == "raid5")
+    name, icon = rect(c.name), rect(shown_icons(c)[0])
+    assert icon[1] + icon[3] <= name[1] + 0.5                         # icons below the name line

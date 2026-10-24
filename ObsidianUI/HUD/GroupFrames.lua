@@ -5,7 +5,8 @@ local _, ns = ...
 -- row or per column), class-coloured health, name, a thin power line, tank/healer icon, dead and
 -- offline text, a border in the colour of a debuff the player can dispel, faded when out of range.
 -- The party can include you on top ("partyPlayer") and can use the raid cells instead
--- ("partyStyle" = "cells"). Both are secure and only move or change out of combat. Test mode shows
+-- ("partyStyle" = "cells"). Every member also shows up to a few debuffs, its raid marker and its
+-- ready check answer. Both are secure and only move or change out of combat. Test mode shows
 -- stand-ins (party or raid) to place and size them while solo; combat ends it.
 local GroupFrames = { party = {}, raid = {}, partyCells = {}, testing = nil }
 ns.GroupFrames = GroupFrames
@@ -25,7 +26,8 @@ local function scale() local _, H = UIParent:GetSize(); return H / 1080 end
 local function fake(i)
   return { name = FAKE_NAMES[(i - 1) % #FAKE_NAMES + 1], class = FAKE_CLASSES[(i - 1) % #FAKE_CLASSES + 1],
     role = i % 5 == 1 and "TANK" or (i % 5 == 2 and "HEALER" or "DAMAGER"), hp = 10000 - (i * 1370) % 7000,
-    power = 40 + (i * 17) % 60, dead = i == 6, group = math.floor((i - 1) / 5) + 1, level = 60 }
+    power = 40 + (i * 17) % 60, dead = i == 6, group = math.floor((i - 1) / 5) + 1, level = 60,
+    marker = ({ [1] = 8, [2] = 1 })[i], debuffs = i == 3 and 2 or 0 }
 end
 
 -- ------------------------------------------------------------------ holders
@@ -40,6 +42,141 @@ local function edge(c, layer)
   local t = c:CreateTexture(nil, layer)
   t:SetColorTexture(1, 1, 1, 1)
   return t
+end
+
+-- ------------------------------------------------------------------ debuffs, marker, ready check
+local MAX_DEBUFFS = 3
+local MARKER_TEX = "Interface\\TargetingFrame\\UI-RaidTargetingIcons"
+local readyActive = false
+
+-- Debuff icons (in the action slots' frame), the raid marker and the ready check icon on a cell
+-- or a party frame. host: what the icons draw over (the cell's health bar or the frame).
+local function addExtras(owner, host)
+  owner.debuffs = {}
+  for i = 1, MAX_DEBUFFS do
+    local d = CreateFrame("Frame", nil, owner)
+    d:SetFrameLevel(host:GetFrameLevel() + 3)
+    d.icon = d:CreateTexture(nil, "ARTWORK")
+    d.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    d.border = d:CreateTexture(nil, "OVERLAY")
+    d.border:SetAllPoints(d)
+    ns.Media.Apply(d.border, ns.ModernTex("mod_slot"))
+    d.count = d:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+    d.count:SetPoint("BOTTOMRIGHT", d, "BOTTOMRIGHT", 0, 0)
+    d:Hide()
+    owner.debuffs[i] = d
+  end
+  local top = CreateFrame("Frame", nil, owner)
+  top:SetAllPoints(owner)
+  top:SetFrameLevel(host:GetFrameLevel() + 4)
+  owner.marker = top:CreateTexture(nil, "OVERLAY")
+  owner.marker:SetTexture(MARKER_TEX)
+  owner.marker:Hide()
+  owner.ready = top:CreateTexture(nil, "OVERLAY")
+  owner.ready:Hide()
+end
+
+local function sizeDebuff(d, size)
+  d:SetSize(size, size)
+  local inset = size * ns.Data.MODERN_SLOT.inset / ns.Data.MODERN_SLOT.size
+  d.icon:ClearAllPoints()
+  d.icon:SetPoint("TOPLEFT", d, "TOPLEFT", inset, -inset)
+  d.icon:SetPoint("BOTTOMRIGHT", d, "BOTTOMRIGHT", -inset, inset)
+  ns.Look.SetFont(d.count, math.max(8, size * 0.42))
+end
+
+-- Cell: the name across the top; along the bottom the role icon and the marker on the left and
+-- the debuffs on the right, growing left; the ready check in the middle.
+local function placeCellExtras(c, h)
+  local size = math.max(9, h * 0.36)
+  for i, d in ipairs(c.debuffs) do
+    sizeDebuff(d, size)
+    d:ClearAllPoints()
+    d:SetPoint("BOTTOMRIGHT", c.health, "BOTTOMRIGHT", -(i - 1) * size, 0)
+  end
+  c.marker:SetSize(h * 0.36, h * 0.36)
+  c.marker:ClearAllPoints()
+  c.marker:SetPoint("BOTTOMLEFT", c.role, "BOTTOMRIGHT", 1, 0)
+  c.ready:SetSize(h * 0.6, h * 0.6)
+  c.ready:ClearAllPoints()
+  c.ready:SetPoint("CENTER", c, "CENTER", 0, 0)
+end
+
+-- Party frame: debuffs in a row to its right, marker over the portrait, ready check on it.
+local function placeFrameExtras(f)
+  local h = f:GetHeight()
+  local size = h * 0.42
+  for i, d in ipairs(f.debuffs) do
+    sizeDebuff(d, size)
+    d:ClearAllPoints()
+    d:SetPoint("LEFT", f, "RIGHT", 4 + (i - 1) * (size + 2), 0)
+  end
+  f.marker:SetSize(h * 0.3, h * 0.3)
+  f.marker:ClearAllPoints()
+  f.marker:SetPoint("CENTER", f.portrait, "TOP", 0, 0)
+  f.ready:SetSize(h * 0.5, h * 0.5)
+  f.ready:ClearAllPoints()
+  f.ready:SetPoint("CENTER", f.portrait, "CENTER", 0, 0)
+end
+
+local function showDebuffs(owner, list)
+  for i, d in ipairs(owner.debuffs) do
+    local aura = list[i]
+    d:SetShown(aura ~= nil)
+    if aura then
+      d.icon:SetTexture(aura.icon)
+      -- stacks may be secret: shown when the text API takes them, else left out
+      if not pcall(function() d.count:SetText((aura.applications or 0) > 1 and aura.applications or "") end) then
+        d.count:SetText("")
+      end
+    end
+  end
+end
+
+local function updateDebuffs(owner)
+  local list = {}
+  if on("groupDebuffs") and UnitExists(owner.unit) then
+    local ok, got = pcall(ns.Data.UnitAuraList, owner.unit, "HARMFUL", MAX_DEBUFFS)
+    if ok then list = got end
+  end
+  showDebuffs(owner, list)
+end
+
+local function showMarker(owner, index)
+  owner.marker:SetShown(index ~= nil)
+  if index then SetRaidTargetIconTexture(owner.marker, index) end
+end
+
+local function updateMarker(owner)
+  -- the index may come secret: no marker then, rather than an error
+  if not pcall(function() showMarker(owner, UnitExists(owner.unit) and GetRaidTargetIndex(owner.unit) or nil) end) then
+    owner.marker:Hide()
+  end
+end
+
+local READY_TEX = { ready = "READY_CHECK_READY_TEXTURE", notready = "READY_CHECK_NOT_READY_TEXTURE",
+  waiting = "READY_CHECK_WAITING_TEXTURE" }
+local function updateReady(owner)
+  local status = readyActive and UnitExists(owner.unit) and GetReadyCheckStatus(owner.unit)
+  local tex = status and READY_TEX[status] and _G[READY_TEX[status]]
+  owner.ready:SetShown(tex ~= nil and tex ~= false)
+  if tex then owner.ready:SetTexture(tex) end
+end
+
+local function updateExtras(owner)
+  updateDebuffs(owner)
+  updateMarker(owner)
+  updateReady(owner)
+end
+
+local function fakeExtras(owner, d)
+  local list = {}
+  if on("groupDebuffs") then
+    for i = 1, d.debuffs do list[i] = { icon = 136000 + i, applications = i } end
+  end
+  showDebuffs(owner, list)
+  showMarker(owner, d.marker)
+  owner.ready:Hide()
 end
 
 local function newCell(name, unit, parent)
@@ -75,6 +212,7 @@ local function newCell(name, unit, parent)
     if GameTooltip:SetUnit(self.unit) then GameTooltip:Show() end
   end)
   c:SetScript("OnLeave", GameTooltip_Hide)
+  addExtras(c, c.health)
   return c
 end
 for i = 1, RAID do GroupFrames.raid[i] = newCell("ObsidianUIRaid" .. i, "raid" .. i, raidHolder) end
@@ -104,6 +242,7 @@ local function sizeCell(c, w, h)
   c.power:SetStatusBarTexture(ns.Look.BarTexture())
   frameEdges(c.rim, c, 1)
   frameEdges(c.dispel, c.health, 2)
+  placeCellExtras(c, h)
   local font = math.max(8, math.min(12, h * 0.3))
   ns.Look.SetFont(c.name, font)
   ns.Look.SetFont(c.status, font * 0.9)
@@ -114,7 +253,7 @@ local function sizeCell(c, w, h)
   local icon = math.max(8, h * 0.32)
   c.role:SetSize(icon, icon)
   c.role:ClearAllPoints()
-  c.role:SetPoint("TOPLEFT", c.health, "TOPLEFT", 2, -2)
+  c.role:SetPoint("BOTTOMLEFT", c.health, "BOTTOMLEFT", 2, 2)
 end
 
 local function setRole(c, role)
@@ -123,13 +262,13 @@ local function setRole(c, role)
   if coords then c.role:SetTexCoord(coords[1], coords[2], coords[3], coords[4]) end
 end
 
--- Name centred; with a status line under it, both together centred in the health area. Dead or
--- offline: grey bar.
+-- Name at the top of the health area (the debuffs take the bottom), the status line under it.
+-- Dead or offline: grey bar.
 local GREY = { 0.3, 0.3, 0.32 }
 local function setStatus(c, text)
   c.status:SetText(text)
   c.name:ClearAllPoints()
-  c.name:SetPoint("CENTER", c.health, "CENTER", 0, text ~= "" and (c.font or 10) * 0.45 or 0)
+  c.name:SetPoint("TOP", c.health, "TOP", 0, -2)
   if text ~= "" then c.health:SetStatusBarColor(GREY[1], GREY[2], GREY[3]) end
 end
 
@@ -171,6 +310,7 @@ local function fakeCell(c, d)
   c.name:SetText(d.name)
   setStatus(c, d.dead and "Morto" or "")
   setRole(c, d.role)
+  fakeExtras(c, d)
   c:SetAlpha(1)
 end
 
@@ -274,6 +414,7 @@ local function layoutParty()
   end
   local prev
   for _, f in ipairs(list) do
+    if f.debuffs then placeFrameExtras(f) end
     f:ClearAllPoints()
     if prev then f:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, -10 * s)
     else f:SetPoint("TOPLEFT", partyHolder, "TOPLEFT", 0, 0) end
@@ -299,7 +440,7 @@ local function apply()
     watch(m, test ~= "party")
     if test == "party" then
       m:Show()
-      if m.isCell then fakeCell(m, fake(i)) else ns.UnitFrames.Fake(m, fake(i)) end
+      if m.isCell then fakeCell(m, fake(i)) else ns.UnitFrames.Fake(m, fake(i)); fakeExtras(m, fake(i)) end
     end
   end
   local all = { GroupFrames.me }
@@ -341,8 +482,9 @@ function GroupFrames.Update()
   if GroupFrames.testing then return end
   for _, m in ipairs(partyMembers()) do
     if m.isCell then fillCell(m); updateDispel(m); updateRange(m) else ns.UnitFrames.Update(m) end
+    updateExtras(m)
   end
-  for _, c in ipairs(GroupFrames.raid) do fillCell(c); updateDispel(c); updateRange(c) end
+  for _, c in ipairs(GroupFrames.raid) do fillCell(c); updateDispel(c); updateRange(c); updateExtras(c) end
 end
 
 -- "party", "raid" or nil (back to the real group). Out of combat only.
@@ -363,8 +505,10 @@ ns.On("PLAYER_LOGIN", function()
     end
     GroupFrames.me = ns.UnitFrames.Create("player", "modernSmall", nil, "partyplayer")
     GroupFrames.me:SetParent(partyHolder)
-    GroupFrames.me:Resize(select(2, UIParent:GetSize()))
-    for _, f in ipairs(GroupFrames.party) do f:Resize(select(2, UIParent:GetSize())) end
+    for _, f in ipairs({ GroupFrames.me, unpack(GroupFrames.party) }) do
+      f:Resize(select(2, UIParent:GetSize()))
+      addExtras(f, f)
+    end
     -- Blizzard's own party and raid frames give way to these (back after a reload when switched off).
     if on("party_on") then
       ns.HideFrame((ns.Resolve.First(ns.Data.FRAME_CANDIDATES.partyframe)))
@@ -406,9 +550,46 @@ for _, ev in ipairs({ "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_POWER_FREQUENT", "U
     if unit == "player" and GroupFrames.me and GroupFrames.me:IsVisible() then ns.UnitFrames.UpdateValues(GroupFrames.me) end
   end)
 end
-ns.On("UNIT_AURA", function(_, unit)
+-- Everything showing a unit: its cell and, in the frames style, its party frame.
+local function ownersFor(unit)
+  local list = {}
   local c = cellFor(unit)
-  if c and not GroupFrames.testing then updateDispel(c) end
+  if c then list[1] = c end
+  if not cellStyle() then
+    local i = unit and unit:match("^party(%d)$")
+    local f = (i and GroupFrames.party[tonumber(i)]) or (unit == "player" and GroupFrames.me)
+    if f and f:IsVisible() then list[#list + 1] = f end
+  end
+  return list
+end
+local function eachMember(fn)
+  for _, m in ipairs(partyMembers()) do fn(m) end
+  for _, c in ipairs(GroupFrames.raid) do fn(c) end
+end
+
+ns.On("UNIT_AURA", function(_, unit)
+  if GroupFrames.testing then return end
+  for _, o in ipairs(ownersFor(unit)) do
+    if o.isCell then updateDispel(o) end
+    updateDebuffs(o)
+  end
+end)
+ns.On("RAID_TARGET_UPDATE", function()
+  if not GroupFrames.testing then eachMember(updateMarker) end
+end)
+ns.On("READY_CHECK", function()
+  readyActive = true
+  eachMember(updateReady)
+end)
+ns.On("READY_CHECK_CONFIRM", function(_, unit)
+  for _, o in ipairs(ownersFor(unit)) do updateReady(o) end
+end)
+-- the answers stay a few seconds after the check ends, like Blizzard's
+ns.On("READY_CHECK_FINISHED", function()
+  C_Timer.After(6, function()
+    readyActive = false
+    eachMember(updateReady)
+  end)
 end)
 ns.On("UNIT_CONNECTION", function(_, unit) local f = ns.UnitFrames.frames[unit]; if f then ns.UnitFrames.Update(f) end end)
 

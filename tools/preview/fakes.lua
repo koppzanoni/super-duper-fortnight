@@ -139,7 +139,8 @@ function date(f) return "10:24" end
 
 -- Group roster for the group frames: solo by default. PREVIEW_ROSTER("party"|"raid"|nil, n) fills
 -- party1..n or raid1..n (five per subgroup), re-evaluates unit watches and visibility drivers and
--- fires GROUP_ROSTER_UPDATE. Member 3 is out of range, 4 is dead, 7 is offline.
+-- fires GROUP_ROSTER_UPDATE. Member 3 is out of range, 4 is dead, 7 is offline, 1 has the skull
+-- and 2 the star, 5 has two debuffs (the first one magic). READY[unit]: ready check answers.
 PREVIEW_GROUP, ROSTER = false, {} -- false, not nil: unknown globals are stubs here
 local CLASSES = { "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID" }
 local ROLES = { "TANK", "HEALER", "DAMAGER", "DAMAGER", "DAMAGER" }
@@ -195,9 +196,26 @@ function PREVIEW_ROSTER(kind, n)
   for i = 1, (kind and n or 0) do
     ROSTER[(kind == "raid" and "raid" or "party") .. i] = { name = "Membro " .. i, class = CLASSES[(i - 1) % #CLASSES + 1],
       role = ROLES[(i - 1) % 5 + 1], hp = 1000 * (10 - i % 7), group = math.floor((i - 1) / 5) + 1,
-      far = i == 3, dead = i == 4, offline = i == 7 }
+      far = i == 3, dead = i == 4, offline = i == 7, marker = ({ [1] = 8, [2] = 1 })[i], debuffs = i == 5 and 2 or 0 }
   end
   for f in pairs(WATCHED) do applyWatch(f) end
   for f in pairs(DRIVERS) do applyDriver(f) end
   PREVIEW_FIRE("GROUP_ROSTER_UPDATE")
+end
+
+function GetRaidTargetIndex(u) return ROSTER[u] and ROSTER[u].marker end
+function SetRaidTargetIconTexture(tex, i) tex.markerIndex = i; tex:SetTexCoord(0, 1, 0, 1) end
+READY = {}
+function GetReadyCheckStatus(u) return READY[u] end
+READY_CHECK_READY_TEXTURE, READY_CHECK_NOT_READY_TEXTURE, READY_CHECK_WAITING_TEXTURE = "READY", "NOTREADY", "WAITING"
+local auraByIndex = C_UnitAuras.GetAuraDataByIndex
+C_UnitAuras.GetAuraDataByIndex = function(unit, i, filter)
+  local m = ROSTER[unit]
+  if m then
+    if filter:find("HARMFUL") and i <= m.debuffs then
+      return { icon = "ICON:" .. (i + 2), applications = i, dispelName = i == 1 and "Magic" or nil, auraInstanceID = 100 + i }
+    end
+    return nil
+  end
+  return auraByIndex(unit, i, filter)
 end
