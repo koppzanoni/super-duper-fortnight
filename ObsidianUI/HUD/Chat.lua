@@ -97,10 +97,11 @@ local function skinTab(tab)
 end
 
 -- Selected tab: white text and the arcane line under it; the others dim.
+-- The game fades the other tabs to a fifth when the mouse is away: their text stays light.
 local function colourTab(tab, selected)
   if not tab or not tab.obSkinned then return end
   local text = rawget(tab, "Text") or (tab.GetFontString and tab:GetFontString())
-  local c = selected and W.WHITE or W.DIM
+  local c = selected and W.WHITE or W.TEXT
   if text then text:SetTextColor(c[1], c[2], c[3]) end
   tab.obLine:SetShown(selected and true or false)
 end
@@ -127,13 +128,24 @@ local function skin(cf)
   if not cf or cf.obPanel then return end
   local name = cf:GetName()
   for _, k in ipairs(BORDER) do invisible(global(name and name .. k)) end
-  -- the panel takes the tabs in too, like one piece
+  -- the panel takes the tabs in too, like one piece, and the scroll bar the game puts right of
+  -- the messages
+  local bar = rawget(cf, "ScrollBar")
+  local barW = bar and bar.GetWidth and bar:GetWidth() or 0
+  if type(barW) ~= "number" then barW = 0 end
   local panel = CreateFrame("Frame", nil, cf)
   panel:SetPoint("TOPLEFT", cf, "TOPLEFT", -PAD, PAD + TAB_ROOM)
-  panel:SetPoint("BOTTOMRIGHT", cf, "BOTTOMRIGHT", PAD, -PAD)
+  panel:SetPoint("BOTTOMRIGHT", cf, "BOTTOMRIGHT", PAD + (barW > 0 and barW + 2 or 0), -PAD)
   panel:SetFrameStrata("BACKGROUND")
   W.Panel(panel, 0.6)
   cf.obPanel = panel
+  -- a hairline under the tabs: the top message, cut by the scroll, reads as scrolled away
+  local r, g, b = W.Rim()
+  panel.obLine = panel:CreateTexture(nil, "BORDER")
+  panel.obLine:SetColorTexture(r, g, b, 0.18)
+  panel.obLine:SetHeight(1)
+  panel.obLine:SetPoint("TOPLEFT", cf, "TOPLEFT", -PAD, 1)
+  panel.obLine:SetPoint("TOPRIGHT", cf, "TOPRIGHT", PAD + (barW > 0 and barW + 2 or 0), 1)
   local copy = CreateFrame("Button", nil, panel)
   copy:SetSize(16, 16)
   copy:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -6, -6)

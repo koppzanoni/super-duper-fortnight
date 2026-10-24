@@ -34,6 +34,11 @@ CHAT = r"""
     function cf:SetTimeVisible(t) self.timeVisible = t end
     function cf:SetFading(f) self.fading = f end
     cf.buttonFrame = CreateFrame("Frame", name .. "ButtonFrame", cf)
+    -- Midnight: a thin scroll bar right of the messages, outside the frame
+    cf.ScrollBar = CreateFrame("Frame", nil, cf)
+    cf.ScrollBar:SetPoint("TOPLEFT", cf, "TOPRIGHT", 0, 0)
+    cf.ScrollBar:SetPoint("BOTTOMLEFT", cf, "BOTTOMRIGHT", 0, 0)
+    cf.ScrollBar:SetWidth(10)
     local tab = CreateFrame("Button", name .. "Tab", UIParent)
     tab:SetSize(80, 24)
     tab:SetPoint("BOTTOMLEFT", cf, "TOPLEFT", (i - 1) * 84, 4)
@@ -143,3 +148,21 @@ def test_panel_page():
     row = next(r for r in ns.Panel.rows.values() if r.row is not None and r.row.label == "Mensagens somem depois de")
     row.control.plus.GetScript(row.control.plus, "OnClick")(row.control.plus)
     assert ns.db.chatFade == 130 and g.ChatFrame1.timeVisible == 130
+
+
+def test_scroll_bar_inside_the_panel():
+    _, ns, g = preview()
+    p, sb = rect(g.ChatFrame1.obPanel), rect(g.ChatFrame1.ScrollBar)
+    assert p[0] + p[2] >= sb[0] + sb[2] + 2
+
+
+def test_other_tabs_stay_readable():
+    _, ns, g = preview()
+    g.HOOKED.FCFTab_UpdateColors(g.ChatFrame2Tab, False)
+    assert g.ChatFrame2Tab.Text.GetTextColor(g.ChatFrame2Tab.Text)[0] >= 0.7
+
+
+def test_line_between_tabs_and_messages():
+    _, ns, g = preview()
+    line, cf = g.ChatFrame1.obPanel.obLine, rect(g.ChatFrame1)
+    assert line is not None and abs(rect(line)[1] - (cf[1] + cf[3])) <= 2
