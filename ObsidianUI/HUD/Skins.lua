@@ -120,10 +120,13 @@ function Skins.Fonts()
 end
 
 -- ------------------------------------------------------------------ one window
-function Skins.Window(f)
-  if not f or f.obFill then return end
+-- overlay: a frame drawn over its window's content (the world map's border); it loses its art
+-- but gets no panel, which would cover the content.
+function Skins.Window(f, overlay)
+  if not f or f.obFill or f.obSkinned then return end
+  f.obSkinned = true
   for _, k in ipairs(ART) do invisible(rawget(f, k)) end
-  f.obFill = W.Panel(f, 0.92)
+  if not overlay then f.obFill = W.Panel(f, 0.92) end
   local title = rawget(f, "TitleContainer")
   local titleText = (title and rawget(title, "TitleText")) or rawget(f, "TitleText")
   if titleText then titleText:SetTextColor(W.WHITE[1], W.WHITE[2], W.WHITE[3]) end
@@ -132,7 +135,7 @@ function Skins.Window(f)
   for _, tab in ipairs(rawget(f, "Tabs") or {}) do skinTab(tab) end
   -- the world map paints its frame on a child
   local border = rawget(f, "BorderFrame")
-  if border then Skins.Window(border) end
+  if border then Skins.Window(border, true) end
   Skins.Lighten(f)
   -- pages and lists fill in when shown
   if f.HookScript then f:HookScript("OnShow", function(self) Skins.Lighten(self) end) end

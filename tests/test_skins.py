@@ -105,6 +105,8 @@ def test_world_map_border():
                'WorldMapFrame.BorderFrame = MakeWindow("WorldMapBorder"); '
                'PREVIEW_FIRE("ADDON_LOADED", "Blizzard_WorldMap")')
     assert g.WorldMapFrame.BorderFrame.NineSlice.alpha == 0
+    # the border frame sits over the map itself: a panel there darkened the whole map
+    assert g.WorldMapFrame.BorderFrame.obFill is None or g.WorldMapFrame.BorderFrame.obFill.alpha == 0
 
 
 def test_switched_off():
