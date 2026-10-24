@@ -24,8 +24,7 @@ end
 
 -- Font size follows the frame size (the default fonts ran out of the small name plate).
 local function setFontSize(text, size)
-  local path, _, flags = text:GetFont()
-  if path then text:SetFont(path, math.max(9, math.floor(size + 0.5)), flags) end -- 9: still readable
+  ns.Look.SetFont(text, size) -- the Visual page's font and outline; 9 px minimum, still readable
 end
 
 local function setRect(region, owner, spec, rect, w, h)
@@ -107,6 +106,8 @@ local function buildModern(f, k, unit, mirror)
     self.name:SetWidth(spec.name.w * h / spec.h) -- a long name is cut at the plate's end
     setRect(self.levelBadge, self, spec, mirrored(spec, spec.level, mirror), w, h)
     local u = h / spec.h
+    self.health:SetStatusBarTexture(ns.Look.BarTexture())
+    self.power:SetStatusBarTexture(ns.Look.BarTexture())
     setFontSize(self.name, spec.name.h * u * 0.62)
     setFontSize(self.levelText, spec.level.h * u * 0.42)
     setFontSize(self.hpText, spec.health.h * u * 0.62)
@@ -149,12 +150,18 @@ local function healthColor(unit)
     local _, classToken = UnitClass(unit)
     classColor = classToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken]
   end
-  return ns.Data.HealthColor(UnitIsTapDenied(unit), classColor, UnitReaction(unit, "player"))
+  local reaction = UnitReaction(unit, "player")
+  if not UnitIsTapDenied(unit) and not classColor and reaction then
+    local key = reaction == 4 and "neutral" or (reaction >= 5 and "friendly" or "hostile")
+    local r, g, b = ns.Look.Color(key)
+    if r then return r, g, b end
+  end
+  return ns.Data.HealthColor(UnitIsTapDenied(unit), classColor, reaction)
 end
 
 -- "current / max" on a Moderno bar; the current value alone, or nothing, if that fails.
 local function barText(text, cur, max)
-  if pcall(function() text:SetFormattedText("%s / %s", AbbreviateNumbers(cur), AbbreviateNumbers(max)) end) then return end
+  if pcall(function() text:SetFormattedText("%s / %s", ns.Look.Number(cur), ns.Look.Number(max)) end) then return end
   if not pcall(function() text:SetText(AbbreviateNumbers(cur)) end) then text:SetText("") end
 end
 
@@ -163,14 +170,15 @@ local function updateValues(f)
   if not UnitExists(unit) then return end
   -- Unit flags can be secret on some units: keep the last color instead of erroring.
   local ok, r, g, b = pcall(healthColor, unit)
-  if unit == "player" then ok, r, g, b = true, 0.38, 0.84, 0.2 end -- Moderno's player bar: green
+  if unit == "player" then ok, r, g, b = true, 0.38, 0.84, 0.2 end -- the player's bar: green
   if ok and type(r) == "number" then f.health:SetStatusBarColor(r, g, b) end
   f.health:SetMinMaxValues(0, UnitHealthMax(unit))
   f.health:SetValue(UnitHealth(unit))
   local pType, token = UnitPowerType(unit)
   f.power:SetMinMaxValues(0, UnitPowerMax(unit, pType))
   f.power:SetValue(UnitPower(unit, pType))
-  f.power:SetStatusBarColor(ns.Data.PowerColor(token))
+  local pr, pg, pb = ns.Look.Color(token)
+  if pr then f.power:SetStatusBarColor(pr, pg, pb) else f.power:SetStatusBarColor(ns.Data.PowerColor(token)) end
   -- Values may be secret in combat: they only go into the text API, inside pcall.
   if KINDS[f.kind].tiny then
     local curve = CurveConstants and CurveConstants.ScaleTo100
@@ -350,6 +358,7 @@ ns.On("PLAYER_LOGIN", function()
     table.insert(ns.HUD.onResize, function() ns.RunOutOfCombat(layout) end)
   end)
 end)
+UnitFrames.RefreshAll = refreshAll
 ns.On("PLAYER_ENTERING_WORLD", refreshAll)
 
 local function refresh(unit) local f = UnitFrames.frames[unit]; if f then updateAll(f) end end

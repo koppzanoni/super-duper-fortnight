@@ -34,6 +34,30 @@ local function button(label, text, run, help) return { kind = "button", label = 
 local pct = function(v) return string.format("%d%%", math.floor(v * 100 + 0.5)) end
 local int = function(v) return string.format("%d", v) end
 
+-- Colour presets for the Visual page (a picker would need the game's colour window).
+Panel.COLORS = {
+  { "", "Padrão" }, { "red", "Vermelho", { 0.89, 0.2, 0.17 } }, { "orange", "Laranja", { 0.95, 0.5, 0.12 } },
+  { "yellow", "Amarelo", { 0.95, 0.8, 0.15 } }, { "green", "Verde", { 0.25, 0.75, 0.25 } }, { "teal", "Azul-petróleo", { 0.13, 0.6, 0.7 } },
+  { "blue", "Azul", { 0.09, 0.52, 0.96 } }, { "purple", "Roxo", { 0.6, 0.3, 0.9 } }, { "grey", "Cinza", { 0.55, 0.57, 0.6 } },
+}
+function Panel.ColorOptions() local o = {}; for _, c in ipairs(Panel.COLORS) do o[#o + 1] = { c[1], c[2] } end; return o end
+function Panel.ColorGet(key)
+  local c = ns.db.colors and ns.db.colors[key]
+  if not c then return "" end
+  for _, p in ipairs(Panel.COLORS) do
+    if p[3] and math.abs(p[3][1] - c[1]) < 0.01 and math.abs(p[3][2] - c[2]) < 0.01 then return p[1] end
+  end
+  return ""
+end
+function Panel.ColorSet(key, id)
+  ns.db.colors = ns.db.colors or {}
+  local rgb
+  for _, p in ipairs(Panel.COLORS) do if p[1] == id then rgb = p[3] end end
+  ns.db.colors[key] = rgb and { rgb[1], rgb[2], rgb[3] } or nil
+  if ns.Profiles and ns.db.profiles then ns.Profiles.Save() end
+  ns.Look.Apply()
+end
+
 Panel.SECTIONS = {
   { id = "general", name = "Geral", lead = "Cor e tamanho de toda a interface, ferramentas.", cards = {
     { "Aparência", {
@@ -84,7 +108,30 @@ Panel.SECTIONS = {
     } },
   } },
   -- planned (the prototype has their options); listed so the panel shows where things are going
-  { id = "visual", name = "Visual", soon = true },
+  { id = "visual", name = "Visual", lead = "Fonte, textura das barras, números e cores de toda a HUD.", cards = {
+    { "Texto", {
+      { kind = "cycle", label = "Fonte", key = "font", default = "default", onChange = function() ns.Look.Apply() end,
+        options = function() local o = {}; for _, f in ipairs(ns.Look.FONTS) do o[#o + 1] = { f[1], f[2] } end; return o end },
+      choice("Contorno", "outline", "OUTLINE", { { "NONE", "Nenhum" }, { "OUTLINE", "Fino" }, { "THICKOUTLINE", "Grosso" } },
+        function() ns.Look.Apply() end),
+      choice("Números", "numFmt", "short", { { "short", "48.3K" }, { "full", "48.320" } }, function() ns.Look.Apply() end,
+        "Vida e mana nos quadros."),
+    } },
+    { "Barras", {
+      choice("Textura das barras", "barTex", "gloss", { { "gloss", "Vidro" }, { "soft", "Suave" }, { "flat", "Lisa" }, { "blizzard", "Blizzard" } },
+        function() ns.Look.Apply() end),
+    } },
+    { "Cores", {
+      { kind = "cycle", label = "Inimigo", key = "c_hostile", options = Panel.ColorOptions, get = function() return Panel.ColorGet("hostile") end,
+        set = function(v) Panel.ColorSet("hostile", v) end },
+      { kind = "cycle", label = "Neutro", key = "c_neutral", options = Panel.ColorOptions, get = function() return Panel.ColorGet("neutral") end,
+        set = function(v) Panel.ColorSet("neutral", v) end },
+      { kind = "cycle", label = "Aliado", key = "c_friendly", options = Panel.ColorOptions, get = function() return Panel.ColorGet("friendly") end,
+        set = function(v) Panel.ColorSet("friendly", v) end },
+      { kind = "cycle", label = "Mana", key = "c_mana", options = Panel.ColorOptions, get = function() return Panel.ColorGet("MANA") end,
+        set = function(v) Panel.ColorSet("MANA", v) end, help = "Escolha entre cores prontas; \"Padrão\" volta à original." },
+    } },
+  } },
   { id = "resources", group = "HUD", name = "Recursos de classe", soon = true },
   { id = "auras", group = "HUD", name = "Auras", soon = true },
   { id = "databars", group = "HUD", name = "Barras de dados", soon = true },

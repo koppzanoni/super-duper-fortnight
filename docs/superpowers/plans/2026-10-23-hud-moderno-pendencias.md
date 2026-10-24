@@ -40,7 +40,7 @@ no sistema de movers (hoje tem o arrastar próprio).
 Barra lateral em grupos, busca, mudanças ao vivo; opções já ligadas: cor (recarrega), escala,
 modo de edição, teclas, restaurar posições, linhas/colunas, números das teclas, barras verticais,
 anel arcano, zona de latência / ms / marca da fila, tamanho do inventário.
-Falta (marcado "em breve" no painel): Visual, Recursos de classe, Auras, Barras de dados, Barra de
+Falta (marcado "em breve" no painel): Recursos de classe, Auras, Barras de dados, Barra de
 informações, Grupo, Raide, Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
 Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste, instalador,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
@@ -50,6 +50,11 @@ Perfil por personagem, criar/copiar/excluir, troca ao vivo (cor pede recarga), u
 especialização (PLAYER_SPECIALIZATION_CHANGED / ACTIVE_TALENT_GROUP_CHANGED), por conteúdo
 (solo/grupo/raide/JxJ, liga/desliga), presets (ObsidianUI, Compacto, Healer), exportar/importar
 texto OBUI1 (tudo ou só posições; o leitor nunca executa código). Conteúdo do painel rola.
+
+## Visual (FEITO: Core/Look.lua, página Visual)
+Fonte (fontes do jogo), contorno, números (48.3K / 48.320 via AbbreviateNumbers/BreakUpLargeNumbers,
+que aceitam valores secretos), textura das barras (Vidro/Suave/Lisa/Blizzard), cores de inimigo,
+neutro, aliado e mana (cores prontas; seletor livre precisaria da janela de cores do jogo).
 
 ## Fase 3 — Inventário Moderno
 - Janela larga, preto fosco translúcido: personagem à esquerda (modelo, 8+8 slots, 3 armas, nível

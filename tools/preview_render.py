@@ -51,6 +51,13 @@ def texture_image(file):
         p = ADDON / "Media" / (file.split("\\")[-1] + ".tga")
         if p.exists():
             img = Image.open(p).convert("RGBA")
+    elif file in (r"Interface\Buttons\WHITE8X8", r"Interface\TargetingFrame\UI-StatusBar"):
+        # the game's own bar textures: plain white, and Blizzard's light-topped bar
+        img = Image.new("RGBA", (64, 16), (255, 255, 255, 255))
+        if "UI-StatusBar" in file:
+            for yy in range(16):
+                v = 255 if yy < 7 else int(255 - (yy - 7) * 9)
+                ImageDraw.Draw(img).line((0, yy, 63, yy), fill=(v, v, v, 255))
     elif file.startswith("ICON:"):
         key = file[5:]
         if key == "bag":
@@ -95,6 +102,8 @@ def run_addon(vbars=True, inventory=False, db=None, pre=None):
     def lua_value(v):  # nested settings (the edit mode's layout) become Lua tables
         if isinstance(v, dict):
             return rt.table_from({k: lua_value(x) for k, x in v.items()})
+        if isinstance(v, list):  # a Lua array, 1-based
+            return rt.table_from({i + 1: lua_value(x) for i, x in enumerate(v)})
         return v
     for k, v in (db or {}).items():
         ns.db[k] = lua_value(v)

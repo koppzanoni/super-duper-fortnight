@@ -20,6 +20,7 @@ backing:Hide()
 
 table.insert(HUD.onResize, function()
   local g = HUD.modernBar
+  for _, bar in ipairs({ rested, xp }) do bar:SetStatusBarTexture(ns.Look.BarTexture()) end
   for _, bar in ipairs({ rested, xp }) do
     bar:ClearAllPoints()
     bar:SetPoint("TOP", ns.ActionBars.modernFrame, "BOTTOM", 0, -4 * g.s)

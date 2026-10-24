@@ -15,6 +15,12 @@ local PW = { player = { 11000, 20000 }, target = { 45, 100 }, focus = { 16000, 2
 function UnitPower(u, t) if t == 4 then return 3 end return (PW[u] or { 1, 1 })[1] end
 function UnitPowerMax(u, t) if t == 4 then return 5 end return (PW[u] or { 1, 1 })[2] end
 function UnitPowerPercent(u) local p = PW[u] or { 1, 1 }; return p[1] / p[2] * 100 end
+-- Blizzard's thousands separator (pt-BR: ".")
+function BreakUpLargeNumbers(n)
+  local s = tostring(math.floor(n))
+  local out = s:reverse():gsub("(%d%d%d)", "%1."):reverse()
+  return (out:gsub("^%.", ""))
+end
 function AbbreviateNumbers(n) if n >= 1000 then return string.format("%.1fK", n / 1000) end return tostring(n) end
 local NAMES = { player = "Você", target = "Ravenfang Alpha", focus = "Xamã Sombrio", pet = "Lobo", targettarget = "Você" }
 function UnitName(u) return NAMES[u] end

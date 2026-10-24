@@ -41,7 +41,7 @@ def test_sidebar_lists_built_and_planned_modules_in_groups():
     names = [s.name for s in ns.Panel.SECTIONS.values()]
     assert names[0] == "Geral" and names[-1] == "Perfis"
     built = {s.id for s in ns.Panel.SECTIONS.values() if not s.soon}
-    assert built == {"general", "bar", "frames", "cast", "inventory", "profiles"}
+    assert built == {"general", "visual", "bar", "frames", "cast", "inventory", "profiles"}
     for planned in ("chat", "raid", "plates", "classes", "automation"):
         assert any(s.id == planned and s.soon for s in ns.Panel.SECTIONS.values())
 
@@ -141,6 +141,13 @@ def test_every_control_of_every_built_page_works():
                 for b in c.buttons.values():
                     click(b)
                     assert ns.Panel.Get(row) == b.value, row.label
+            elif row.kind == "cycle":
+                options = [o[1] for o in row.options().values()]
+                seen = set()
+                for _ in options:
+                    click(c.next)
+                    seen.add(ns.Panel.Get(row))
+                assert seen == set(options), row.label             # every option reachable, back to the start
             else:
                 if row.label in ("Modo de edição", "Teclas de atalho da barra"):
                     click(c)
@@ -154,7 +161,7 @@ def test_every_control_of_every_built_page_works():
                 else:
                     click(c)
             checked.append(row.label)
-    assert len(checked) == 16
+    assert len(checked) == 24
     assert "OBSIDIANUI_RELOAD" in list(rt.globals().POPUPS.values())
 
 

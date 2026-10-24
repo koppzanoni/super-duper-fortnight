@@ -27,7 +27,7 @@ local HIDDEN_REGIONS = { "Border", "BorderShield", "Background", "TextBorder", "
   "ChargeFlash", "StandardGlow", "CraftGlow", "ChannelShadow", "BaseGlow", "WispGlow", "EnergyGlow" }
 
 local function reskin(bar)
-  bar:SetStatusBarTexture(M.mod_gloss.file)
+  bar:SetStatusBarTexture(ns.Look.BarTexture())
   local interrupted = bar.barType == "interrupted" or bar.barType == "uninterruptable"
   if interrupted then bar:SetStatusBarColor(0.77, 0.15, 0.11) else bar:SetStatusBarColor(0.17, 0.67, 0.87) end
   for _, key in ipairs(HIDDEN_REGIONS) do
@@ -179,6 +179,9 @@ local function layout()
     bar.Icon:SetSize(S.icon.w * u, S.icon.h * u)
     bar.Icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     bar.Icon:Show()
+  end
+  for _, t in ipairs({ bar.Text or false, ns.CastBar.time or false, ns.CastBar.lagText or false }) do
+    if t then ns.Look.SetFont(t, t == bar.Text and barH * 0.95 or barH * 0.7) end
   end
   if ns.CastBar.time then
     -- the time sits left of the queue mark, the latency under the bar's end
