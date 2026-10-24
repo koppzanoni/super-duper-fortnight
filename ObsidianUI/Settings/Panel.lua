@@ -232,7 +232,18 @@ Panel.SECTIONS = {
       steps("Altura", "plateH", 10, 4, 24, 1, int, function() ns.Nameplates.Refresh() end),
     } },
   } },
-  { id = "chat", group = "Interface", name = "Chat", soon = true },
+  { id = "chat", group = "Interface", name = "Chat", lead = "Painel preto, abas lisas, caixa de digitar embaixo e botão de copiar.", cards = {
+    { "Visual", {
+      toggle("Usar o chat da ObsidianUI", "chat_on", true, function() ns.Chat.Apply() end,
+        "Desligado, o chat volta ao normal depois de recarregar."),
+      toggle("Botões do lado do chat", "chatButtons", false, function() ns.Chat.Apply() end,
+        "Menu, canais e grupo rápido."),
+    } },
+    { "Mensagens", {
+      steps("Mensagens somem depois de", "chatFade", 120, 0, 600, 10, function(v) return v == 0 and "nunca" or (v .. " s") end,
+        function() ns.Chat.Apply() end, "Passe o mouse no chat para ver de novo."),
+    } },
+  } },
   { id = "quests", group = "Interface", name = "Rastreador de missões", soon = true },
   { id = "tooltip", group = "Interface", name = "Dicas (tooltip)", soon = true },
   { id = "skins", group = "Interface", name = "Janelas da Blizzard", soon = true },

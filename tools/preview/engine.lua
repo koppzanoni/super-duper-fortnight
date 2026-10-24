@@ -227,6 +227,7 @@ function Region:GetText() return self.text or "" end
 function Region:GetStringWidth() return #(self.text or "") * (self.fsize or FONT_PX[self.font] or 12) * 0.55 end
 function Region:SetFormattedText(fmt, ...) self.text = string.format(fmt, ...); autosize(self) end
 function Region:SetTextColor(r, g, b) self.tcolor = { r, g, b } end
+function Region:GetTextColor() local c = self.tcolor or { 1, 1, 1 }; return c[1], c[2], c[3] end
 function Region:SetJustifyH(j) self.justify = j end
 function Region:SetFont(path, size, flags) self.fsize = size; self.fontPath, self.fontFlags = path, flags; autosize(self) end
 function Region:GetFont() return self.fontPath or "PREVIEW", self.fsize or FONT_PX[self.font] or 12, self.fontFlags or "" end

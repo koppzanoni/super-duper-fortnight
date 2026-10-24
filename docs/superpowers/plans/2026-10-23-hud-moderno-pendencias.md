@@ -59,7 +59,13 @@ cast azul / cinza (não interrompível) — SetTimerDuration(UnitCastingDuration
 pelos tempos, senão barra cheia; alvo com borda roxa (comparando a placa, não UnitIsUnit), outros
 apagados; largura/altura; desligar devolve o visual do jogo. Placas proibidas (aliados em
 instância) e a placa pessoal ficam como o jogo desenha. Falta: cor por ameaça (tanque), ícone de elite.
-Falta (marcado "em breve" no painel): Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
+Chat (FEITO: HUD/Chat.lua): painel preto com borda fina englobando abas e mensagens (borda e
+fundo do jogo com alpha 0), abas lisas com a ativa em branco e linha roxa (hook em
+FCFTab_UpdateColors), caixa de digitar no próprio painel logo abaixo (ns.Pin), botões do lado
+escondidos (opção), mensagens somem depois de N s (SetTimeVisible/SetFading, sem mexer em
+configuração do jogo), botão de copiar com o texto sem códigos; janelas novas e de sussurro
+pegam o visual (hook em FCF_OpenNewWindow/FCF_OpenTemporaryWindow).
+Falta (marcado "em breve" no painel): Rastreador de missões, Dicas, Janelas da Blizzard,
 Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
 
@@ -118,6 +124,8 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
   clicáveis, busca, organizar, abas de reputação e moedas abrindo as páginas da Blizzard.
 - Nameplates: visual do jogo some de verdade (o hook de SetAlpha segura), cast andando em combate
   (qual dos três caminhos funcionou), alvo com borda roxa, nada de erro em instância.
+- Chat: borda e fundo do jogo sumindo, abas recoloridas ao trocar, caixa de digitar no lugar ao
+  abrir (Enter) e depois de arrastar o chat, botão de copiar, janela de sussurro nova com o visual.
 - Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
   UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.
