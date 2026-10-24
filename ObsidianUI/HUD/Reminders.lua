@@ -101,6 +101,7 @@ function Reminders.Update()
       local n = spellName(id)
       if n and buffs[n:lower()] then left = math.max(left or 0, buffs[n:lower()]) end
     end
+    if class == "ROGUE" and db().c_rog_poison == false then poisonKnown = false end -- the rogue page's switch
     if poisonKnown and (not left or left < SOON) then
       add("poison", C_Spell.GetSpellTexture(POISONS[1]), left and ("Veneno acabando (" .. minutes(left) .. ")") or "Sem veneno nas armas")
     elseif not poisonKnown and GetWeaponEnchantInfo then

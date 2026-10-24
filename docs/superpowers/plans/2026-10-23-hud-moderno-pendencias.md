@@ -104,7 +104,15 @@ buff da classe faltando (mago/sacerdote/druida/guerreiro, versão de grupo conta
 comida e frasco em raide (por nome: Bem Alimentado / Frasco, Phial), veneno do ladino ou óleo de arma
 com menos de 5 min, durabilidade abaixo de 30%, 5 espaços livres ou menos. Só checa fora de combate
 (auras podem ser secretas) e some em combate; revê a cada 15 s por causa das durações.
-Falta (marcado "em breve" no painel): Classes (+ modo de teste,
+Classes (página FEITA: Classes/Classes.lua; seletor com a sua classe primeiro, as outras mostram
+"Em breve" até ganharem o arquivo delas). Ladino (FEITO: Classes/Rogue.lua): linha do tick de energia
+na barra de energia (só se a energia chega em saltos de 2 s; regeneração contínua não mostra nada),
+pontos de combo acima da barra do alvo (opção, desligado), barras de Picar e Rasgar acima da barra de
+cast (GetPlayerAuraBySpellID / GetUnitAuraBySpellID + GetAuraDuration -> SetTimerDuration; Rasgar só o
+seu; movível "Temporizadores (Ladino)"), venenos acabando liga/desliga o aviso nos Lembretes.
+Próximas classes, uma por commit: Guerreiro, Paladino, Caçador, Sacerdote, Cavaleiro da Morte, Xamã,
+Mago, Bruxo, Monge, Druida (opções de cada uma no protótipo, CLASS_OPTS).
+Falta: as outras classes na página Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
 
 ## Perfis (FEITO: Core/Serialize.lua + Core/Profiles.lua, página Perfis)
@@ -174,6 +182,8 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
   (/afk) saindo com tecla e voltando a interface inteira.
 - Lembretes: ícones de comida/frasco/reparo/bolsa aparecendo (caminhos Interface\Icons), nome do buff
   batendo com a aura (Intelecto Arcano etc.), frasco reconhecido pelo nome no idioma do jogo.
+- Ladino: o tick de energia existe neste cliente (saltos de 20 a cada 2 s) ou a linha nunca aparece;
+  Picar/Rasgar andando em combate (GetPlayerAuraBySpellID pode devolver nil se a aura for secreta).
 - Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
   UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.

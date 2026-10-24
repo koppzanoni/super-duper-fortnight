@@ -320,7 +320,8 @@ Panel.SECTIONS = {
       toggle("Bolsas quase cheias", "rmBags", true, function() ns.Reminders.Update() end, "5 espaços livres ou menos."),
     } },
   } },
-  { id = "classes", group = "Classes", name = "Classes", soon = true },
+  { id = "classes", group = "Classes", name = "Classes", lead = "Opções próprias de cada classe. A classe do personagem abre primeiro.",
+    build = function() return ns.Classes.Cards() end },
   { id = "profiles", name = "Perfis", lead = "Salve layouts, um por especialização ou por conteúdo, e compartilhe por texto.",
     build = function() return Panel.ProfileCards() end },
 }

@@ -50,6 +50,8 @@ HUD\Cooldowns.lua
 HUD\Cursor.lua
 HUD\Automation.lua
 HUD\Reminders.lua
+Classes\Classes.lua
+Classes\Rogue.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Stats.lua
