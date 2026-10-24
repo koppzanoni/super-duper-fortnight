@@ -8,7 +8,8 @@ local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, sh
   modernColor = "black", arcaneRing = true, modernRows = 2, modernCols = 12,
   castLag = true, castMs = true, castQueue = true,
   font = "default", outline = "OUTLINE", barTex = "gloss", numFmt = "short",
-  res_on = true, resStyle = "gems", resHide = false, buffs_on = true, debuffs_on = true, buffSize = 26, buffRow = 16 }
+  res_on = true, resStyle = "gems", resHide = false, buffs_on = true, debuffs_on = true, buffSize = 26, buffRow = 16,
+  xp_on = true, rep_on = true, dataText = "hover", dataHeight = 5 }
 
 -- A Moderno texture in the chosen colour: the black theme, or the concept's blue.
 function ns.ModernTex(name)

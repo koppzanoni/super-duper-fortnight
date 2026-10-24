@@ -40,7 +40,10 @@ no sistema de movers (hoje tem o arrastar próprio).
 Barra lateral em grupos, busca, mudanças ao vivo; opções já ligadas: cor (recarrega), escala,
 modo de edição, teclas, restaurar posições, linhas/colunas, números das teclas, barras verticais,
 anel arcano, zona de latência / ms / marca da fila, tamanho do inventário.
-Falta (marcado "em breve" no painel): Barras de dados, Grupo, Raide, Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
+Barras de dados (FEITO): experiência + descanso e reputação acompanhada (cor por reputação),
+texto sempre/ao passar o mouse/nunca, altura, liga/desliga, modo de edição; a barra de ações sobe
+quando as duas barras não cabem embaixo dela.
+Falta (marcado "em breve" no painel): Grupo, Raide, Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
 Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
 

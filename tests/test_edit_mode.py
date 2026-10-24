@@ -7,7 +7,7 @@ from conftest import ROOT, load_pure
 sys.path.insert(0, str(ROOT / "tools"))
 import preview_render  # noqa: E402
 
-KEYS = {"player", "target", "targettarget", "focus", "pet", "bar", "cast", "map", "menu", "buffs", "vbars", "info", "res"}
+KEYS = {"player", "target", "targettarget", "focus", "pet", "bar", "cast", "map", "menu", "buffs", "vbars", "info", "res", "databars"}
 
 
 def preview(db=None, vbars=False):
@@ -95,7 +95,10 @@ def test_start_shows_a_box_over_each_element():
         if visible(item.box):
             assert visible(box), key
             a, b = rect(box), rect(item.box)
-            assert all(abs(a[i] - b[i]) < 1 for i in range(4)), key
+            # same top-left; thin elements get a box of at least 24 x 16 to grab
+            w, h = max(b[2], 24), max(b[3], 16)
+            assert abs(a[0] - b[0]) < 1 and abs(a[1] + a[3] - b[1] - b[3]) < 1, key
+            assert abs(a[2] - w) < 1 and abs(a[3] - h) < 1, key
     assert visible(ns.EditMode.grid)
 
 

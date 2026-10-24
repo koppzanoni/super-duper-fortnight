@@ -164,7 +164,17 @@ Panel.SECTIONS = {
       steps("Ícones por linha", "buffRow", 16, 4, 24, 1, int, function() ns.HUD.Layout() end),
     } },
   } },
-  { id = "databars", group = "HUD", name = "Barras de dados", soon = true },
+  { id = "databars", group = "HUD", name = "Barras de dados", lead = "Experiência e reputação embaixo da barra de ações. Posição: modo de edição.", cards = {
+    { "Mostrar", {
+      toggle("Experiência", "xp_on", true, function() ns.DataBars.Update() end, "Some sozinha no nível máximo."),
+      toggle("Reputação", "rep_on", true, function() ns.DataBars.Update() end, "A facção acompanhada no painel de reputação."),
+    } },
+    { "Aparência", {
+      choice("Texto", "dataText", "hover", { { "always", "Sempre" }, { "hover", "Ao passar o mouse" }, { "never", "Nunca" } },
+        function() ns.DataBars.Update() end),
+      steps("Altura", "dataHeight", 5, 3, 14, 1, int, function() ns.DataBars.Update() end),
+    } },
+  } },
   { id = "infobar", group = "HUD", name = "Barra de informações", lead = "FPS, latência, durabilidade, bolsas, ouro, amigos, guilda e hora numa faixa.",
     build = function()
       local items = { toggle("Mostrar a barra", "info_on", true, function() ns.HUD.Layout() end, "Arraste no modo de edição.") }
