@@ -35,6 +35,7 @@ HUD\Auras.lua
 HUD\Minimap.lua
 HUD\Extras.lua
 HUD\PlayerStatus.lua
+HUD\InfoBar.lua
 HUD\DefaultPositions.lua
 HUD\EditMode.lua
 Inventory\Filters.lua

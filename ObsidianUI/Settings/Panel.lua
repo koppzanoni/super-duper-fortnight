@@ -135,7 +135,14 @@ Panel.SECTIONS = {
   { id = "resources", group = "HUD", name = "Recursos de classe", soon = true },
   { id = "auras", group = "HUD", name = "Auras", soon = true },
   { id = "databars", group = "HUD", name = "Barras de dados", soon = true },
-  { id = "infobar", group = "HUD", name = "Barra de informações", soon = true },
+  { id = "infobar", group = "HUD", name = "Barra de informações", lead = "FPS, latência, durabilidade, bolsas, ouro, amigos, guilda e hora numa faixa.",
+    build = function()
+      local items = { toggle("Mostrar a barra", "info_on", true, function() ns.HUD.Layout() end, "Arraste no modo de edição.") }
+      for _, it in ipairs(ns.InfoBar.ITEMS) do
+        items[#items + 1] = toggle(it[2], "info_" .. it[1], it[3], function() ns.InfoBar.Update() end)
+      end
+      return { { "Itens", items } }
+    end },
   { id = "party", group = "Grupo", name = "Grupo", soon = true },
   { id = "raid", group = "Grupo", name = "Raide", soon = true },
   { id = "plates", group = "Grupo", name = "Nameplates", soon = true },

@@ -222,6 +222,7 @@ local function autosize(self)
 end
 function Region:SetText(t) self.text = t and tostring(t) or ""; autosize(self) end
 function Region:GetText() return self.text or "" end
+function Region:GetStringWidth() return #(self.text or "") * (self.fsize or FONT_PX[self.font] or 12) * 0.55 end
 function Region:SetFormattedText(fmt, ...) self.text = string.format(fmt, ...); autosize(self) end
 function Region:SetTextColor(r, g, b) self.tcolor = { r, g, b } end
 function Region:SetJustifyH(j) self.justify = j end

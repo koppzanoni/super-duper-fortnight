@@ -40,8 +40,7 @@ no sistema de movers (hoje tem o arrastar próprio).
 Barra lateral em grupos, busca, mudanças ao vivo; opções já ligadas: cor (recarrega), escala,
 modo de edição, teclas, restaurar posições, linhas/colunas, números das teclas, barras verticais,
 anel arcano, zona de latência / ms / marca da fila, tamanho do inventário.
-Falta (marcado "em breve" no painel): Recursos de classe, Auras, Barras de dados, Barra de
-informações, Grupo, Raide, Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
+Falta (marcado "em breve" no painel): Recursos de classe, Auras, Barras de dados, Grupo, Raide, Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
 Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste, instalador,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
 
@@ -55,6 +54,10 @@ texto OBUI1 (tudo ou só posições; o leitor nunca executa código). Conteúdo 
 Fonte (fontes do jogo), contorno, números (48.3K / 48.320 via AbbreviateNumbers/BreakUpLargeNumbers,
 que aceitam valores secretos), textura das barras (Vidro/Suave/Lisa/Blizzard), cores de inimigo,
 neutro, aliado e mana (cores prontas; seletor livre precisaria da janela de cores do jogo).
+
+## Barra de informações (FEITO: HUD/InfoBar.lua)
+FPS, ms, durabilidade, bolsas, ouro, amigos, guilda, hora; cada item liga/desliga; cores de alerta;
+acima do menu por padrão, movível no modo de edição; atualiza por eventos e a cada 1 s.
 
 ## Fase 3 — Inventário Moderno
 - Janela larga, preto fosco translúcido: personagem à esquerda (modelo, 8+8 slots, 3 armas, nível

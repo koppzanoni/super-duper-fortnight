@@ -41,7 +41,7 @@ def test_sidebar_lists_built_and_planned_modules_in_groups():
     names = [s.name for s in ns.Panel.SECTIONS.values()]
     assert names[0] == "Geral" and names[-1] == "Perfis"
     built = {s.id for s in ns.Panel.SECTIONS.values() if not s.soon}
-    assert built == {"general", "visual", "bar", "frames", "cast", "inventory", "profiles"}
+    assert built == {"general", "visual", "bar", "frames", "cast", "inventory", "profiles", "infobar"}
     for planned in ("chat", "raid", "plates", "classes", "automation"):
         assert any(s.id == planned and s.soon for s in ns.Panel.SECTIONS.values())
 
@@ -161,7 +161,7 @@ def test_every_control_of_every_built_page_works():
                 else:
                     click(c)
             checked.append(row.label)
-    assert len(checked) == 24
+    assert len(checked) == 33
     assert "OBSIDIANUI_RELOAD" in list(rt.globals().POPUPS.values())
 
 
