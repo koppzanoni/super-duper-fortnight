@@ -98,6 +98,7 @@ end
 -- Secure header pages the top-left 12 buttons (vehicles, override, possess, stances, forms).
 local header = CreateFrame("Frame", "ObsidianUIBarHeader", HUD.over, "SecureHandlerStateTemplate")
 header:SetAllPoints(HUD.over)
+ActionBars.header = header -- the buttons' parent (HUD/Visibility.lua fades it with the bar)
 header:SetAttribute("_onstate-page", [[
   local page = tonumber(newstate) or 1
   for i = 1, 12 do

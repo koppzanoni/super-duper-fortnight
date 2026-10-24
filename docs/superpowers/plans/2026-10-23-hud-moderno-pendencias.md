@@ -151,7 +151,11 @@ Druida (FEITO: Classes/Druid.lua): mana em barra fina nas formas animais, barra 
 o quadro do jogador (padrão ligado), tick de energia em Felino (Classes/EnergyTick.lua, comum com o
 Ladino), pontos de combo só em Felino ou em todas as formas (gancho ClassResource.PowerTypeFor), regra
 dos 5 s na forma humana. Página Classes COMPLETA: as 11 classes do protótipo.
-Todos os módulos do painel estão feitos (nenhum "em breve"). Ainda falta: visibilidade por elemento,
+Visibilidade (FEITO: HUD/Visibility.lua, página Visibilidade): por elemento sempre / só em combate / fora de
+combate / com alvo ou em combate / ao passar o mouse / escondido, por transparência (o jogo deixa em combate;
+não briga com o mostrar/esconder dos módulos; escondido ainda aceita clique); a barra de ações leva junto o
+cabeçalho dos botões e o menu os botões; o modo de edição mostra tudo.
+Todos os módulos do painel estão feitos (nenhum "em breve"). Ainda falta:
 ancorar elementos um no outro / X e Y digitados no modo de edição, clicar para curar nos quadros de raide,
 banco; e conferir tudo no jogo quando o servidor voltar.
 
@@ -238,6 +242,7 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
 - Marcadores (UI-RaidTargetingIcons), ícones de prontidão, debuffs nos quadros; ferramentas de raide:
   Pronto?, contagem e marcar o alvo funcionando sem erro.
 - Marcadores no chão: clicar mostra o círculo para escolher o lugar; o X limpa todos ("all" no idioma do jogo).
+- Visibilidade: transparência mudando em combate sem erro (barra de ações e quadros são protegidos).
 
 ## Opções das classes (do protótipo, CLASS_OPTS)
 ```js

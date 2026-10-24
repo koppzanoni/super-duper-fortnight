@@ -191,6 +191,8 @@ Panel.SECTIONS = {
       end
       return { { "Itens", items } }
     end },
+  { id = "visibility", group = "HUD", name = "Visibilidade", lead = "Quando cada parte da HUD aparece.",
+    build = function() return ns.Visibility.Cards() end },
   { id = "party", group = "Grupo", name = "Grupo", lead = "Os outros quatro do grupo, no visual dos quadros. Posição: modo de edição.", cards = {
     { "Quadros", {
       toggle("Mostrar", "party_on", true, function() ns.GroupFrames.Refresh() end,

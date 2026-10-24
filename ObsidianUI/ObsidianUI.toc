@@ -50,6 +50,7 @@ HUD\Cooldowns.lua
 HUD\Cursor.lua
 HUD\Automation.lua
 HUD\Reminders.lua
+HUD\Visibility.lua
 Classes\Classes.lua
 Classes\Timers.lua
 Classes\FiveSecond.lua
