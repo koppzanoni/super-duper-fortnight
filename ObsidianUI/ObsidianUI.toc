@@ -65,6 +65,7 @@ Classes\Shaman.lua
 Classes\Mage.lua
 Classes\Warlock.lua
 Classes\Monk.lua
+Classes\Druid.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Stats.lua

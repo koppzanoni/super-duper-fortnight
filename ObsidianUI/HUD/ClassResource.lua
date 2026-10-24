@@ -156,9 +156,13 @@ ClassResource.Redraw = redraw
 
 local function refreshResource()
   local _, classToken = UnitClass("player")
-  current = ns.Data.ClassResourceFor(classToken, specIndex(), (UnitPowerType("player")))
+  local powerType = UnitPowerType("player")
+  -- PowerTypeFor: a class module may read the resource as in another form (the druid's combo points)
+  if ClassResource.PowerTypeFor then powerType = ClassResource.PowerTypeFor(classToken, powerType) or powerType end
+  current = ns.Data.ClassResourceFor(classToken, specIndex(), powerType)
   redraw()
 end
+ClassResource.Refresh = refreshResource
 
 local function onPower(_, unit, token)
   if unit ~= "player" or not current then return end

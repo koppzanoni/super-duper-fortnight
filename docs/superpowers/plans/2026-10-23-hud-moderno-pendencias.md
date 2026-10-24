@@ -145,8 +145,11 @@ comum com o Caçador).
 Monge (FEITO: Classes/Monk.lua): barra de Estagnar do Mestre Cervejeiro no lugar das gemas (UnitStagger
 direto na barra; cor verde/amarelo/vermelho só com valor legível), Chi em gemas ou barra (gancho
 ClassResource.ForceBar, só para o Monge).
-Falta a última classe: Druida (opções no fim deste doc, CLASS_OPTS).
-Falta: as outras classes na página Classes (+ modo de teste,
+Druida (FEITO: Classes/Druid.lua): mana em barra fina nas formas animais, barra de formas da Blizzard sob
+o quadro do jogador (padrão ligado), tick de energia em Felino (Classes/EnergyTick.lua, comum com o
+Ladino), pontos de combo só em Felino ou em todas as formas (gancho ClassResource.PowerTypeFor), regra
+dos 5 s na forma humana. Página Classes COMPLETA: as 11 classes do protótipo.
+Falta (do painel): modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
 
 ## Perfis (FEITO: Core/Serialize.lua + Core/Profiles.lua, página Perfis)

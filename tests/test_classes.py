@@ -63,8 +63,11 @@ def test_other_classes_listed_and_not_built_ones_say_so():
     row = next(r for r in ns.Panel.rows.values() if r.row is not None and r.row.label == "Classe")
     names = [o[2] for o in row.row.options().values()]
     assert len(names) == 11 and names[0].startswith("Ladino")             # yours first
+    assert all(ns.Classes.cards[c[1]] is not None for c in ns.Classes.LIST.values())   # every class is built
     row.row.set("DRUID")
-    assert ns.Classes.selected == "DRUID" and "Tick de energia" not in page_labels(ns)
+    assert ns.Classes.selected == "DRUID" and "Tick de energia em Felino" in page_labels(ns)
+    ns.Classes.cards.DRUID = None                                          # a class without its file
+    ns.Panel.Show("classes")
     heads = [r.label.text for r in ns.Panel.rows.values() if r.row is None]
     assert any("EM BREVE" in (h or "") for h in heads)
 
