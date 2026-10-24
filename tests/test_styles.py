@@ -13,7 +13,7 @@ def preview(db=None):
 
 
 def inv_alpha(ns):
-    return ns.Inventory.frame.fill.color[4]
+    return ns.Inventory.frame.obFillAlpha
 
 
 def test_glass_makes_window_panels_see_through():
@@ -52,3 +52,22 @@ def test_choices_on_the_visual_page():
     ns.Panel.Open("visual")
     labels = [r.row.label for r in ns.Panel.rows.values() if r.row is not None]
     assert "Vidro das janelas" in labels and "Quadros" in labels
+
+
+def test_panels_have_rounded_corners_and_windows_a_soft_shadow():
+    _, ns = preview()
+    inv = ns.Inventory.frame
+    assert inv.fill.slice is not None and "soft_fill" in inv.fill.file
+    assert inv.rim[1].slice is not None and inv.rim[1].grad is not None  # lit from above
+    assert inv.shadow.IsShown(inv.shadow) and inv.shadow.GetLeft(inv.shadow) < inv.GetLeft(inv)
+    sort = ns.Inventory.sortButton
+    assert sort.fill.slice is not None and sort.shadow is None  # buttons: no shadow
+
+
+def test_selected_tab_keeps_its_look_when_the_glass_changes():
+    _, ns = preview()
+    tab = ns.Inventory.statsTab
+    before = tab.obFillAlpha
+    ns.db.glass = "crystal"
+    ns.Widgets.ApplyGlass()
+    assert tab.obFillAlpha == before == 0.1

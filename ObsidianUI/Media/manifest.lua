@@ -24,4 +24,7 @@ ns.MediaManifest = {
   mod_slot_black = { file = "Interface\\AddOns\\ObsidianUI\\Media\\mod_slot_black", w = 104, h = 104, potW = 128, potH = 128 },
   mod_unit = { file = "Interface\\AddOns\\ObsidianUI\\Media\\mod_unit", w = 720, h = 250, potW = 1024, potH = 256 },
   mod_unit_black = { file = "Interface\\AddOns\\ObsidianUI\\Media\\mod_unit_black", w = 720, h = 250, potW = 1024, potH = 256 },
+  soft_fill = { file = "Interface\\AddOns\\ObsidianUI\\Media\\soft_fill", w = 32, h = 32, potW = 32, potH = 32 },
+  soft_rim = { file = "Interface\\AddOns\\ObsidianUI\\Media\\soft_rim", w = 32, h = 32, potW = 32, potH = 32 },
+  soft_shadow = { file = "Interface\\AddOns\\ObsidianUI\\Media\\soft_shadow", w = 64, h = 64, potW = 64, potH = 64 },
 }

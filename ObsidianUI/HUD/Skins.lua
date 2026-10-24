@@ -59,7 +59,8 @@ local function colourTab(tab)
   local text = rawget(tab, "Text") or (tab.GetFontString and tab:GetFontString())
   local c = selected and W.WHITE or W.DIM
   if text then text:SetTextColor(c[1], c[2], c[3]) end
-  tab.obFill:SetColorTexture(selected and 1 or 0, selected and 1 or 0, selected and 1 or 0, selected and 0.1 or 0.35)
+  tab.obSelected = selected and true or nil
+  W.StylePanel(tab)
   tab.obLine:SetShown(selected and true or false)
 end
 
@@ -70,8 +71,8 @@ local function skinTab(tab)
     "LeftHighlight", "MiddleHighlight", "RightHighlight" }) do invisible(rawget(tab, k)) end
   tab.obFill = W.Panel(tab, 0.35)
   tab.obLine = tab:CreateTexture(nil, "ARTWORK")
-  tab.obLine:SetPoint("BOTTOMLEFT", tab, "BOTTOMLEFT", 4, 1)
-  tab.obLine:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", -4, 1)
+  tab.obLine:SetPoint("BOTTOMLEFT", tab, "BOTTOMLEFT", 8, 1)
+  tab.obLine:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", -8, 1)
   tab.obLine:SetHeight(2)
   tab.obLine:SetColorTexture(W.ACCENT[1], W.ACCENT[2], W.ACCENT[3], 0.9)
   colourTab(tab)

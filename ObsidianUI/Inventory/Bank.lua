@@ -54,7 +54,11 @@ table.insert(UISpecialFrames, "ObsidianUIBank")
 win.title = win:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 win.title:SetTextColor(W.WHITE[1], W.WHITE[2], W.WHITE[3])
 win.title:SetText("Banco")
-win.hairline = win:CreateTexture(nil, "BORDER")
+do
+  local r, g, b = W.Rim()
+  win.hairline = W.FadeLine(win, r, g, b, 0.22)
+end
+W.FadeIn(win)
 win.close = W.Button(win, "X", function() win:Hide() end)
 
 -- ------------------------------------------------------------------ the pane
@@ -503,8 +507,6 @@ function Bank.Arrange()
       win.hairline:ClearAllPoints()
       win.hairline:SetPoint("TOPLEFT", win, "TOPLEFT", 20 * u, -B.win.head * u)
       win.hairline:SetSize((B.win.w - 40) * u, 1)
-      local r, g, b = W.Rim()
-      win.hairline:SetColorTexture(r, g, b, 0.14)
       win:Show()
     else
       win:Hide()

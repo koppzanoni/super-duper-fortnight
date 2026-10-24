@@ -18,7 +18,7 @@ local function global(name) return rawget(_G, name) end
 
 local function setRim(tip, r, g, b, a)
   if not tip.obRim then return end
-  for _, t in ipairs(tip.obRim) do t:SetColorTexture(r, g, b, a or 1) end
+  W.SetRim(tip, r, g, b, a or 1)
 end
 local function neutralRim(tip) setRim(tip, W.Rim()) end
 

@@ -32,7 +32,11 @@ frame:EnableMouse(true)
 frame:Hide()
 Installer.frame = frame
 
+-- Areas are rounded (Widgets.SoftTexture); thin bars stay plain.
 local function fill(parent, layer, r, g, b, a)
+  return ns.Widgets.SoftTexture(parent, layer, r, g, b, a)
+end
+local function plain(parent, layer, r, g, b, a)
   local t = parent:CreateTexture(nil, layer)
   t:SetColorTexture(r, g, b, a)
   return t
@@ -44,11 +48,14 @@ local function text(parent, template, color)
   return t
 end
 
-fill(frame, "BACKGROUND", 0.024, 0.028, 0.035, 0.96):SetAllPoints(frame)
-local track = fill(frame, "BORDER", 1, 1, 1, 0.08)
-track:SetPoint("TOPLEFT"); track:SetPoint("TOPRIGHT"); track:SetHeight(3)
-local progress = fill(frame, "ARTWORK", BLUE[1], BLUE[2], BLUE[3], 1)
-progress:SetPoint("TOPLEFT"); progress:SetHeight(3)
+ns.Widgets.Panel(frame, 0.96)
+ns.Widgets.FadeIn(frame)
+-- the progress runs on a thin track inside the rounded top edge
+local TRACK_X = 26
+local track = plain(frame, "BORDER", 1, 1, 1, 0.08)
+track:SetPoint("TOPLEFT", TRACK_X, -12); track:SetPoint("TOPRIGHT", -TRACK_X, -12); track:SetHeight(2)
+local progress = plain(frame, "ARTWORK", BLUE[1], BLUE[2], BLUE[3], 1)
+progress:SetPoint("TOPLEFT", TRACK_X, -12); progress:SetHeight(2)
 local stepLabel = text(frame, "GameFontDisableSmall", DIM)
 stepLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 26, -24)
 local title = text(frame, "GameFontNormalLarge", WHITE)
@@ -98,7 +105,7 @@ local function show()
   title:SetText(s.title)
   body:SetText(s.text)
   Installer.counter:SetText(Installer.step .. " / " .. #STEPS)
-  progress:SetWidth(W * Installer.step / #STEPS)
+  progress:SetWidth((W - 2 * TRACK_X) * Installer.step / #STEPS)
   for i, c in ipairs(Installer.choices) do
     local o = s.options and s.options[i]
     if o then
@@ -106,7 +113,7 @@ local function show()
       c.name:SetText(o[2])
       c.desc:SetText(o[3])
       local on = picked[s.key] == o[1]
-      c.bg:SetColorTexture(on and BLUE[1] or 1, on and BLUE[2] or 1, on and BLUE[3] or 1, on and 0.35 or 0.04)
+      ns.Widgets.SetSoftColor(c.bg, on and BLUE[1] or 1, on and BLUE[2] or 1, on and BLUE[3] or 1, on and 0.35 or 0.04)
       c:Show()
     else
       c:Hide()
@@ -145,7 +152,7 @@ Installer.nextButton = button("Continuar", 120, function()
   if Installer.step < #STEPS then Installer.step = Installer.step + 1; show() else Installer.Finish() end
 end)
 Installer.nextButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -18, 14)
-Installer.nextButton.bg:SetColorTexture(BLUE[1], BLUE[2], BLUE[3], 1)
+ns.Widgets.SetSoftColor(Installer.nextButton.bg, BLUE[1], BLUE[2], BLUE[3], 1)
 Installer.skipButton = button("Pular", 90, function()
   ns.db.installed = true
   if ns.db.profiles then ns.Profiles.Save() end

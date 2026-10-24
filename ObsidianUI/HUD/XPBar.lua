@@ -15,8 +15,8 @@ local function newBar(parent)
   local bar = CreateFrame("StatusBar", nil, parent)
   bar:SetMinMaxValues(0, 1)
   bar:SetValue(0)
-  local backing = bar:CreateTexture(nil, "BACKGROUND", nil, -8)
-  backing:SetColorTexture(0, 0, 0, 0.55)
+  -- rounded ends: the track does not stop in a hard cut
+  local backing = ns.Widgets.SoftTexture(bar, "BACKGROUND", 0, 0, 0, 0.55, -8)
   backing:SetPoint("TOPLEFT", bar, "TOPLEFT", -1, 1)
   backing:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", 1, -1)
   return bar
@@ -163,7 +163,9 @@ holder:SetScript("OnLeave", function() hovering = false; showText() end)
 table.insert(HUD.onResize, function()
   local g = HUD.modernBar
   for _, bar in ipairs({ rested, xp, rep }) do bar:SetStatusBarTexture(ns.Look.BarTexture()) end
-  holder:SetWidth(g.width)
+  -- as wide as the slots' visible frames, not the bar's whole box
+  local inset = g.slot * ns.Data.MODERN_SLOT.inset / ns.Data.MODERN_SLOT.size
+  holder:SetWidth(g.width - 2 * inset + 2)
   laidOutRoom = DataBars.Room()
   ns.Movers.Register("databars", "Barras de dados", holder, function(f)
     f:ClearAllPoints()

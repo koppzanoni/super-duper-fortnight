@@ -54,7 +54,12 @@ def preview(db=None):
 
 
 def rim(tip):
-    return list(tip.obRim[1].color.values())[:3]
+    # the rim is lit from above: its colour is the gradient's top colour
+    t = tip.obRim[1]
+    if t.grad:
+        hi = list(t.grad.values())[2]
+        return [hi.r, hi.g, hi.b]
+    return list((t.color or t.vc).values())[:3]
 
 
 def test_black_panel_instead_of_the_games_border():

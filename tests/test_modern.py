@@ -142,7 +142,11 @@ def test_xp_bar_runs_under_the_action_bar():
     bar = rect(ns.ActionBars.modernFrame)
     xp = rect(ns.XPBar.xp)
     assert xp[1] + xp[3] <= bar[1]                            # below the slots
-    assert abs(xp[0] - bar[0]) < 1 and abs(xp[2] - bar[2]) < 1
+    # as wide as the slots' visible frames: from the first button's edge to the last one's
+    buttons = [rect(b) for b in ns.ActionBars.buttons.values() if visible(b)]
+    left = min(r[0] for r in buttons)
+    right = max(r[0] + r[2] for r in buttons)
+    assert abs(xp[0] - (left - 1)) < 1 and abs(xp[0] + xp[2] - (right + 1)) < 1
 
 
 def test_menu_is_one_row_at_the_bottom_right():

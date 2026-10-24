@@ -24,14 +24,13 @@ table.insert(UISpecialFrames, "ObsidianUIInventory")
 -- nearly opaque: the HUD under the window would compete with the items
 Inventory.backdrop = W.Panel(frame, 0.94)
 -- a hairline under the head and a vertical line between the character and the bags
-local function line(alpha)
-  local t = frame:CreateTexture(nil, "BORDER")
+local function line(alpha, vertical)
   local r, g, b = W.Rim()
-  t:SetColorTexture(r, g, b, alpha)
-  return t
+  return W.FadeLine(frame, r, g, b, alpha * 1.6, vertical)
 end
 Inventory.hairline = line(0.14)
-Inventory.separator = line(0.1)
+Inventory.separator = line(0.1, true)
+W.FadeIn(frame)
 
 local function rect(region, r)
   local w, h = frame:GetSize()

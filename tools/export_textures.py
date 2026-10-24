@@ -125,6 +125,46 @@ def cursor_dot(size=32):
     return Image.fromarray(a, "RGBA")
 
 
+# Soft panel pieces (Widgets.Panel), drawn 8x larger and scaled down for smooth corners. All
+# white: the addon tints them. Sliced in the game (SetTextureSliceMargins) so the corners keep
+# their size on any panel. SOFT_RADIUS and SOFT_MARGIN are read by Core/Widgets.lua.
+SOFT_SIZE, SOFT_RADIUS, SOFT_MARGIN = 32, 6, 10
+
+
+def _rounded(size, inset, radius, ss=8):
+    from PIL import ImageDraw
+    big = Image.new("L", (size * ss, size * ss), 0)
+    ImageDraw.Draw(big).rounded_rectangle(
+        (inset * ss, inset * ss, (size - inset) * ss - 1, (size - inset) * ss - 1), radius * ss, fill=255)
+    return big.resize((size, size), Image.LANCZOS)
+
+
+def _white(alpha):
+    img = Image.new("RGBA", alpha.size, (255, 255, 255, 0))
+    img.putalpha(alpha)
+    return img
+
+
+def soft_fill():
+    return _white(_rounded(SOFT_SIZE, 0, SOFT_RADIUS))
+
+
+def soft_rim():
+    from PIL import ImageChops
+    outer = _rounded(SOFT_SIZE, 0, SOFT_RADIUS)
+    inner = _rounded(SOFT_SIZE, 1, SOFT_RADIUS - 1)
+    return _white(ImageChops.subtract(outer, inner))
+
+
+def soft_shadow(size=64, spread=16):
+    from PIL import ImageFilter
+    a = _rounded(size, spread, SOFT_RADIUS + 2)
+    a = a.filter(ImageFilter.GaussianBlur(spread / 2.2))
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    img.putalpha(a)
+    return img
+
+
 PROCEDURAL = {
     "mask_circle": mask_circle,
     "bar_fill": bar_fill,
@@ -132,6 +172,9 @@ PROCEDURAL = {
     "icon_sort": icon_sort,
     "cursor_ring": cursor_ring,
     "cursor_dot": cursor_dot,
+    "soft_fill": soft_fill,
+    "soft_rim": soft_rim,
+    "soft_shadow": soft_shadow,
 }
 
 

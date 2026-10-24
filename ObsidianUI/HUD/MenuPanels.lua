@@ -232,7 +232,9 @@ local band = CreateFrame("Frame", "ObsidianUIModernMenu", UIParent)
 band:SetFrameStrata("LOW")
 band:Hide()
 local bandLeft, bandMid = band:CreateTexture(nil, "BACKGROUND"), band:CreateTexture(nil, "BACKGROUND")
-MenuPanels.band, MenuPanels.bandFrame = bandMid, band
+-- the right end closes with the left cap mirrored, instead of the stretched middle stopping short
+local bandRight = band:CreateTexture(nil, "BACKGROUND")
+MenuPanels.band, MenuPanels.bandFrame, MenuPanels.bandRight = bandMid, band, bandRight
 local money = band:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 local MENU_W, MENU_H, CAP = 620, 92, 40 -- mod_menu texture px; CAP: left end with the arrow tip
 
@@ -246,7 +248,7 @@ function MenuPanels.LayoutModern()
   local s = H / 1080 * (ns.db.scale or 1) * ns.Movers.Scale("menu")
   local list = ns.Data.MODERN_MENU
   local size, step, k = 28 * s, 34 * s, 0.5 * s
-  local w = (CAP + 20) * k + #list * step
+  local w = (2 * CAP + 8) * k + #list * step
   band:SetSize(w, MENU_H * k)
   ns.Movers.Register("menu", "Menu", band, function(f)
     f:ClearAllPoints()
@@ -259,9 +261,13 @@ function MenuPanels.LayoutModern()
   bandLeft:SetSize(CAP * k, MENU_H * k)
   ns.Media.ApplyRange(bandLeft, tex, false, 0, CAP / MENU_W)
   bandMid:ClearAllPoints()
+  bandRight:ClearAllPoints()
+  bandRight:SetPoint("TOPRIGHT", band, "TOPRIGHT")
+  bandRight:SetSize(CAP * k, MENU_H * k)
+  ns.Media.ApplyRange(bandRight, tex, true, 0, CAP / MENU_W)
   bandMid:SetPoint("TOPLEFT", bandLeft, "TOPRIGHT")
-  bandMid:SetPoint("BOTTOMRIGHT", band, "BOTTOMRIGHT")
-  ns.Media.ApplyRange(bandMid, tex, false, CAP / MENU_W, 1)
+  bandMid:SetPoint("BOTTOMRIGHT", bandRight, "BOTTOMLEFT")
+  ns.Media.ApplyRange(bandMid, tex, false, CAP / MENU_W, 1 - CAP / MENU_W)
   band:Show()
   local wanted = {}
   for i, id in ipairs(list) do

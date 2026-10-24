@@ -235,7 +235,10 @@ function Region:GetTexture() return self.file end
 function Region:SetAtlas(a) self.file = "ATLAS:" .. tostring(a) end
 function Region:SetColorTexture(r, g, b, a) self.color = { r, g, b, a or 1 }; self.file = nil end
 function Region:SetTexCoord(...) self.tc = { ... } end
-function Region:SetVertexColor(r, g, b, a) self.vc = { r, g, b, a or 1 } end
+function Region:SetVertexColor(r, g, b, a) self.vc = { r, g, b, a or 1 }; self.grad = nil end
+-- Sliced textures: the margins (texture pixels) keep their size, the middle stretches.
+function Region:SetTextureSliceMargins(l, t, r, b) self.slice = { l, t, r, b } end
+function Region:SetTextureSliceMode() end
 function Region:SetDesaturated(v) self.desat = v end
 function Region:SetBlendMode(m) self.blend = m end
 function Region:SetRotation(a) self.rot = a end

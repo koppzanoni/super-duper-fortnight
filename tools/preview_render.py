@@ -200,6 +200,25 @@ def map_image(size):
     return img
 
 
+def nine_slice(src, margins, w, h):
+    """A sliced texture: corners at their pixel size, edges and middle stretched."""
+    l, t, r, b = (int(m) for m in margins)
+    l, r = min(l, w // 2), min(r, w - min(l, w // 2))
+    t, b = min(t, h // 2), min(b, h - min(t, h // 2))
+    sw, sh = src.size
+    out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    xs_src, xs_dst = [0, l, sw - r, sw], [0, l, w - r, w]
+    ys_src, ys_dst = [0, t, sh - b, sh], [0, t, h - b, h]
+    for i in range(3):
+        for j in range(3):
+            sbox = (xs_src[i], ys_src[j], xs_src[i + 1], ys_src[j + 1])
+            dw, dh = xs_dst[i + 1] - xs_dst[i], ys_dst[j + 1] - ys_dst[j]
+            if dw <= 0 or dh <= 0 or sbox[2] <= sbox[0] or sbox[3] <= sbox[1]:
+                continue
+            out.paste(src.crop(sbox).resize((dw, dh), Image.LANCZOS), (xs_dst[i], ys_dst[j]))
+    return out
+
+
 def render(rt, scene, out_path):
     canvas = scene.copy()
     regions = list(rt.globals().REGIONS.values())
@@ -254,17 +273,29 @@ def render(rt, scene, out_path):
             src = texture_image(str(r.file))
             if src is None:
                 continue
-            img = tex_crop(src, r.tc).resize((box[2], box[3]), Image.LANCZOS)
+            if r.slice:
+                img = nine_slice(tex_crop(src, r.tc), list(r.slice.values()), box[2], box[3])
+            else:
+                img = tex_crop(src, r.tc).resize((box[2], box[3]), Image.LANCZOS)
         else:
             continue
-        if r.grad and r.color:
-            _, lo, hi = list(r.grad.values())
+        if r.grad:
+            orient, lo, hi = list(r.grad.values())
             col = [[c.r, c.g, c.b, c.a] for c in (lo, hi)]
-            grad = Image.new("RGBA", (1, box[3]))
-            for yy in range(box[3]):
-                f = 1 - yy / max(1, box[3] - 1)  # 0 at the bottom (minColor), 1 at the top
-                grad.putpixel((0, yy), tuple(int((col[0][i] + (col[1][i] - col[0][i]) * f) * 255) for i in range(4)))
-            img = grad.resize((box[2], box[3]))
+            horizontal = orient == "HORIZONTAL"
+            n = box[2] if horizontal else box[3]
+            grad = Image.new("RGBA", (n, 1) if horizontal else (1, n))
+            for k in range(n):
+                # minColor at the left / bottom, maxColor at the right / top
+                f = k / max(1, n - 1) if horizontal else 1 - k / max(1, n - 1)
+                px = tuple(int((col[0][i] + (col[1][i] - col[0][i]) * f) * 255) for i in range(4))
+                grad.putpixel((k, 0) if horizontal else (0, k), px)
+            grad = grad.resize((box[2], box[3]))
+            if r.color:
+                img = grad
+            else:
+                rgb = ImageChops.multiply(img.convert("RGB"), grad.convert("RGB"))
+                img = Image.merge("RGBA", (*rgb.split(), ImageChops.multiply(img.getchannel("A"), grad.getchannel("A"))))
         if r.rot:
             img = img.rotate(math.degrees(r.rot), resample=Image.BICUBIC)
         vc = list(r.vc.values())

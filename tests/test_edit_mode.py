@@ -75,7 +75,7 @@ def test_moving_the_bar_takes_its_buttons_xp_cast_and_stack_along():
     b1 = rect(ns.ActionBars.buttons[1])
     assert bar[0] < b1[0] < bar[0] + 60
     xp = rect(ns.XPBar.xp)
-    assert abs(xp[0] - bar[0]) < 0.5 and xp[1] < bar[1]
+    assert abs((xp[0] + xp[2] / 2) - (bar[0] + bar[2] / 2)) < 0.5 and xp[1] < bar[1]  # centred under it
     cast = rect(ns.CastBar.art)
     assert cast[1] > bar[1] + bar[3] and abs((cast[0] + cast[2] / 2) - (bar[0] + bar[2] / 2)) < 1
 

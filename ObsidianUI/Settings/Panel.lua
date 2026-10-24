@@ -384,10 +384,12 @@ frame:Hide()
 Panel.frame = frame
 UISpecialFrames[#UISpecialFrames + 1] = "ObsidianUIConfig" -- Esc closes it
 
+-- Areas are rounded (Widgets.SoftTexture); hairlines fade at their ends (Widgets.FadeLine).
 local function fill(parent, layer, r, g, b, a)
-  local t = parent:CreateTexture(nil, layer)
-  t:SetColorTexture(r, g, b, a)
-  return t
+  return ns.Widgets.SoftTexture(parent, layer, r, g, b, a)
+end
+local function hairline(parent, alpha, vertical)
+  return ns.Widgets.FadeLine(parent, 1, 1, 1, alpha, vertical)
 end
 local function text(parent, template, color)
   local t = parent:CreateFontString(nil, "OVERLAY", template)
@@ -396,18 +398,11 @@ local function text(parent, template, color)
   return t
 end
 local function edge(f, alpha)
-  for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
-    local e = fill(f, "BORDER", 1, 1, 1, alpha)
-    if side == "TOP" or side == "BOTTOM" then
-      e:SetPoint(side .. "LEFT"); e:SetPoint(side .. "RIGHT"); e:SetHeight(1)
-    else
-      e:SetPoint("TOP" .. side); e:SetPoint("BOTTOM" .. side); e:SetWidth(1)
-    end
-  end
+  ns.Widgets.SoftRim(f, 1, 1, 1, alpha)
 end
 
-fill(frame, "BACKGROUND", 0.024, 0.028, 0.035, 0.94):SetAllPoints(frame)
-edge(frame, 0.1)
+ns.Widgets.Panel(frame, 0.94)
+ns.Widgets.FadeIn(frame)
 
 local header = CreateFrame("Frame", nil, frame)
 header:SetPoint("TOPLEFT"); header:SetPoint("TOPRIGHT"); header:SetHeight(52)
@@ -421,8 +416,8 @@ logo:SetText("ObsidianUI")
 local sub = text(header, "GameFontHighlightSmall", DIM)
 sub:SetPoint("LEFT", logo, "RIGHT", 8, -1)
 sub:SetText("Configurações")
-local headerLine = fill(header, "BORDER", 1, 1, 1, 0.08)
-headerLine:SetPoint("BOTTOMLEFT"); headerLine:SetPoint("BOTTOMRIGHT"); headerLine:SetHeight(1)
+local headerLine = hairline(header, 0.12)
+headerLine:SetPoint("BOTTOMLEFT", 16, 0); headerLine:SetPoint("BOTTOMRIGHT", -16, 0); headerLine:SetHeight(1)
 
 local function flatButton(parent, label, w, onClick)
   local b = CreateFrame("Button", nil, parent)
@@ -465,8 +460,8 @@ local side = CreateFrame("Frame", nil, frame)
 side:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -52)
 side:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT")
 side:SetWidth(SIDE)
-local sideLine = fill(side, "BORDER", 1, 1, 1, 0.08)
-sideLine:SetPoint("TOPRIGHT"); sideLine:SetPoint("BOTTOMRIGHT"); sideLine:SetWidth(1)
+local sideLine = hairline(side, 0.12, true)
+sideLine:SetPoint("TOPRIGHT", 0, -12); sideLine:SetPoint("BOTTOMRIGHT", 0, 12); sideLine:SetWidth(1)
 Panel.sideButtons = {}
 
 -- content
@@ -622,7 +617,7 @@ local function newRow()
   r.label:SetPoint("TOPLEFT", r, "TOPLEFT", 0, -6)
   r.help = text(r, "GameFontDisableSmall", MUTED)
   r.help:SetPoint("TOPLEFT", r.label, "BOTTOMLEFT", 0, -3)
-  local line = fill(r, "BORDER", 1, 1, 1, 0.05)
+  local line = hairline(r, 0.08)
   line:SetPoint("BOTTOMLEFT"); line:SetPoint("BOTTOMRIGHT"); line:SetHeight(1)
   r.controls = {}
   return r
@@ -660,7 +655,7 @@ local function switch(r, row)
   knob:SetSize(16, 16)
   local function draw()
     local on = Panel.Get(row) and true or false
-    track:SetColorTexture(on and BLUE[1] or 1, on and BLUE[2] or 1, on and BLUE[3] or 1, on and 1 or 0.14)
+    ns.Widgets.SetSoftColor(track, on and BLUE[1] or 1, on and BLUE[2] or 1, on and BLUE[3] or 1, on and 1 or 0.14)
     knob:ClearAllPoints()
     knob:SetPoint("LEFT", s, "LEFT", on and 21 or 3, 0)
     s.on = on
@@ -700,7 +695,7 @@ local function segmented(r, row)
   local function draw()
     for _, b in ipairs(buttons) do
       local on = Panel.Get(row) == b.value
-      b.bg:SetColorTexture(1, 1, 1, on and 0.16 or 0.04)
+      ns.Widgets.SetSoftColor(b.bg, 1, 1, 1, on and 0.16 or 0.04)
       b.label:SetTextColor(on and 1 or DIM[1], on and 1 or DIM[2], on and 1 or DIM[3])
     end
   end
@@ -819,7 +814,7 @@ function Panel.Show(id)
     end
   end
   pageHeight(y)
-  for _, b in ipairs(Panel.sideButtons) do b.bg:SetColorTexture(1, 1, 1, b.id == id and 0.09 or 0) end
+  for _, b in ipairs(Panel.sideButtons) do ns.Widgets.SetSoftColor(b.bg, 1, 1, 1, b.id == id and 0.09 or 0) end
 end
 
 function Panel.Search(query)

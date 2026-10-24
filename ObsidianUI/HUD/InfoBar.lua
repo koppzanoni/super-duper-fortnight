@@ -19,9 +19,8 @@ local frame = CreateFrame("Frame", "ObsidianUIInfoBar", UIParent)
 frame:SetFrameStrata("LOW")
 frame:SetHeight(H)
 InfoBar.frame = frame
-local bg = frame:CreateTexture(nil, "BACKGROUND")
+local bg = ns.Widgets.SoftTexture(frame, "BACKGROUND", 0.015, 0.02, 0.028, 0.6)
 bg:SetAllPoints(frame)
-bg:SetColorTexture(0.015, 0.02, 0.028, 0.6)
 
 for _, item in ipairs(InfoBar.ITEMS) do
   local t = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
