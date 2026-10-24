@@ -101,7 +101,8 @@ Panel.SECTIONS = {
   { id = "cooldowns", group = "Qualidade de vida", name = "Recarga nos ícones", soon = true },
   { id = "reminders", group = "Qualidade de vida", name = "Lembretes", soon = true },
   { id = "classes", group = "Classes", name = "Classes", soon = true },
-  { id = "profiles", name = "Perfis", soon = true },
+  { id = "profiles", name = "Perfis", lead = "Salve layouts, um por especialização ou por conteúdo, e compartilhe por texto.",
+    build = function() return Panel.ProfileCards() end },
 }
 local GROUP_ORDER = { [""] = 0, HUD = 1, Grupo = 2, Interface = 3, ["Qualidade de vida"] = 4, Classes = 5 }
 local function rank(sec)
@@ -117,15 +118,23 @@ table.sort(Panel.SECTIONS, function(a, b)
 end)
 
 function Panel.Get(row)
+  if row.get then return row.get() end
   local v = ns.db and ns.db[row.key]
   if v == nil then return row.default end
   return v
 end
 
 function Panel.Set(row, value)
-  ns.db[row.key] = value
+  if row.set then
+    row.set(value)
+  else
+    ns.db[row.key] = value
+  end
   if row.onChange then row.onChange(value) end
+  -- every change lands in the active profile too
+  if ns.Profiles and ns.db.profiles and not row.set then ns.Profiles.Save() end
 end
+
 
 -- ------------------------------------------------------------------ window
 local frame = CreateFrame("Frame", "ObsidianUIConfig", UIParent)
@@ -225,15 +234,143 @@ sideLine:SetPoint("TOPRIGHT"); sideLine:SetPoint("BOTTOMRIGHT"); sideLine:SetWid
 Panel.sideButtons = {}
 
 -- content
-local body = CreateFrame("Frame", nil, frame)
-body:SetPoint("TOPLEFT", side, "TOPRIGHT", 22, -18)
-body:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -22, 18)
-Panel.body = body
+-- The page scrolls with the mouse wheel when it is taller than the window (Perfis is).
+local view = CreateFrame("ScrollFrame", "ObsidianUIConfigView", frame)
+view:SetPoint("TOPLEFT", side, "TOPRIGHT", 22, -18)
+view:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -22, 18)
+local body = CreateFrame("Frame", nil, view)
+body:SetSize(W - SIDE - 44, 10)
+view:SetScrollChild(body)
+view:EnableMouseWheel(true)
+view:SetScript("OnMouseWheel", function(self, delta)
+  local max = math.max(0, body:GetHeight() - self:GetHeight())
+  self:SetVerticalScroll(math.max(0, math.min(max, self:GetVerticalScroll() - delta * 40)))
+end)
+Panel.body, Panel.view = body, view
+local function pageHeight(y)
+  body:SetHeight(math.max(10, -y + 10))
+  view:SetVerticalScroll(0)
+end
 local title = text(body, "GameFontNormalLarge", WHITE)
 title:SetPoint("TOPLEFT")
 local lead = text(body, "GameFontHighlightSmall", DIM)
 lead:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
 Panel.title, Panel.lead = title, lead
+
+-- ------------------------------------------------------------------ Perfis page
+local P = function() return ns.Profiles end
+local function profileOptions(withNone)
+  local list = withNone and { { "", "(nenhum)" } } or {}
+  for _, name in ipairs(P().List()) do list[#list + 1] = { name, name } end
+  return list
+end
+local function refreshPage() if Panel.current == "profiles" then Panel.Show("profiles") end end
+
+local CONTENT = { { "solo", "Sozinho" }, { "group", "Grupo" }, { "raid", "Raide" }, { "pvp", "JxJ" } }
+
+function Panel.ProfileCards()
+  local active = {
+    { kind = "cycle", label = "Perfil deste personagem", options = function() return profileOptions(false) end,
+      get = function() return P().Current() end, set = function(v) P().Switch(v) end,
+      help = "Trocar aplica na hora. Cada personagem lembra o seu." },
+    button("Novo perfil", "Criar (cópia)", function()
+      local n = 2
+      while ns.db.profiles["Perfil " .. n] do n = n + 1 end
+      P().New("Perfil " .. n, P().Current())
+      P().Switch("Perfil " .. n)
+      refreshPage()
+    end, "Começa como uma cópia do perfil atual."),
+    button("Excluir este perfil", "Excluir", function()
+      local name = P().Current()
+      if name == "Padrão" then return end
+      P().Switch("Padrão")
+      P().Delete(name)
+      refreshPage()
+    end, "Volta para o perfil Padrão (que não pode ser excluído)."),
+  }
+  local specs = {}
+  local count = (GetNumSpecializations and GetNumSpecializations()) or 3
+  if type(count) ~= "number" or count < 1 then count = 3 end
+  for i = 1, count do
+    local name = GetSpecializationInfo and select(2, GetSpecializationInfo(i))
+    specs[#specs + 1] = { kind = "cycle", label = (type(name) == "string" and name) or ("Especialização " .. i),
+      options = function() return profileOptions(true) end,
+      get = function() return P().SpecProfile(i) or "" end,
+      set = function(v) P().SetSpecProfile(i, v ~= "" and v or nil) end }
+  end
+  specs[1].help = "Ao trocar de especialização, o perfil dela carrega sozinho."
+  local content = {
+    { kind = "toggle", label = "Trocar sozinho pelo tipo de conteúdo", get = function() return P().AutoContent() end,
+      set = function(v) P().SetAutoContent(v) end, help = "Grupo, raide ou JxJ carregam o perfil escolhido abaixo." },
+  }
+  for _, c in ipairs(CONTENT) do
+    content[#content + 1] = { kind = "cycle", label = c[2], options = function() return profileOptions(true) end,
+      get = function() return P().ContentProfile(c[1]) or "" end,
+      set = function(v) P().SetContentProfile(c[1], v ~= "" and v or nil) end }
+  end
+  local presets = {}
+  for _, name in ipairs(P().PRESET_ORDER) do
+    presets[#presets + 1] = button(name, "Aplicar", function() P().ApplyPreset(name) end, P().PRESETS[name].desc)
+  end
+  local share = {
+    button("Exportar tudo", "Exportar", function() Panel.TextBox("export", P().Export("all")) end, "Todas as opções e posições deste perfil."),
+    button("Exportar só posições", "Exportar", function() Panel.TextBox("export", P().Export("layout")) end),
+    button("Importar", "Colar texto", function() Panel.TextBox("import", "") end, "Cole um texto OBUI1 de um amigo."),
+  }
+  return { { "Perfil ativo", active }, { "Por especialização", specs }, { "Por conteúdo", content },
+    { "Presets", presets }, { "Compartilhar", share } }
+end
+
+-- Export/import text box over the panel.
+local box = CreateFrame("Frame", "ObsidianUIProfileText", UIParent)
+box:SetSize(560, 300)
+box:SetPoint("CENTER")
+box:SetFrameStrata("FULLSCREEN_DIALOG")
+box:EnableMouse(true)
+box:Hide()
+fill(box, "BACKGROUND", 0.02, 0.025, 0.03, 0.97):SetAllPoints(box)
+edge(box, 0.16)
+local boxTitle = text(box, "GameFontNormal", WHITE)
+boxTitle:SetPoint("TOPLEFT", box, "TOPLEFT", 14, -12)
+local boxHelp = text(box, "GameFontDisableSmall", MUTED)
+boxHelp:SetPoint("TOPLEFT", boxTitle, "BOTTOMLEFT", 0, -4)
+local scroll = CreateFrame("ScrollFrame", "ObsidianUIProfileScroll", box, "UIPanelScrollFrameTemplate")
+scroll:SetPoint("TOPLEFT", box, "TOPLEFT", 14, -52)
+scroll:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", -34, 46)
+local edit = CreateFrame("EditBox", "ObsidianUIProfileEdit", scroll)
+edit:SetMultiLine(true)
+edit:SetAutoFocus(false)
+edit:SetFontObject("GameFontHighlightSmall")
+edit:SetWidth(500)
+edit:SetScript("OnEscapePressed", function() box:Hide() end)
+scroll:SetScrollChild(edit)
+fill(scroll, "BACKGROUND", 0, 0, 0, 0.4):SetAllPoints(scroll)
+local boxStatus = text(box, "GameFontHighlightSmall", DIM)
+boxStatus:SetPoint("BOTTOMLEFT", box, "BOTTOMLEFT", 14, 16)
+local apply = flatButton(box, "Importar", 110, function()
+  local ok, result = pcall(ns.Profiles.Import, edit:GetText())
+  if ok then
+    boxStatus:SetText(result == "layout" and "Posições importadas." or "Perfil importado.")
+    refreshPage()
+  else
+    boxStatus:SetText("Não deu para importar: o texto não é de um perfil da ObsidianUI.")
+  end
+end)
+apply:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", -126, 10)
+local closeBox = flatButton(box, "Fechar", 100, function() box:Hide() end)
+closeBox:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", -14, 10)
+Panel.textBox, Panel.textEdit, Panel.textApply, Panel.textStatus = box, edit, apply, boxStatus
+
+function Panel.TextBox(mode, value)
+  boxTitle:SetText(mode == "export" and "Exportar perfil" or "Importar perfil")
+  boxHelp:SetText(mode == "export" and "Copie com Ctrl+C e mande para quem quiser." or "Cole o texto com Ctrl+V e clique em Importar.")
+  edit:SetText(value or "")
+  apply:SetShown(mode == "import")
+  boxStatus:SetText("")
+  box:Show()
+  edit:SetFocus()
+  if mode == "export" then edit:HighlightText() end
+end
 
 -- ------------------------------------------------------------------ rows
 local pool = {}
@@ -329,6 +466,34 @@ local function segmented(r, row)
   return holder
 end
 
+local function cycler(r, row)
+  local holder = CreateFrame("Frame", nil, r)
+  holder:SetSize(240, 26)
+  holder:SetPoint("RIGHT", r, "RIGHT", 0, 0)
+  local value = text(holder, "GameFontHighlight", WHITE)
+  value:SetPoint("CENTER")
+  value:SetJustifyH("CENTER")
+  local function label(v)
+    for _, o in ipairs(row.options()) do if o[1] == v then return o[2] end end
+    return tostring(v)
+  end
+  local function draw() value:SetText(label(Panel.Get(row))) end
+  local function step(dir)
+    local list, current, at = row.options(), Panel.Get(row), 1
+    for i, o in ipairs(list) do if o[1] == current then at = i end end
+    local nxt = list[(at - 1 + dir) % #list + 1]
+    Panel.Set(row, nxt[1])
+    draw()
+  end
+  local prev = flatButton(holder, "<", 32, function() step(-1) end)
+  prev:SetPoint("LEFT")
+  local nxt = flatButton(holder, ">", 32, function() step(1) end)
+  nxt:SetPoint("RIGHT")
+  holder.prev, holder.next, holder.value = prev, nxt, value
+  draw()
+  return holder
+end
+
 local function fillRow(r, row, where)
   clearControls(r)
   r.label:SetText(row.label .. (where and ("  |cff6d737a" .. where .. "|r") or ""))
@@ -338,6 +503,7 @@ local function fillRow(r, row, where)
   if row.kind == "toggle" then c = switch(r, row)
   elseif row.kind == "steps" then c = stepper(r, row)
   elseif row.kind == "choice" then c = segmented(r, row)
+  elseif row.kind == "cycle" then c = cycler(r, row)
   else c = flatButton(r, row.text, 130, row.run); c:SetPoint("RIGHT", r, "RIGHT", 0, 0) end
   r.control = c
   r.controls[1] = c
@@ -382,6 +548,14 @@ function Panel.Show(id)
   local y = -48
   if sec.soon then
     lead:SetText("Em breve: este módulo está no protótipo aprovado e será feito numa próxima etapa.")
+    pageHeight(y)
+  elseif sec.build then
+    lead:SetText(sec.lead or "")
+    for _, card in ipairs(sec.build()) do
+      y = addHeading(card[1], y)
+      for _, row in ipairs(card[2]) do y = addRow(row, y) end
+      y = y - 10
+    end
   else
     lead:SetText(sec.lead or "")
     for _, card in ipairs(sec.cards) do
@@ -390,6 +564,7 @@ function Panel.Show(id)
       y = y - 10
     end
   end
+  pageHeight(y)
   for _, b in ipairs(Panel.sideButtons) do b.bg:SetColorTexture(1, 1, 1, b.id == id and 0.09 or 0) end
 end
 
@@ -409,6 +584,7 @@ function Panel.Search(query)
     end
   end
   if n == 0 then lead:SetText("Nada encontrado para \"" .. query .. "\".") end
+  pageHeight(y)
 end
 
 search:SetScript("OnTextChanged", function(self)

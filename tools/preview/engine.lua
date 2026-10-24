@@ -164,8 +164,13 @@ function Region:RegisterForDrag() end
 -- ScrollFrame: the game pins the scroll child to the scroll frame's top-left corner.
 function Region:SetScrollChild(child)
   self.scrollChild = child
-  child.points = { { point = "TOPLEFT", rel = self, relPoint = "TOPLEFT", x = 0, y = 0 } }
+  child.points = { { point = "TOPLEFT", rel = self, relPoint = "TOPLEFT", x = 0, y = self.vscroll or 0 } }
 end
+function Region:SetVerticalScroll(v)
+  self.vscroll = v
+  if self.scrollChild then self.scrollChild.points[1].y = v end
+end
+function Region:GetVerticalScroll() return self.vscroll or 0 end
 
 -- Scripts / attributes --------------------------------------------------------------------------
 function Region:SetScript(name, fn) self.handlers[name] = fn end
@@ -216,6 +221,7 @@ local function autosize(self)
   self.w, self.h = #(self.text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")) * px * 0.56, px + 2
 end
 function Region:SetText(t) self.text = t and tostring(t) or ""; autosize(self) end
+function Region:GetText() return self.text or "" end
 function Region:SetFormattedText(fmt, ...) self.text = string.format(fmt, ...); autosize(self) end
 function Region:SetTextColor(r, g, b) self.tcolor = { r, g, b } end
 function Region:SetJustifyH(j) self.justify = j end

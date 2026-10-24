@@ -42,8 +42,14 @@ modo de edição, teclas, restaurar posições, linhas/colunas, números das tec
 anel arcano, zona de latência / ms / marca da fila, tamanho do inventário.
 Falta (marcado "em breve" no painel): Visual, Recursos de classe, Auras, Barras de dados, Barra de
 informações, Grupo, Raide, Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
-Cursor, Automação, Recarga nos ícones, Lembretes, Classes, Perfis (+ modo de teste, instalador,
+Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste, instalador,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
+
+## Perfis (FEITO: Core/Serialize.lua + Core/Profiles.lua, página Perfis)
+Perfil por personagem, criar/copiar/excluir, troca ao vivo (cor pede recarga), um por
+especialização (PLAYER_SPECIALIZATION_CHANGED / ACTIVE_TALENT_GROUP_CHANGED), por conteúdo
+(solo/grupo/raide/JxJ, liga/desliga), presets (ObsidianUI, Compacto, Healer), exportar/importar
+texto OBUI1 (tudo ou só posições; o leitor nunca executa código). Conteúdo do painel rola.
 
 ## Fase 3 — Inventário Moderno
 - Janela larga, preto fosco translúcido: personagem à esquerda (modelo, 8+8 slots, 3 armas, nível

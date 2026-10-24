@@ -216,7 +216,21 @@ def render(rt, scene, out_path):
         l, b, w, h = rect
         box = (int(round(l)), int(round(H - (b + h))), max(1, int(round(w))), max(1, int(round(h))))
         if r.kind == "font":
-            draw_text(canvas, rt, r, rect)
+            # a scroll frame or a clipping frame cuts its texts too
+            clip = r.parent
+            while clip is not None and not clip.clips:
+                clip = clip.parent
+            if clip is None:
+                draw_text(canvas, rt, r, rect)
+            else:
+                cr = tuple(clip.Rect(clip).values())
+                cbox = (int(round(cr[0])), int(round(H - (cr[1] + cr[3]))), int(round(cr[0] + cr[2])), int(round(H - cr[1])))
+                layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+                draw_text(layer, rt, r, rect)
+                keep = Image.new("L", (W, H), 0)
+                keep.paste(255, cbox)
+                layer.putalpha(ImageChops.multiply(layer.getchannel("A"), keep))
+                canvas.alpha_composite(layer)
             continue
         if r.kind == "frame":
             img = map_image((box[2], box[3])) if r.isMinimap else HERO.resize((box[2], box[3]), Image.LANCZOS)

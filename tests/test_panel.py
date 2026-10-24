@@ -41,7 +41,7 @@ def test_sidebar_lists_built_and_planned_modules_in_groups():
     names = [s.name for s in ns.Panel.SECTIONS.values()]
     assert names[0] == "Geral" and names[-1] == "Perfis"
     built = {s.id for s in ns.Panel.SECTIONS.values() if not s.soon}
-    assert built == {"general", "bar", "frames", "cast", "inventory"}
+    assert built == {"general", "bar", "frames", "cast", "inventory", "profiles"}
     for planned in ("chat", "raid", "plates", "classes", "automation"):
         assert any(s.id == planned and s.soon for s in ns.Panel.SECTIONS.values())
 
@@ -120,7 +120,7 @@ def test_every_control_of_every_built_page_works():
     rt, ns = preview()
     rt.execute("POPUPS = {}; function StaticPopup_Show(n) POPUPS[#POPUPS + 1] = n end")
     checked = []
-    for sec in [s for s in ns.Panel.SECTIONS.values() if not s.soon]:
+    for sec in [s for s in ns.Panel.SECTIONS.values() if not s.soon and s.id != "profiles"]:  # Perfis: own tests
         ns.Panel.Open(sec.id)
         for r in rows(ns):
             row = r.row
@@ -188,3 +188,65 @@ def test_header_buttons_start_the_edit_mode_and_close():
     ns.Panel.Open()
     click(ns.Panel.closeButton)
     assert not visible(ns.Panel.frame)
+
+
+# ------------------------------------------------------------------ Perfis page
+def test_profiles_page_creates_switches_and_deletes():
+    _, ns = preview()
+    ns.Panel.Open("profiles")
+    click(row(ns, "Novo perfil").control)
+    assert ns.Profiles.Current() == "Perfil 2"
+    cyc = row(ns, "Perfil deste personagem").control
+    click(cyc.prev)
+    assert ns.Profiles.Current() == "Padrão"
+    click(cyc.next)
+    assert ns.Profiles.Current() == "Perfil 2"
+    click(row(ns, "Excluir este perfil").control)
+    assert ns.Profiles.Current() == "Padrão" and ns.db.profiles["Perfil 2"] is None
+
+
+def test_profiles_page_export_and_import_box():
+    _, ns = preview()
+    ns.db.modernCols = 9
+    ns.Panel.Open("profiles")
+    click(row(ns, "Exportar tudo").control)
+    text = ns.Panel.textEdit.GetText(ns.Panel.textEdit)
+    assert isinstance(text, str) and visible(ns.Panel.textBox) and text.startswith("OBUI1:")
+    ns.db.modernCols = 12
+    click(row(ns, "Importar").control)
+    ns.Panel.textEdit.SetText(ns.Panel.textEdit, text)
+    click(ns.Panel.textApply)
+    assert ns.db.modernCols == 9 and "importado" in ns.Panel.textStatus.text
+    ns.Panel.textEdit.SetText(ns.Panel.textEdit, "lixo")
+    click(ns.Panel.textApply)
+    assert "Não deu" in ns.Panel.textStatus.text
+
+
+def test_profiles_page_presets_and_content():
+    _, ns = preview()
+    ns.Panel.Open("profiles")
+    click(row(ns, "Compacto").control)
+    assert ns.db.modernCols == 10
+    s = row(ns, "Trocar sozinho pelo tipo de conteúdo").control
+    click(s)
+    assert ns.Profiles.AutoContent() is True
+
+
+def test_changes_in_the_panel_land_in_the_active_profile():
+    _, ns = preview()
+    ns.Panel.Open("bar")
+    r = row(ns, "Colunas")
+    click(r.control.minus)
+    assert ns.db.profiles["Padrão"].modernCols == 11
+
+
+def test_tall_page_scrolls_inside_the_window():
+    _, ns = preview()
+    ns.Panel.Open("profiles")
+    view, body = ns.Panel.view, ns.Panel.body
+    assert view.clips and body.GetHeight(body) > view.GetHeight(view)
+    view.GetScript(view, "OnMouseWheel")(view, -1)
+    assert view.GetVerticalScroll(view) == 40
+    for _ in range(100):
+        view.GetScript(view, "OnMouseWheel")(view, -1)
+    assert abs(view.GetVerticalScroll(view) - (body.GetHeight(body) - view.GetHeight(view))) < 0.5

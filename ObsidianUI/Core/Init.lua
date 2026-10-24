@@ -2,6 +2,7 @@ local addonName, ns = ...
 
 ns.name = addonName
 
+-- Default settings (also what a new profile starts from, Core/Profiles.lua).
 local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, showHotkeys = true,
   -- the HUD (the stone HUD retired: git tag hud-pedra-final)
   modernColor = "black", arcaneRing = true, modernRows = 2, modernCols = 12,
@@ -12,6 +13,8 @@ function ns.ModernTex(name)
   if ns.db and ns.db.modernColor == "blue" then return name end
   return name .. "_black"
 end
+
+ns.DEFAULTS = DEFAULTS
 
 -- Event bus: ns.On(event, fn) calls fn(event, ...) every time the event fires.
 local listeners = {}
