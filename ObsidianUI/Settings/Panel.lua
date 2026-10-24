@@ -210,7 +210,7 @@ fill(search, "BACKGROUND", 0, 0, 0, 0.45):SetAllPoints(search)
 edge(search, 0.14)
 local searchHint = text(search, "GameFontDisableSmall", MUTED)
 searchHint:SetPoint("LEFT", search, "LEFT", 10, 0)
-searchHint:SetText("Buscar opção…")
+searchHint:SetText("Buscar opção...")
 Panel.search = search
 search:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
 
@@ -397,7 +397,7 @@ function Panel.Search(query)
   if query == "" then return Panel.Show(Panel.current or "general") end
   clearRows()
   title:SetText("Resultados")
-  lead:SetText("Opções com “" .. query .. "”.")
+  lead:SetText("Opções com \"" .. query .. "\".")
   local y, n = -48, 0
   for _, sec in ipairs(Panel.SECTIONS) do
     for _, card in ipairs(sec.cards or {}) do
@@ -407,7 +407,7 @@ function Panel.Search(query)
       end
     end
   end
-  if n == 0 then lead:SetText("Nada encontrado para “" .. query .. "”.") end
+  if n == 0 then lead:SetText("Nada encontrado para \"" .. query .. "\".") end
 end
 
 search:SetScript("OnTextChanged", function(self)
