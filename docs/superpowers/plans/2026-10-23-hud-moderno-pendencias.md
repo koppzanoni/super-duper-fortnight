@@ -149,8 +149,9 @@ Druida (FEITO: Classes/Druid.lua): mana em barra fina nas formas animais, barra 
 o quadro do jogador (padrão ligado), tick de energia em Felino (Classes/EnergyTick.lua, comum com o
 Ladino), pontos de combo só em Felino ou em todas as formas (gancho ClassResource.PowerTypeFor), regra
 dos 5 s na forma humana. Página Classes COMPLETA: as 11 classes do protótipo.
-Falta (do painel): modo de teste,
-visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
+Todos os módulos do painel estão feitos (nenhum "em breve"). Ainda falta: visibilidade por elemento,
+ancorar elementos um no outro / X e Y digitados no modo de edição, clicar para curar nos quadros de raide,
+marcadores no chão (macro segura), banco; e conferir tudo no jogo quando o servidor voltar.
 
 ## Perfis (FEITO: Core/Serialize.lua + Core/Profiles.lua, página Perfis)
 Perfil por personagem, criar/copiar/excluir, troca ao vivo (cor pede recarga), um por
