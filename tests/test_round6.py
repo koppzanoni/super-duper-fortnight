@@ -92,13 +92,10 @@ def test_inventory_title_is_the_character_name(lua, ns):
 def test_equipment_and_weapon_frames_match():
     rt = new_runtime()
     S = load_addon_file(rt, "Core/Data.lua", rt.table()).Data.INV
-    assert S.weaponSize == ia.FRAME_SIZE
-    assert S.weaponSize - 2 * S.weaponInset == S.equipSize
-    assert S.weaponY == ia.WEAPON_BOTTOM - ia.FRAME_SIZE
-    assert [S.weapons[i] for i in (1, 2, 3)] == [cx - ia.FRAME_SIZE / 2 for cx in ia.WEAPON_CX]
-    assert S.model.y + S.model.h <= S.weaponY - 4
-    assert S.model.y + S.model.h >= S.weaponY - 12
-
+    assert S.weaponSize == S.equipSize
+    assert S.model.y + S.model.h <= S.weaponY - 4             # the model ends above the weapons
+    left, right = S.equipCols[1] + S.equipSize / 2, S.equipCols[2] - S.equipSize / 2
+    assert left <= S.model.x and S.model.x + S.model.w <= right   # the model between the columns
 
 def test_model_command_saves_camera(lua, ns):
     boot(lua, ns)
@@ -257,8 +254,7 @@ def test_hud_bag_slots_match_the_inventory_footer():
     rt = new_runtime()
     D = load_addon_file(rt, "Core/Data.lua", rt.table()).Data
     bags = [D.MENU_RIGHT[i].bag for i in range(1, len(D.MENU_RIGHT) + 1) if D.MENU_RIGHT[i].bag is not None]
-    assert bags == [0, 1, 2, 3, 4]
-    assert len(D.INV.bags) == 5
+    assert bags == [0, 1, 2, 3, 4]                             # the footer has the same five
 
 
 # Empty equipment slots show the game's empty-slot picture (like the default character sheet).
@@ -419,7 +415,7 @@ def test_equipment_slots_glow_on_hover(lua, ns):
 
 
 # The bag scroll bar sits on the rail painted in the window art; its own art is hidden.
-def test_bag_scroll_bar_sits_on_the_painted_rail(lua, ns):
+def test_bag_scroll_bar_is_thin_without_arrows(lua, ns):
     boot(lua, ns, pre="""
       local cf = CreateFrame
       function CreateFrame(kind, name, parent, template)
@@ -431,17 +427,14 @@ def test_bag_scroll_bar_sits_on_the_painted_rail(lua, ns):
             p.SetPoint = function(self, ...) self.points[#self.points + 1] = { ... } end
             p.ClearAllPoints = function(self) self.points = {} end
             p.SetSize = function(self, w, h) self.w, self.h = w, h end
-            p.tex = { SetAlpha = function(t, a) t.alpha = a end }
-            p.GetNormalTexture = function(self) return self.tex end
-            p.GetPushedTexture = function(self) return self.tex end
-            p.GetDisabledTexture = function(self) return self.tex end
-            p.SetHighlightTexture = function(self, t) self.hl = t end
+            p.SetAlpha = function(self, a) self.alpha = a end
+            p.EnableMouse = function(self, on) self.mouse = on end
             return p
           end
           f.ScrollBar = part()
           f.ScrollBar.ScrollUpButton = part()
           f.ScrollBar.ScrollDownButton = part()
-          local thumb = { SetTexture = function(t, file) t.file = file end, SetTexCoord = function() end,
+          local thumb = { SetColorTexture = function(t, r, g, b, a) t.color = { r, g, b, a } end,
             SetSize = function(t, w, h) t.w, t.h = w, h end }
           f.ScrollBar.GetThumbTexture = function() return thumb end
           BAG_SCROLL = f
@@ -450,16 +443,13 @@ def test_bag_scroll_bar_sits_on_the_painted_rail(lua, ns):
       end
     """)
     ns.Inventory.Layout()
-    g = lua.globals()
-    bar = g.BAG_SCROLL.ScrollBar
+    bar = lua.globals().BAG_SCROLL.ScrollBar
     S = ns.Data.INV.scroll
-    ux, uy = 1920 / ns.Data.INV.w, 1080 / ns.Data.INV.h
-    assert bar.points[1][4] == S.track.x * ux and bar.points[1][5] == -S.track.y * uy
-    assert abs(bar.w - S.track.w * ux) < 1e-6
-    up = bar.ScrollUpButton
-    assert up.points[1][4] == S.up.x * ux and up.tex.alpha == 0
-    assert bar.ScrollDownButton.points[1][5] == -S.down.y * uy
-    assert "scroll_thumb" in bar.GetThumbTexture().file
+    u = 1920 / ns.Data.INV.w
+    assert abs(bar.points[1][4] - S.x * u) < 1e-6 and abs(bar.w - S.w * u) < 1e-6
+    assert bar.ScrollUpButton.alpha == 0 and bar.ScrollDownButton.mouse is False
+    assert bar.GetThumbTexture().color[4] > 0
+
 
 
 # The character key runs ToggleCharacter("PaperDollFrame"). The page is flagged hidden (only

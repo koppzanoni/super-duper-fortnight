@@ -1,9 +1,12 @@
 local _, ns = ...
 
--- Unified inventory window: 3D player model, 8+8 equipment slots, 3 square weapon slots,
--- stats panel. The bag grid is added by BagGrid.lua into Inventory.gridArea (spec 4.10).
+-- Unified inventory window, Moderno look: one wide black translucent window. Head: the
+-- character's name, level and class, close button (the head drags the window). Left: 3D player
+-- model with the item level, 8+8 equipment slots, 3 weapon slots, the Attributes / Reputation /
+-- Currency tabs and the stats in two columns. Right: the bags, added by BagGrid.lua into
+-- Inventory.gridArea. Positions in design units (Data.INV).
 local S = ns.Data.INV
-local M = ns.MediaManifest
+local W = ns.Widgets
 local Inventory = {}
 ns.Inventory = Inventory
 
@@ -18,8 +21,17 @@ frame.obPlaced = false
 Inventory.frame = frame
 table.insert(UISpecialFrames, "ObsidianUIInventory")
 
-local art = frame:CreateTexture(nil, "BACKGROUND")
-art:SetAllPoints(frame)
+-- nearly opaque: the HUD under the window would compete with the items
+Inventory.backdrop = W.Panel(frame, 0.94)
+-- a hairline under the head and a vertical line between the character and the bags
+local function line(alpha)
+  local t = frame:CreateTexture(nil, "BORDER")
+  local r, g, b = W.Rim()
+  t:SetColorTexture(r, g, b, alpha)
+  return t
+end
+Inventory.hairline = line(0.14)
+Inventory.separator = line(0.1)
 
 local function rect(region, r)
   local w, h = frame:GetSize()
@@ -29,7 +41,7 @@ local function rect(region, r)
   region:SetSize(rw, rh)
 end
 
--- Title plate doubles as the drag handle.
+-- The head doubles as the drag handle.
 local title = CreateFrame("Frame", nil, frame)
 title:EnableMouse(true)
 title:RegisterForDrag("LeftButton")
@@ -39,7 +51,13 @@ title:SetScript("OnDragStop", function()
   Inventory.SavePosition()
 end)
 local titleText = title:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-titleText:SetAllPoints(title)
+titleText:SetJustifyH("LEFT")
+Inventory.titleText = titleText
+-- level and class beside the name
+local subText = title:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+subText:SetPoint("LEFT", titleText, "RIGHT", 14, 0)
+subText:SetTextColor(W.DIM[1], W.DIM[2], W.DIM[3])
+Inventory.subText = subText
 -- The character's full name (with title, like the default character sheet) on the plate;
 -- a smaller font when it does not fit.
 function Inventory.TitleText()
@@ -51,12 +69,17 @@ local function setTitle()
   titleText:SetFontObject("GameFontNormalLarge")
   titleText:SetText(Inventory.TitleText())
   local textW, plateW = titleText:GetStringWidth(), title:GetWidth()
-  if type(textW) == "number" and type(plateW) == "number" and textW > plateW * 0.9 then
+  if type(textW) == "number" and type(plateW) == "number" and textW > plateW * 0.6 then
     titleText:SetFontObject("GameFontNormal")
   end
+  local level = UnitLevel("player")
+  local className = UnitClass("player")
+  subText:SetText(string.format("Nível %s %s", tostring(level or ""), className or ""))
 end
 setTitle()
-titleText:SetTextColor(0.91, 0.77, 0.42)
+titleText:SetTextColor(W.WHITE[1], W.WHITE[2], W.WHITE[3])
+
+Inventory.closeButton = W.Button(frame, "X", function() Inventory.Close() end)
 
 -- 3D model of the player, transparent background, drag to rotate, wheel to zoom.
 local model = CreateFrame("PlayerModel", nil, frame)
@@ -87,15 +110,33 @@ model:SetScript("OnMouseWheel", function(self, delta)
   self:SetPortraitZoom(zoom)
 end)
 pcall(model.SetLight, model, true, false, -1, 1, -1, 1, 1, 0.82, 0.62, 1, 0.95, 0.78, 0.55)
+Inventory.model = model
+
+-- Item level over the model: a small caption and the equipped average in the arcane purple.
+local ilvlCaption = model:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+ilvlCaption:SetPoint("TOP", model, "TOP", 0, -8)
+ilvlCaption:SetTextColor(W.DIM[1], W.DIM[2], W.DIM[3])
+ilvlCaption:SetText("Nível de item")
+local itemLevel = model:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+itemLevel:SetPoint("TOP", ilvlCaption, "BOTTOM", 0, -2)
+itemLevel:SetTextColor(W.ACCENT[1], W.ACCENT[2], W.ACCENT[3])
+Inventory.itemLevel = itemLevel
+local function updateItemLevel()
+  local ok, _, equipped = pcall(GetAverageItemLevel)
+  local shown = ok and type(equipped) == "number" and equipped > 0
+  itemLevel:SetText(shown and string.format("%d", math.floor(equipped)) or "")
+  ilvlCaption:SetShown(shown)
+end
 
 -- Equipment slots.
 local slotButtons = {}
 Inventory.slotButtons = slotButtons
 local function qualityColor(q)
-  local c = q and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[q]
+  local c = type(q) == "number" and q > 1 and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[q]
   if c then return c.r, c.g, c.b end
-  return 0.54, 0.43, 0.23
+  return 1, 1, 1
 end
+Inventory.QualityColor = qualityColor
 
 local RELIC_TEXTURE = "Interface\\Paperdoll\\UI-PaperDoll-Slot-Relic"
 
@@ -117,11 +158,11 @@ local function slotButton(slotName)
   local b = CreateFrame("Button", nil, frame)
   b.slotID, b.slotName, b.emptyTexture, b.checkRelic = slotID, slotName, emptyTexture, checkRelic
   b.icon = b:CreateTexture(nil, "ARTWORK")
-  b.icon:SetAllPoints(b)
   b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  -- the action slots' frame, in the item's quality colour
   b.border = b:CreateTexture(nil, "OVERLAY")
   b.border:SetAllPoints(b)
-  b.border:SetTexture(M.aura_border.file)
+  ns.Media.Apply(b.border, ns.ModernTex("mod_slot"))
   -- Blue glow on hover, like the default character sheet's slots.
   b:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
   b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -165,8 +206,7 @@ for col, list in ipairs({ ns.Data.EQUIP_LEFT, ns.Data.EQUIP_RIGHT }) do
 end
 for i, name in ipairs(ns.Data.WEAPONS) do
   local b = slotButton(name)
-  if b then equipLayout[#equipLayout + 1] = { b = b, x = S.weapons[i] + S.weaponInset, y = S.weaponY + S.weaponInset,
-    size = S.weaponSize - 2 * S.weaponInset } end
+  if b then equipLayout[#equipLayout + 1] = { b = b, x = S.weapons[i], y = S.weaponY, size = S.weaponSize } end
 end
 
 local function updateEquipment()
@@ -176,35 +216,27 @@ local function updateEquipment()
     local empty = isRelic(b) and RELIC_TEXTURE or b.emptyTexture
     b.icon:SetTexture(tex or empty)
     b.icon:SetShown((tex or empty) ~= nil)
-    if tex then b.icon:SetVertexColor(1, 1, 1) else b.icon:SetVertexColor(0.55, 0.55, 0.55) end
-    b.border:SetShown(tex ~= nil)
-    if tex then b.border:SetVertexColor(qualityColor(GetInventoryItemQuality("player", b.slotID))) end
+    if tex then b.icon:SetVertexColor(1, 1, 1) else b.icon:SetVertexColor(0.4, 0.4, 0.4) end
+    b.icon:SetAlpha(tex and 1 or 0.5)
+    if tex then b.border:SetVertexColor(qualityColor(GetInventoryItemQuality("player", b.slotID)))
+    else b.border:SetVertexColor(1, 1, 1, 0.6) end
   end
+  updateItemLevel()
 end
 
--- Stats wing: part of the window, on its left (art: tools/inventory_art.py). Its right pillar
--- hides under the window's left pillar. Everything in it is placed in wing art pixels and
--- scales with the window: title plate, sections of label/value rows, then (from BagGrid) the
--- bag search, and the Reputation and Currency buttons at the bottom.
-local W = ns.Widgets
-local WG = S.wing
+-- Stats panel: a darker box in the character side, under its tabs; rows in two columns.
+local ST = S.stats
 local stats = CreateFrame("Frame", nil, frame)
-stats:SetFrameLevel(math.max(0, frame:GetFrameLevel() - 1))
-local wingArt = stats:CreateTexture(nil, "BACKGROUND")
-wingArt:SetAllPoints(stats)
+W.Panel(stats, 0.3)
 Inventory.statsPanel = stats
 
--- Place a region in the wing by its art pixels.
-local wingUnit = 1
-function Inventory.PlaceInWing(region, x, y, w, h)
+-- Place a region in the stats panel by design units.
+local unit = 1
+function Inventory.PlaceStat(region, x, y, w, h)
   region:ClearAllPoints()
-  region:SetPoint("TOPLEFT", stats, "TOPLEFT", x * wingUnit, -y * wingUnit)
-  if w then region:SetSize(w * wingUnit, h * wingUnit) end
+  region:SetPoint("TOPLEFT", stats, "TOPLEFT", x * unit, -y * unit)
+  if w then region:SetSize(w * unit, h * unit) end
 end
-
-local statsTitle = stats:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-statsTitle:SetText("ATRIBUTOS")
-statsTitle:SetTextColor(W.GOLD[1], W.GOLD[2], W.GOLD[3])
 
 -- Stat tooltips: the default character sheet's own setters fill a stat frame's tooltip fields
 -- (or a custom onEnterFunc); each row's hover area plays that stat frame.
@@ -233,7 +265,7 @@ end
 
 local lines = {}
 Inventory.statLines = lines
-local function line(i)
+local function statLine(i)
   if lines[i] then return lines[i] end
   local l = {}
   -- Hover area; also the stat frame Blizzard's setters write to (hidden Label/Value).
@@ -248,16 +280,20 @@ local function line(i)
   l.hover:SetScript("OnLeave", GameTooltip_Hide)
   l.label = stats:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   l.label:SetJustifyH("LEFT")
+  l.label:SetTextColor(W.TEXT[1], W.TEXT[2], W.TEXT[3])
   l.value = stats:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   l.value:SetJustifyH("RIGHT")
-  l.divider = stats:CreateTexture(nil, "ARTWORK")
-  l.divider:SetColorTexture(W.BRONZE[1], W.BRONZE[2], W.BRONZE[3], 0.7)
+  l.value:SetTextColor(W.WHITE[1], W.WHITE[2], W.WHITE[3])
   lines[i] = l
   return l
 end
 
-Inventory.repButton = W.Button(stats, "Reputação", nil, "CharacterFrameTab2")
-Inventory.tokenButton = W.Button(stats, "Moedas", nil, "CharacterFrameTab3")
+-- Tabs over the stats: Attributes is this page; Reputation and Currency open Blizzard's pages.
+Inventory.statsTab = W.Button(frame, "Atributos")
+W.SetSelected(Inventory.statsTab, true)
+Inventory.repButton = W.Button(frame, "Reputação", nil, "CharacterFrameTab2")
+Inventory.tokenButton = W.Button(frame, "Moedas", nil, "CharacterFrameTab3")
+Inventory.charTabs = { Inventory.statsTab, Inventory.repButton, Inventory.tokenButton }
 
 -- In this client (camelot) the character frame's pages are side tabs: plain Frames that open
 -- their page on mouse up, which a secure click cannot press. While the character frame is
@@ -320,71 +356,53 @@ end
 lendCharacterTabs()
 ns.On("PLAYER_LOGIN", lendCharacterTabs)
 
+-- Rows (headers left out) flow down two columns; the row height shrinks when there are many.
 local function updateStats()
-  local R = WG.rows
-  local rows = ns.Stats.Rows(ns.Stats.GameAPI())
-  local y = R.top
+  local rows = {}
+  for _, r in ipairs(ns.Stats.Rows(ns.Stats.GameAPI())) do
+    if not r.header then rows[#rows + 1] = r end
+  end
+  local perCol = math.max(1, math.ceil(#rows / 2))
+  local rowH = math.min(ST.maxRow, (ST.h - 2 * ST.padY) / perCol)
+  local colW = (ST.w - 2 * ST.padX - ST.colGap) / 2
   for i, r in ipairs(rows) do
-    local l = line(i)
-    if r.header then
-      if i > 1 then y = y + R.gap end
-      l.label:SetFontObject("GameFontNormalLarge")
-      l.label:SetText(r.header)
-      l.label:SetTextColor(W.GOLD[1], W.GOLD[2], W.GOLD[3])
-      Inventory.PlaceInWing(l.label, R.x0, y)
-      l.value:SetText("")
-      Inventory.PlaceInWing(l.divider, R.x0, y + R.header - 8, R.x1 - R.x0, 2)
-      l.divider:Show()
-      l.key, l.index = nil, nil
-      l.hover:Hide()
-      y = y + R.header
-    else
-      l.label:SetFontObject("GameFontHighlight")
-      l.label:SetText(r.label)
-      l.label:SetTextColor(W.TEXT[1], W.TEXT[2], W.TEXT[3])
-      Inventory.PlaceInWing(l.label, R.x0, y)
-      l.value:SetText(r.value)
-      l.value:ClearAllPoints()
-      l.value:SetPoint("TOPRIGHT", stats, "TOPLEFT", R.x1 * wingUnit, -y * wingUnit)
-      l.divider:Hide()
-      l.key, l.index, l.labelText, l.valueText = r.key, r.index, r.label, r.value
-      Inventory.PlaceInWing(l.hover, R.x0, y - 4, R.x1 - R.x0, R.row)
-      l.hover:Show()
-      y = y + R.row
-    end
+    local l = statLine(i)
+    local col, n = math.floor((i - 1) / perCol), (i - 1) % perCol
+    local x, y = ST.padX + col * (colW + ST.colGap), ST.padY + n * rowH
+    l.label:SetText(r.label)
+    Inventory.PlaceStat(l.label, x, y + 3)
+    l.value:SetText(r.value)
+    l.value:ClearAllPoints()
+    l.value:SetPoint("TOPRIGHT", stats, "TOPLEFT", (x + colW) * unit, -(y + 3) * unit)
+    l.key, l.index, l.labelText, l.valueText = r.key, r.index, r.label, r.value
+    Inventory.PlaceStat(l.hover, x, y, colW, rowH)
+    l.hover:Show()
     l.label:Show()
     l.value:Show()
   end
   for i = #rows + 1, #lines do
-    lines[i].label:Hide(); lines[i].value:Hide(); lines[i].divider:Hide(); lines[i].hover:Hide()
+    lines[i].label:Hide(); lines[i].value:Hide(); lines[i].hover:Hide(); lines[i].key = nil
   end
 end
 
-local function layoutWing()
-  wingUnit = frame:GetWidth() / S.w
-  stats:ClearAllPoints()
-  stats:SetPoint("TOPRIGHT", frame, "TOPLEFT", WG.overlap * wingUnit, 0)
-  stats:SetSize(WG.w * wingUnit, frame:GetHeight())
-  -- Keep the wing on screen too when the window is dragged to the left edge.
-  frame:SetClampRectInsets(-(WG.w - WG.overlap) * wingUnit, 0, 0, 0)
-  ns.Media.Apply(wingArt, "inventory_wing")
-  local T = WG.title
-  Inventory.PlaceInWing(statsTitle, T.x, T.y, T.w, T.h)
-  local B = WG.buttons
-  local bw = (B.x1 - B.x0 - B.gap) / 2
-  Inventory.PlaceInWing(Inventory.repButton, B.x0, B.y, bw, B.h)
-  Inventory.PlaceInWing(Inventory.tokenButton, B.x0 + bw + B.gap, B.y, bw, B.h)
+local function layoutStats()
+  unit = frame:GetWidth() / S.w
+  rect(stats, ST)
+  local T = S.charTabs
+  for i, b in ipairs(Inventory.charTabs) do
+    rect(b, { x = T.x + (i - 1) * (T.w + T.gap), y = T.y, w = T.w, h = T.h })
+  end
 end
 
--- Area the bag grid fills (8 columns x 6 visible rows).
+-- Area the bag grid fills (9 columns x 7 visible rows).
 Inventory.gridArea = CreateFrame("Frame", nil, frame)
 
--- Default spot: above the bottom HUD and left of the minimap, never under either of them.
--- The window shrinks when a large HUD scale leaves less room.
-function Inventory.DefaultPlacement(W, H, hudH)
+-- Default spot: centred above the bottom HUD. The window shrinks when a large HUD scale leaves
+-- less room, and never gets wider than the screen allows.
+function Inventory.DefaultPlacement(screenW, H, hudH)
   local scale = ns.db and ns.db.invScale or 1
-  local h = math.min(0.74 * H, H - hudH - 0.04 * H) * scale
-  return "BOTTOMRIGHT", -0.27 * H, hudH + 0.02 * H, h
+  local h = math.min(0.66 * H, H - hudH - 0.06 * H, 0.9 * screenW * S.h / S.w) * scale
+  return "BOTTOM", 0, hudH + 0.02 * H, h
 end
 
 -- Where the player dragged the window, kept across sessions.
@@ -408,15 +426,27 @@ function Inventory.Layout()
     end
     frame.obPlaced = true
   end
-  ns.Media.Apply(art, "inventory")
-  rect(title, S.title)
+  rect(title, { x = 0, y = 0, w = S.w - 60, h = S.head })
+  -- the name as wide as it is, the level and class right after it
+  titleText:ClearAllPoints()
+  titleText:SetPoint("LEFT", title, "LEFT", S.title.x * frame:GetWidth() / S.w, 0)
   setTitle()
+  rect(Inventory.closeButton, S.close)
+  rect(Inventory.hairline, { x = 20, y = S.head, w = S.w - 40, h = 1 })
+  rect(Inventory.separator, { x = S.sep, y = S.head + 12, w = 1, h = S.h - S.head - 30 })
   rect(model, S.model)
-  for _, e in ipairs(equipLayout) do rect(e.b, { x = e.x, y = e.y, w = e.size, h = e.size }) end
-  local cols, rows = S.gridCols, S.gridRows
-  rect(Inventory.gridArea, { x = cols[1], y = rows[1], w = cols[#cols] + S.gridSlot - cols[1],
-    h = rows[#rows] + S.gridSlot - rows[1] })
-  layoutWing()
+  local inset = S.equipSize * ns.Data.MODERN_SLOT.inset / ns.Data.MODERN_SLOT.size
+  for _, e in ipairs(equipLayout) do
+    rect(e.b, { x = e.x, y = e.y, w = e.size, h = e.size })
+    local px = e.b:GetWidth() * inset / e.size
+    e.b.icon:ClearAllPoints()
+    e.b.icon:SetPoint("TOPLEFT", e.b, "TOPLEFT", px, -px)
+    e.b.icon:SetPoint("BOTTOMRIGHT", e.b, "BOTTOMRIGHT", -px, px)
+  end
+  local G = S.grid
+  rect(Inventory.gridArea, { x = G.x, y = G.y, w = G.cols * (G.slot + G.gap) - G.gap,
+    h = G.rows * (G.slot + G.gap) - G.gap })
+  layoutStats()
   if Inventory.onLayout then Inventory.onLayout() end
   -- Resized while open (size setting): the stat rows are placed by updateStats.
   if frame:IsShown() then updateStats() end
@@ -435,6 +465,7 @@ function Inventory.Open()
     updateEquipment()
     updateStats()
     stats:Show()
+    updateItemLevel()
     if Inventory.onOpen then Inventory.onOpen() end
   end)
 end

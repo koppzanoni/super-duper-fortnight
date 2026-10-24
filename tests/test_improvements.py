@@ -58,11 +58,11 @@ def test_inventory_default_placement_clears_minimap_and_hud(lua, ns):
     boot(lua, ns)
     W, H, hud = 1920.0, 1080.0, 270.0
     point, x, y, h = ns.Inventory.DefaultPlacement(W, H, hud)
-    assert point == "BOTTOMRIGHT"
-    assert -x >= 0.25 * H          # right edge left of the minimap
+    w = h * ns.Data.INV.w / ns.Data.INV.h
+    assert point == "BOTTOM" and x == 0  # centred above the bar
+    assert W / 2 + w / 2 <= W - 0.2 * H  # right edge left of the minimap
     assert y >= hud                # bottom above the HUD
     assert y + h <= H              # top inside the screen
-
 
 def test_inventory_default_placement_shrinks_with_big_hud(lua, ns):
     boot(lua, ns)

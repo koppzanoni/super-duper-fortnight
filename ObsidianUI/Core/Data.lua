@@ -39,29 +39,24 @@ Data.MODERN_MAP.socketSize = 44
 -- One action slot frame (the icon sits 10 px inside it).
 Data.MODERN_SLOT = { size = 104, inset = 10 }
 
--- Inventory window. Spec 4.10.
-Data.INV = { w = 690, h = 1334,
-  title = { x = 187, y = 31, w = 315, h = 39 },
-  model = { x = 168, y = 95, w = 350, h = 488 },
-  -- Equipment frames and the tab row are redrawn by tools/inventory_art.py.
-  equipCols = { 96.5, 591.5 }, equipTop = 104, equipPitch = 70.75, equipSize = 65,
-  weapons = { 197.5, 309.5, 421.5 }, weaponY = 589, weaponSize = 69, weaponInset = 2,
-  tabs = { 42, 151, 260, 369, 478 }, tabY = 705, tabW = 95, tabH = 34,
-  sort = { x = 589, y = 705, w = 34, h = 34 },
-  gridCols = { 44, 116, 189, 261, 333, 405, 478, 550 }, gridRows = { 761, 841, 918, 995, 1072, 1149 },
-  gridSlot = 59, gridPitchY = 77.6,
-  -- Bag scroll bar on the rail painted in the art (tools/inventory_art.py SCROLL_*).
-  scroll = { up = { x = 629, y = 750, w = 23, h = 22 }, down = { x = 629, y = 1199, w = 23, h = 22 },
-    track = { x = 634, y = 774, w = 13, h = 423 }, thumbH = 64 },
-  -- Each item button's own slot frame (texture bag_slot), relative to the button.
-  gridFrame = { dx = -2, dy = -4, w = 65, h = 70 },
-  bags = { 42, 119, 196, 273, 350 }, bagY = 1234, bagW = 64, bagH = 66,
-  gold = { x = 445, y = 1247, w = 202, h = 38 },
-  -- Stats wing (art pixels of its own texture, built by tools/inventory_art.py).
-  wing = { w = 400, overlap = 28, title = { x = 40, y = 33, w = 292, h = 37 },
-    rows = { x0 = 52, x1 = 340, top = 104, row = 36, header = 46, gap = 14 },
-    search = { x = 44, y = 1170, w = 296, h = 44 },
-    buttons = { x0 = 44, x1 = 340, gap = 10, y = 1236, h = 50 } } }
+-- Moderno inventory (prototype in the sketch): one wide window in design units, the character on
+-- the left (model, 8 + 8 equipment slots, 3 weapons, the Attributes/Reputation/Currency tabs and
+-- the stats in two columns) and the bags on the right (search and sort, filter tabs, a grid of 9
+-- columns with a thin scroll bar, the equipped bags, free slots and gold).
+Data.INV = { w = 1240, h = 780,
+  head = 48, title = { x = 24, y = 9, w = 760, h = 30 }, close = { x = 1186, y = 9, w = 30, h = 30 },
+  model = { x = 112, y = 60, w = 356, h = 440 },
+  equipCols = { 63, 517 }, equipTop = 60, equipPitch = 64, equipSize = 58, -- columns by their centre
+  weapons = { 183, 259, 335 }, weaponY = 510, weaponSize = 58,
+  charTabs = { x = 34, y = 584, w = 110, h = 30, gap = 6 },
+  stats = { x = 34, y = 624, w = 512, h = 126, padX = 14, padY = 8, colGap = 28, maxRow = 22 },
+  sep = 578,
+  search = { x = 598, y = 60, w = 568, h = 34 }, sort = { x = 1180, y = 60, w = 34, h = 34 },
+  tabs = { x = 598, y = 106, w = 616, h = 30, gap = 6 },
+  grid = { x = 598, y = 150, cols = 9, rows = 7, slot = 62, gap = 6 },
+  scroll = { x = 1214, y = 150, w = 5, h = 470, thumbH = 120 },
+  bags = { x = 598, y = 702, size = 40, gap = 6 }, free = { x = 838, y = 702, w = 160, h = 40 },
+  gold = { x = 1014, y = 702, w = 200, h = 40 } }
 
 -- Unit frame health: grey when tapped by someone else, class color for players, else reaction.
 local HOSTILE, NEUTRAL, FRIENDLY = { 0.78, 0.16, 0.12 }, { 0.85, 0.70, 0.15 }, { 0.20, 0.62, 0.18 }

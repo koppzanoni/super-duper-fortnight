@@ -1,12 +1,14 @@
 local _, ns = ...
 
--- Bag grid inside the inventory window: one grid of 8 columns for all bags, filter tabs,
--- inner scrolling, equipped bag slots and gold in the footer. Replaces the default bag frames.
+-- Bag side of the inventory window: search and sort, filter tabs, one grid of 9 columns for all
+-- bags (each item in the Moderno slot frame, in its quality colour) with a thin scroll bar, and
+-- the footer: equipped bag slots, free slots and gold. Replaces the default bag frames.
 local S = ns.Data.INV
 local M = ns.MediaManifest
+local W = ns.Widgets
 local Inventory = ns.Inventory
 local frame = Inventory.frame
-local COLS = 8
+local COLS = S.grid.cols
 local BAGS = { 0, 1, 2, 3, 4, 5 }
 
 local scroll = CreateFrame("ScrollFrame", "ObsidianUIBagScroll", Inventory.gridArea, "UIPanelScrollFrameTemplate")
@@ -25,7 +27,16 @@ end
 
 local activeTab = "all"
 local searchText = ""
-local unit = 1 -- screen units per texture pixel, set on layout
+local unit = 1 -- screen units per design unit, set on layout
+
+-- Every item button made so far (for tests and tools).
+function Inventory.bagButtons()
+  local list = {}
+  for _, bag in ipairs(BAGS) do
+    for _, b in pairs(buttons[bag]) do list[#list + 1] = b end
+  end
+  return list
+end
 
 local function newButton(bag, slot)
   local name = "ObsidianUIBag" .. bag .. "Slot" .. slot
@@ -34,13 +45,10 @@ local function newButton(bag, slot)
   b:SetID(slot)
   b.Cooldown = b.Cooldown or _G[name .. "Cooldown"]
   b.IconQuestTexture = b.IconQuestTexture or _G[name .. "IconQuestTexture"]
-  -- The slot frame scrolls with the button (the window art has no slots in the grid area).
-  b.obSlot = b:CreateTexture(nil, "BACKGROUND", nil, -8)
-  b.obSlot:SetTexture(M.bag_slot.file)
-  b.obSlot:SetTexCoord(0, M.bag_slot.w / M.bag_slot.potW, 0, M.bag_slot.h / M.bag_slot.potH)
+  -- The action slots' frame around the item, in its quality colour (it scrolls with the button).
   b.obBorder = b:CreateTexture(nil, "OVERLAY", nil, 7)
   b.obBorder:SetAllPoints(b)
-  b.obBorder:SetTexture(M.aura_border.file)
+  ns.Media.Apply(b.obBorder, ns.ModernTex("mod_slot"))
   local normal = b.GetNormalTexture and b:GetNormalTexture()
   if normal then normal:SetAlpha(0) end
   b:Hide()
@@ -108,11 +116,9 @@ local function refreshButton(b, bag, slot)
   if icon and not info then icon:Hide() end
   SetItemButtonCount(b, info and info.stackCount or 0)
   if SetItemButtonDesaturated then SetItemButtonDesaturated(b, info and info.isLocked) end
-  local q = info and info.quality
-  local c = q and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[q]
-  if c and q > 0 then b.obBorder:SetVertexColor(c.r, c.g, c.b); b.obBorder:Show()
-  elseif info then b.obBorder:SetVertexColor(0.62, 0.62, 0.62); b.obBorder:Show()
-  else b.obBorder:Hide() end
+  -- quality colour from green up; plain items and empty slots keep the neutral frame
+  if info then b.obBorder:SetVertexColor(Inventory.QualityColor(info.quality))
+  else b.obBorder:SetVertexColor(1, 1, 1, 0.6) end
 end
 
 local function collectSlots()
@@ -131,9 +137,11 @@ end
 
 local function relayout()
   ensureButtons()
-  local pitchX = (S.gridCols[2] - S.gridCols[1]) * unit
-  local pitchY = S.gridPitchY * unit
-  local size = S.gridSlot * unit
+  local G = S.grid
+  local pitchX = (G.slot + G.gap) * unit
+  local pitchY = pitchX
+  local size = G.slot * unit
+  local inset = size * ns.Data.MODERN_SLOT.inset / ns.Data.MODERN_SLOT.size
   for _, bag in ipairs(BAGS) do
     for _, b in pairs(buttons[bag]) do b:Hide() end
   end
@@ -145,10 +153,12 @@ local function relayout()
       b:ClearAllPoints()
       b:SetPoint("TOPLEFT", child, "TOPLEFT", (col - 1) * pitchX, -(row - 1) * pitchY)
       b:SetSize(size, size)
-      local F = S.gridFrame
-      b.obSlot:ClearAllPoints()
-      b.obSlot:SetPoint("TOPLEFT", b, "TOPLEFT", F.dx * unit, -F.dy * unit)
-      b.obSlot:SetSize(F.w * unit, F.h * unit)
+      local icon = b.icon or _G[b:GetName() .. "IconTexture"]
+      if icon then
+        icon:ClearAllPoints()
+        icon:SetPoint("TOPLEFT", b, "TOPLEFT", inset, -inset)
+        icon:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -inset, inset)
+      end
       refreshButton(b, s.bag, s.slot)
       b:Show()
     end
@@ -175,37 +185,17 @@ local function refreshVisuals()
   end
 end
 
--- Filter tabs.
+-- Filter tabs: flat buttons, the active one lighter.
 local tabs = {}
+Inventory.filterTabs = tabs
 local function setTab(tab)
   activeTab = tab
-  for _, t in ipairs(tabs) do
-    local active = t.tab == tab
-    if active then t.text:SetTextColor(1, 0.82, 0) else t.text:SetTextColor(0.73, 0.68, 0.58) end
-    t.glow:SetShown(active)
-    t.underline:SetShown(active)
-  end
+  for _, t in ipairs(tabs) do W.SetSelected(t, t.tab == tab) end
   scheduleRelayout()
 end
 for i, tab in ipairs(ns.Filters.TABS) do
-  local t = CreateFrame("Button", nil, frame)
+  local t = W.Button(frame, ns.Filters.LABELS[tab], function() setTab(tab) end)
   t.tab = tab
-  t.text = t:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-  t.text:SetAllPoints(t)
-  t.text:SetText(ns.Filters.LABELS[tab])
-  -- Active tab: warm glow and a gold underline on the stone plate (all plates are alike).
-  t.glow = t:CreateTexture(nil, "ARTWORK")
-  t.glow:SetAllPoints(t)
-  t.glow:SetColorTexture(0.91, 0.77, 0.42, 0.10)
-  t.underline = t:CreateTexture(nil, "ARTWORK", nil, 1)
-  t.underline:SetPoint("BOTTOMLEFT", 6, 2)
-  t.underline:SetPoint("BOTTOMRIGHT", -6, 2)
-  t.underline:SetHeight(2)
-  t.underline:SetColorTexture(0.91, 0.77, 0.42, 0.85)
-  local hover = t:CreateTexture(nil, "HIGHLIGHT")
-  hover:SetAllPoints(t)
-  hover:SetColorTexture(1, 1, 1, 0.05)
-  t:SetScript("OnClick", function() setTab(tab) end)
   tabs[i] = t
 end
 
@@ -217,8 +207,10 @@ for i = 1, 5 do
   b.bag = bag
   if bag > 0 then b.invSlot = C_Container.ContainerIDToInventoryID(bag) end
   b.icon = b:CreateTexture(nil, "ARTWORK")
-  b.icon:SetPoint("TOPLEFT", 4, -4)
-  b.icon:SetPoint("BOTTOMRIGHT", -4, 4)
+  b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  b.frame = b:CreateTexture(nil, "OVERLAY")
+  b.frame:SetAllPoints(b)
+  ns.Media.Apply(b.frame, ns.ModernTex("mod_slot"))
   b:SetScript("OnReceiveDrag", function(self)
     if self.bag == 0 then PutItemInBackpack() else PutItemInBag(self.invSlot) end
   end)
@@ -230,22 +222,26 @@ for i = 1, 5 do
   b:SetScript("OnLeave", GameTooltip_Hide)
   footerBags[i] = b
 end
+Inventory.footerBags = footerBags
 local gold = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+gold:SetJustifyH("RIGHT")
+Inventory.gold = gold
+local freeText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+freeText:SetJustifyH("LEFT")
+freeText:SetTextColor(W.DIM[1], W.DIM[2], W.DIM[3])
+Inventory.freeText = freeText
 
--- Bag search on a stone plate in the stats wing, above its buttons; sort button in its plate
--- right after the tabs.
-local search = CreateFrame("EditBox", "ObsidianUIBagSearch", Inventory.statsPanel)
+-- Bag search at the top of the bag side, the sort button right after it.
+local search = CreateFrame("EditBox", "ObsidianUIBagSearch", frame)
 search:SetAutoFocus(false)
 search:SetFontObject("GameFontHighlight")
-search:SetTextColor(0.95, 0.9, 0.8)
-search.plate = search:CreateTexture(nil, "BACKGROUND")
-search.plate:SetAllPoints(search)
-search.plate:SetTexture(M.plate.file)
+search:SetTextColor(W.WHITE[1], W.WHITE[2], W.WHITE[3])
+W.Panel(search, 0.5)
 search.glass = search:CreateTexture(nil, "ARTWORK")
 search.glass:SetPoint("LEFT", 10, 0)
 search.glass:SetSize(14, 14)
 search.glass:SetTexture(SEARCH_ICON)
-search.glass:SetVertexColor(0.91, 0.77, 0.42)
+search.glass:SetVertexColor(W.TEXT[1], W.TEXT[2], W.TEXT[3])
 search:SetTextInsets(30, 10, 0, 0)
 search.hint = search:CreateFontString(nil, "OVERLAY", "GameFontDisable")
 search.hint:SetPoint("LEFT", 30, 0)
@@ -260,17 +256,14 @@ search:SetScript("OnTextChanged", function(self)
 end)
 Inventory.searchBox = search
 
-local sort = CreateFrame("Button", nil, frame)
+local sort = W.Button(frame, "")
 sort.icon = sort:CreateTexture(nil, "ARTWORK")
-sort.icon:SetPoint("TOPLEFT", 5, -5)
-sort.icon:SetPoint("BOTTOMRIGHT", -5, 5)
+sort.icon:SetPoint("TOPLEFT", 7, -7)
+sort.icon:SetPoint("BOTTOMRIGHT", -7, 7)
 sort.icon:SetTexture(M.icon_sort.file)
-sort.icon:SetVertexColor(0.91, 0.77, 0.42)
-local sortHover = sort:CreateTexture(nil, "HIGHLIGHT")
-sortHover:SetAllPoints(sort)
-sortHover:SetColorTexture(1, 1, 1, 0.06)
-sort:SetScript("OnMouseDown", function(self) self.icon:SetVertexColor(1, 0.9, 0.6) end)
-sort:SetScript("OnMouseUp", function(self) self.icon:SetVertexColor(0.91, 0.77, 0.42) end)
+sort.icon:SetVertexColor(W.TEXT[1], W.TEXT[2], W.TEXT[3])
+sort:SetScript("OnMouseDown", function(self) self.icon:SetVertexColor(W.WHITE[1], W.WHITE[2], W.WHITE[3]) end)
+sort:SetScript("OnMouseUp", function(self) self.icon:SetVertexColor(W.TEXT[1], W.TEXT[2], W.TEXT[3]) end)
 sort:SetScript("OnClick", function()
   if C_Container.SortBags then C_Container.SortBags() end
 end)
@@ -288,6 +281,13 @@ local function updateFooter()
     b.icon:SetTexture(tex or "Interface\\PaperDoll\\UI-PaperDoll-Slot-Bag")
   end
   gold:SetText(GetMoneyString(GetMoney(), true))
+  local free, total = 0, 0
+  for _, bag in ipairs(BAGS) do
+    local n = C_Container.GetContainerNumSlots(bag) or 0
+    total = total + n
+    free = free + (C_Container.GetContainerNumFreeSlots and C_Container.GetContainerNumFreeSlots(bag) or 0)
+  end
+  freeText:SetText(string.format("Livres: %d / %d", free, total))
 end
 
 local function place(region, x, y, w, h)
@@ -298,41 +298,42 @@ local function place(region, x, y, w, h)
   region:SetSize(rw, rh)
 end
 
--- The scroll bar sits on the rail painted in the window art: the arrow buttons keep only a
--- hover glow over the painted arrows, the thumb is the painted one (erased from the art).
+-- Thin scroll bar on the right of the grid: a faint track and a light thumb, no arrows.
 local bar = scroll.ScrollBar
 if bar then
   for _, b in ipairs({ bar.ScrollUpButton, bar.ScrollDownButton }) do
-    for _, get in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture" }) do
-      local t = b and b[get] and b[get](b)
-      if t then t:SetAlpha(0) end
-    end
-    if b then b:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD") end
+    if b then b:SetAlpha(0); b:EnableMouse(false) end
   end
+  bar.track = bar.track or bar:CreateTexture(nil, "BACKGROUND")
+  bar.track:SetAllPoints(bar)
+  bar.track:SetColorTexture(1, 1, 1, 0.06)
   local thumb = bar.GetThumbTexture and bar:GetThumbTexture()
-  if thumb and M.scroll_thumb then
-    thumb:SetTexture(M.scroll_thumb.file)
-    thumb:SetTexCoord(0, M.scroll_thumb.w / M.scroll_thumb.potW, 0, M.scroll_thumb.h / M.scroll_thumb.potH)
-  end
+  if thumb then thumb:SetColorTexture(1, 1, 1, 0.35) end
 end
 local function placeScrollBar()
   if not bar then return end
   local SC = S.scroll
-  place(bar, SC.track.x, SC.track.y, SC.track.w, SC.track.h)
-  if bar.ScrollUpButton then place(bar.ScrollUpButton, SC.up.x, SC.up.y, SC.up.w, SC.up.h) end
-  if bar.ScrollDownButton then place(bar.ScrollDownButton, SC.down.x, SC.down.y, SC.down.w, SC.down.h) end
+  place(bar, SC.x, SC.y, SC.w, SC.h)
   local thumb = bar.GetThumbTexture and bar:GetThumbTexture()
-  local fw, fh = frame:GetSize()
-  if thumb then thumb:SetSize(SC.track.w * fw / S.w, SC.thumbH * fh / S.h) end
+  if thumb then thumb:SetSize(SC.w * unit, SC.thumbH * unit) end
 end
 
 Inventory.onLayout = function()
   unit = frame:GetWidth() / S.w
-  for i, t in ipairs(tabs) do place(t, S.tabs[i], S.tabY, S.tabW, S.tabH) end
+  local T = S.tabs
+  local tw = (T.w - T.gap * (#tabs - 1)) / #tabs
+  for i, t in ipairs(tabs) do place(t, T.x + (i - 1) * (tw + T.gap), T.y, tw, T.h) end
   place(sort, S.sort.x, S.sort.y, S.sort.w, S.sort.h)
-  local SR = S.wing.search
-  Inventory.PlaceInWing(search, SR.x, SR.y, SR.w, SR.h)
-  for i, b in ipairs(footerBags) do place(b, S.bags[i], S.bagY, S.bagW, S.bagH) end
+  place(search, S.search.x, S.search.y, S.search.w, S.search.h)
+  local B = S.bags
+  for i, b in ipairs(footerBags) do
+    place(b, B.x + (i - 1) * (B.size + B.gap), B.y, B.size, B.size)
+    local px = B.size * unit * ns.Data.MODERN_SLOT.inset / ns.Data.MODERN_SLOT.size
+    b.icon:ClearAllPoints()
+    b.icon:SetPoint("TOPLEFT", b, "TOPLEFT", px, -px)
+    b.icon:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -px, px)
+  end
+  place(freeText, S.free.x, S.free.y, S.free.w, S.free.h)
   place(gold, S.gold.x, S.gold.y, S.gold.w, S.gold.h)
   placeScrollBar()
   -- Item buttons follow the new size right away (they were only placed on open).
