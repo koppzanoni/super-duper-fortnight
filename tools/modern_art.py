@@ -116,7 +116,7 @@ def tip(c, x, y, direction, size=5, color=LINE):
 # ------------------------------------------------------------------ unit frame (player, target)
 # Rects in px of the 700x220 texture (Data.MODERN_UNIT mirrors them).
 UNIT = {"w": 720, "h": 250, "ring": (12, 12, 232, 232), "portrait": (28, 28, 216, 216),
-        "name": (250, 26, 704, 80), "health": (180, 86, 700, 146), "power": (180, 152, 692, 200),
+        "name": (250, 26, 704, 80), "health": (186, 91, 694, 141), "power": (186, 157, 686, 195),
         "level": (4, 168, 80, 244)}
 
 
@@ -124,12 +124,14 @@ def unit_frame():
     c = Canvas(UNIT["w"], UNIT["h"])
     for key in ("health", "power"):
         x0, y0, x1, y1 = UNIT[key]
-        r = 9
-        # thick dark navy rim with a thin teal line outside it, the groove dark inside
-        c.rrect((x0 - 4, y0 - 4, x1 + 4, y1 + 4), r + 4, fill=(4, 14, 24, 250), layer="body")
-        c.rrect((x0 - 4, y0 - 4, x1 + 4, y1 + 4), r + 4, outline=(40, 112, 140, 255), width=1.4)
+        r, rim = 8, 8
+        # each bar in its own thick dark rim (the user found the bars too close together): a teal
+        # line outside it, a dark line where it meets the groove, the groove dark inside
+        c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, fill=(4, 14, 24, 250), layer="body")
+        c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, outline=(40, 112, 140, 255), width=2.0)
+        c.rrect((x0 - 1.5, y0 - 1.5, x1 + 1.5, y1 + 1.5), r + 1.5, outline=(0, 0, 0, 255), width=1.6, layer="body")
         c.rrect((x0, y0, x1, y1), r, fill=(1, 6, 11, 255), layer="body")
-        c.line([(x0 + 14, y0 - 3.2), (x1 - 14, y0 - 3.2)], (96, 170, 196, 160), 0.9, layer="top")
+        c.line([(x0 + 16, y0 - rim + 1.2), (x1 - 16, y0 - rim + 1.2)], (96, 170, 196, 170), 1.0, layer="top")
     # the ring: a thick dark navy band between a teal line outside and a dark edge inside
     x0, y0, x1, y1 = UNIT["ring"]
     c.ellipse((x0, y0, x1, y1), fill=(5, 18, 30, 255), layer="body")

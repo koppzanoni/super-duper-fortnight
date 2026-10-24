@@ -11,6 +11,7 @@ from PIL import Image
 
 import cap_art
 import inventory_art
+import modern_art
 import orb_fluid
 import relic_art
 import vbar_art
@@ -238,6 +239,16 @@ def export_all(out_dir=MEDIA):
     save("orb_glass", orb_fluid.glass())
     save("orb_spark", orb_fluid.spark())
     save("orb_depth", orb_fluid.depth())
+
+    # "Moderno" HUD style: each piece in the blue colours of the concept and in the black theme.
+    for name, piece in (("mod_unit", modern_art.unit_frame), ("mod_cast", modern_art.cast_bar),
+                        ("mod_slot", modern_art.slot_frame), ("mod_map", modern_art.minimap_ring),
+                        ("mod_menu", modern_art.menu_band)):
+        img = piece()
+        save(name, img)
+        save(name + "_black", modern_art.blackify(img))
+    save("mod_arcane", modern_art.arcane_ring())
+    save("mod_gloss", modern_art.gloss())
 
     write_manifest(entries, out_dir / "manifest.lua")
     return entries

@@ -35,6 +35,21 @@ Data.MINIMAP = { w = 1008, h = 1012, map = { x = 82, y = 84, w = 844, h = 844 },
   plate = { x = 350, y = 10, w = 310, h = 66 },
   sockets = { { 180, 824 }, { 348, 932 }, { 660, 932 }, { 826, 824 } }, socketSize = 56 }
 
+-- HUD style "Moderno" (tools/modern_art.py; spec docs/superpowers/specs/2026-10-23-hud-moderno-design.md).
+-- Unit frame: portrait opening inside the ring, the bar grooves, name and level spots.
+Data.MODERN_UNIT = { w = 720, h = 250, ring = { x = 12, y = 12, w = 220, h = 220 },
+  portrait = { x = 28, y = 28, w = 188, h = 188 }, name = { x = 250, y = 26, w = 454, h = 54 },
+  health = { x = 186, y = 91, w = 508, h = 50 }, power = { x = 186, y = 157, w = 500, h = 38 },
+  level = { x = 4, y = 168, w = 76, h = 76 } }
+-- Cast bar: square icon socket, progress groove, name on the tab above it.
+Data.MODERN_CAST = { w = 940, h = 124, icon = { x = 14, y = 14, w = 96, h = 96 },
+  bar = { x = 122, y = 64, w = 784, h = 42 }, name = { x = 140, y = 12, w = 370, h = 48 } }
+-- Minimap: the ring's opening, the zone plate and the round button beside it.
+Data.MODERN_MAP = { w = 340, h = 360, hole = { x = 26, y = 72, w = 288, h = 286 },
+  plate = { x = 10, y = 4, w = 260, h = 46 }, button = { x = 282, y = 4, w = 48, h = 48 } }
+-- One action slot frame (the icon sits 10 px inside it).
+Data.MODERN_SLOT = { size = 104, inset = 10 }
+
 -- Inventory window. Spec 4.10.
 Data.INV = { w = 690, h = 1334,
   title = { x = 187, y = 31, w = 315, h = 39 },

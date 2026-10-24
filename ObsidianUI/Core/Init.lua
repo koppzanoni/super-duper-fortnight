@@ -3,7 +3,9 @@ local addonName, ns = ...
 ns.name = addonName
 
 local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, extraCols = 0, showHotkeys = true,
-  orbText = true, orbStyle = "a", capStyle = "classic" }
+  orbText = true, orbStyle = "a", capStyle = "classic",
+  -- HUD style "Moderno": an option next to the stone HUD, which stays the default
+  hudTheme = "obsidian", modernColor = "black", arcaneRing = true, modernRows = 2, modernCols = 12 }
 
 -- Event bus: ns.On(event, fn) calls fn(event, ...) every time the event fires.
 local listeners = {}
