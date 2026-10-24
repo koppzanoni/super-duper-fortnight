@@ -56,6 +56,30 @@ local function register()
     return container:GetData()
   end, "Clássico: asas de dragão. Relicário: garras de osso na vida e um dragão na mana.")
 
+  -- HUD style "Moderno" (spec 2026-10-23-hud-moderno). Style and colour build the secure buttons
+  -- and textures at login: they apply after a reload, offered right away.
+  local function choice(key, label, default, options, tooltip, onChange)
+    local setting = Settings.RegisterAddOnSetting(category, "ObsidianUI_" .. key, key, ns.db, "string", label, default)
+    setting:SetValueChangedCallback(onChange)
+    Settings.CreateDropdown(category, setting, function()
+      local container = Settings.CreateControlTextContainer()
+      for _, o in ipairs(options) do container:Add(o[1], o[2]) end
+      return container:GetData()
+    end, tooltip)
+  end
+  local function askReload() StaticPopup_Show("OBSIDIANUI_RELOAD") end
+  choice("hudTheme", "Estilo da HUD", "obsidian", { { "obsidian", "Pedra (orbes)" }, { "modern", "Moderno" } },
+    "Pedra: orbes e barra de pedra. Moderno: retratos redondos, barra sem fundo, painéis pretos.", askReload)
+  choice("modernColor", "Cor do estilo Moderno", "black", { { "black", "Preto translúcido" }, { "blue", "Azul" } },
+    "Só vale com o estilo Moderno.", askReload)
+  checkbox("arcaneRing", "Anel arcano no retrato (Moderno)", true, function()
+    local player = ns.UnitFrames and ns.UnitFrames.frames.player
+    if player and player.arcane then player.arcane:SetShown(ns.db.arcaneRing ~= false) end
+  end)
+  slider("modernRows", "Linhas da barra de ações (Moderno)", 2, 1, 4, 1, "%d", relayoutHUD,
+    "Linhas x colunas: até 36 botões (barra principal, inferior direita e inferior esquerda).")
+  slider("modernCols", "Colunas da barra de ações (Moderno)", 12, 4, 18, 1, "%d", relayoutHUD)
+
   local scale = Settings.RegisterAddOnSetting(category, "ObsidianUI_scale", "scale", ns.db, "number", "Escala do HUD", 1.0)
   scale:SetValueChangedCallback(function() ns.RunOutOfCombat(ns.HUD.Layout) end)
   local options = Settings.CreateSliderOptions(0.6, 1.4, 0.05)
@@ -73,6 +97,15 @@ local function register()
 
   Settings.RegisterAddOnCategory(category)
 end
+
+-- Changing the HUD style or its colour needs a reload: asked, never forced. (Only a key is added:
+-- assigning the global StaticPopupDialogs itself would taint Blizzard's popups.)
+StaticPopupDialogs["OBSIDIANUI_RELOAD"] = {
+  text = "ObsidianUI: recarregar a interface agora para aplicar o novo estilo?",
+  button1 = "Recarregar", button2 = "Depois",
+  OnAccept = function() ReloadUI() end,
+  timeout = 0, whileDead = true, hideOnEscape = true,
+}
 
 ns.On("PLAYER_LOGIN", register)
 

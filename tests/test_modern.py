@@ -90,6 +90,7 @@ def test_bar_geometry(pure):
     g = L.ModernBar(1080, 1, 2, 12)
     assert (g.slot, g.gap, g.numbers, g.bottom) == (54, 7, 18, 14)
     assert g.width == 12 * 54 + 11 * 7 and g.height == 18 + 2 * 54 + 7
+    assert L.ModernBar(1080, 1, 4, 18).rows == 2               # 36 buttons at most
     small = L.ModernBar(1080, 0.5, 3, 4)
     assert small.slot == 27 and small.height == 9 + 3 * 27 + 2 * 3.5
 
@@ -353,3 +354,22 @@ def test_minimap_in_the_modern_ring():
     assert c[2] < 0.21 * 1080                                  # thinner and smaller than the stone ring
     _, ns = preview()
     assert str(ns.Minimap.ring.file).endswith("minimap_ring") and visible(ns.Minimap.rim)
+
+
+# ------------------------------------------------------------------ vertical bars, settings
+def test_vertical_bars_are_slot_columns_in_modern():
+    _, ns = preview({"hudTheme": "modern", "vbar1": True, "vbar2": True}, vbars=True)
+    vb = ns.VerticalBars
+    assert not visible(vb.art)
+    first, last = vb.bars[1][1], vb.bars[1][12]
+    assert visible(first.obModernSlot)
+    top, bottom = rect(first), rect(last)
+    assert top[1] > bottom[1] and bottom[1] > ns.HUD.h       # a column, above the action bar
+    assert rect(vb.bars[2][1])[0] > top[0]                    # second column to the right
+
+
+def test_theme_and_colour_changes_ask_for_a_reload(lua, ns):
+    loaded(lua, ns)
+    lua.execute('STUB_FIRE("PLAYER_LOGIN")')
+    assert lua.eval('type(rawget(StaticPopupDialogs, "OBSIDIANUI_RELOAD"))') == "table"
+    assert lua.eval('type(rawget(rawget(StaticPopupDialogs, "OBSIDIANUI_RELOAD"), "OnAccept"))') == "function"

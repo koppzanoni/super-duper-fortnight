@@ -53,6 +53,7 @@ end
 -- bottom center of the screen. Sizes are those of a 1080 px screen, scaled by the HUD scale.
 function Layout.ModernBar(screenH, userScale, rows, cols)
   local s = screenH / 1080 * (userScale or 1)
+  rows = math.min(rows, math.ceil(36 / cols)) -- 36 buttons at most: no empty rows
   local g = { rows = rows, cols = cols, slot = 54 * s, gap = 7 * s, numbers = 18 * s, bottom = 14 * s, s = s }
   g.width = cols * g.slot + (cols - 1) * g.gap
   g.height = g.numbers + rows * g.slot + (rows - 1) * g.gap

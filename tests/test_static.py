@@ -20,3 +20,20 @@ def test_no_arithmetic_on_unit_values():
             if UNSAFE.search(line):
                 offenders.append(f"{path.name}:{n}: {line.strip()}")
     assert not offenders, "\n".join(offenders)
+
+
+# Assigning a Blizzard global (StaticPopupDialogs = ..., even to itself) taints it, and every
+# Blizzard function that reads it afterwards: the addon only adds keys to Blizzard tables.
+GLOBAL_ASSIGN = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=[^=]")
+ALLOWED_GLOBAL = re.compile(r"^(ObsidianUI|SLASH_|BINDING_)")
+
+
+def test_no_blizzard_global_is_reassigned():
+    offenders = []
+    for path in ADDON.rglob("*.lua"):
+        depth = 0
+        for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            m = GLOBAL_ASSIGN.match(line)
+            if m and line[:len(line) - len(line.lstrip())] == "" and not ALLOWED_GLOBAL.match(m.group(1)):
+                offenders.append(f"{path.name}:{n}: {line.strip()}")
+    assert not offenders, "\n".join(offenders)

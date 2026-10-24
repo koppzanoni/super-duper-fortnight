@@ -11,6 +11,7 @@ VerticalBars.container = container
 container:SetFrameStrata("LOW")
 local art = container:CreateTexture(nil, "ARTWORK")
 art:SetAllPoints(container)
+VerticalBars.art = art
 
 local bars = { {}, {} }
 VerticalBars.bars = bars
@@ -36,6 +37,26 @@ local function placeColumn(buttons, spec, col, height)
   end
 end
 
+-- Moderno: columns of slot frames, no art; slots as big as the action bar's when they fit.
+local function placeModern(on, height)
+  local g = ns.HUD.modernBar
+  local pitch = math.min(g.slot + g.gap, height / 12)
+  local slot = pitch - g.gap
+  local inset = slot * ns.Data.MODERN_SLOT.inset / ns.Data.MODERN_SLOT.size
+  container:SetSize(#on * pitch - g.gap, 12 * pitch - g.gap)
+  art:Hide()
+  for col, buttons in ipairs(on) do
+    for i, b in ipairs(buttons) do
+      b:ClearAllPoints()
+      b:SetPoint("TOPLEFT", container, "TOPLEFT", (col - 1) * pitch + inset, -(i - 1) * pitch - inset)
+      b:SetSize(slot - 2 * inset, slot - 2 * inset)
+      ns.ActionBars.ModernSlot(b, inset)
+      b.obEnabled = true
+      b:Show()
+    end
+  end
+end
+
 function VerticalBars.Refresh()
   ns.RunOutOfCombat(function()
     local db = ns.db or {}
@@ -54,9 +75,14 @@ function VerticalBars.Refresh()
       local height = screenH * (1 - VerticalBars.TOP - VerticalBars.GAP) - hudH
       container:ClearAllPoints()
       container:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -4, -VerticalBars.TOP * screenH)
-      container:SetSize(spec.w * height / spec.h, height)
-      ns.Media.Apply(art, #on == 1 and "vbar1" or "vbar2")
-      for col, buttons in ipairs(on) do placeColumn(buttons, spec, col, height) end
+      if ns.HUD.modern then
+        placeModern(on, height)
+      else
+        container:SetSize(spec.w * height / spec.h, height)
+        ns.Media.Apply(art, #on == 1 and "vbar1" or "vbar2")
+        art:Show()
+        for col, buttons in ipairs(on) do placeColumn(buttons, spec, col, height) end
+      end
       container:Show()
     end
     ns.ActionBars.UpdateBindings()
