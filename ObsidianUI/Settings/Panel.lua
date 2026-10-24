@@ -311,7 +311,15 @@ Panel.SECTIONS = {
         function() ns.Cooldowns.Refresh() end, "Recargas mais curtas (como a global) ficam sem número."),
     } },
   } },
-  { id = "reminders", group = "Qualidade de vida", name = "Lembretes", soon = true },
+  { id = "reminders", group = "Qualidade de vida", name = "Lembretes", lead = "Avisa quando falta algo importante. Some em combate; mova no modo de edição.", cards = {
+    { "Avisos", {
+      toggle("Buff da classe faltando", "rmBuff", true, function() ns.Reminders.Update() end, "Intelecto Arcano, Fortitude, Marca da Natureza, Brado de Batalha."),
+      toggle("Comida e frasco faltando em raide", "rmFood", true, function() ns.Reminders.Update() end),
+      toggle("Veneno ou óleo de arma acabando", "rmPoison", true, function() ns.Reminders.Update() end, "Menos de 5 minutos."),
+      toggle("Durabilidade baixa", "rmRepair", true, function() ns.Reminders.Update() end, "Abaixo de 30%."),
+      toggle("Bolsas quase cheias", "rmBags", true, function() ns.Reminders.Update() end, "5 espaços livres ou menos."),
+    } },
+  } },
   { id = "classes", group = "Classes", name = "Classes", soon = true },
   { id = "profiles", name = "Perfis", lead = "Salve layouts, um por especialização ou por conteúdo, e compartilhe por texto.",
     build = function() return Panel.ProfileCards() end },

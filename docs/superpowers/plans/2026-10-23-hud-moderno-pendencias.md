@@ -99,7 +99,12 @@ de batalha sem pedra da alma; pula cinemáticas e vídeos já vistos (seenCinema
 dos perfis); saque rápido quando o saque automático vale; erros vermelhos escondidos em combate (opção,
 UIErrorsFrame UI_ERROR_MESSAGE); tela de ausente (UIParent escondido, câmera girando, faixa preta com
 modelo, nome, nível/classe/guilda, tempo; sai com tecla, combate, ou fim do ausente; nunca em instância).
-Falta (marcado "em breve" no painel): Lembretes, Classes (+ modo de teste,
+Lembretes (FEITO: HUD/Reminders.lua): faixas pretas com ícone acima do centro (movível, "Lembretes"):
+buff da classe faltando (mago/sacerdote/druida/guerreiro, versão de grupo conta; só se conhece a magia),
+comida e frasco em raide (por nome: Bem Alimentado / Frasco, Phial), veneno do ladino ou óleo de arma
+com menos de 5 min, durabilidade abaixo de 30%, 5 espaços livres ou menos. Só checa fora de combate
+(auras podem ser secretas) e some em combate; revê a cada 15 s por causa das durações.
+Falta (marcado "em breve" no painel): Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
 
 ## Perfis (FEITO: Core/Serialize.lua + Core/Profiles.lua, página Perfis)
@@ -167,6 +172,8 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
 - Automação: vender lixo e reparar (mensagem no chat), convite de amigo entrando no grupo sem a
   janela recusar, ressurreição, cinemática pulada na segunda vez, saque rápido, tela de ausente
   (/afk) saindo com tecla e voltando a interface inteira.
+- Lembretes: ícones de comida/frasco/reparo/bolsa aparecendo (caminhos Interface\Icons), nome do buff
+  batendo com a aura (Intelecto Arcano etc.), frasco reconhecido pelo nome no idioma do jogo.
 - Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
   UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.

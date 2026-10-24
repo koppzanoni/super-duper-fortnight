@@ -59,6 +59,8 @@ local function freeSlots()
   return free, total
 end
 
+InfoBar.Durability, InfoBar.FreeSlots = durability, freeSlots -- also used by the reminders
+
 -- Every value is plain (never a secret): FPS, network, durability, bag slots, money, counts.
 local VALUES = {
   fps = function(t)

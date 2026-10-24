@@ -49,6 +49,7 @@ HUD\Skins.lua
 HUD\Cooldowns.lua
 HUD\Cursor.lua
 HUD\Automation.lua
+HUD\Reminders.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Stats.lua

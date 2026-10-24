@@ -19,7 +19,8 @@ local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, sh
   skins_on = true, cd_on = true, cdAuras = true, cdMin = 1.5, cdDecimals = true,
   curRing = false, curTrail = false, curCombat = true, curSize = 1,
   autoJunk = true, autoRepair = "guild", autoInvite = true, noDuel = false, autoRes = true, autoRelease = true,
-  skipCine = true, fastLoot = true, hideErrors = false, afkScreen = true }
+  skipCine = true, fastLoot = true, hideErrors = false, afkScreen = true,
+  rmBuff = true, rmFood = true, rmPoison = true, rmRepair = true, rmBags = true }
 
 -- A Moderno texture in the chosen colour: the black theme, or the concept's blue.
 function ns.ModernTex(name)
