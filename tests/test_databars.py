@@ -81,8 +81,8 @@ def test_text_always_hover_and_never():
 
 
 def test_height_setting():
-    _, ns = preview({"dataHeight": 10})
-    thin = rect(preview()[1].DataBars.xp)[3]                     # default 5
+    _, ns = preview({"dataHeight": 10, "dataText": "never"})
+    thin = rect(preview({"dataText": "never"})[1].DataBars.xp)[3]   # default 5
     assert abs(rect(ns.DataBars.xp)[3] - thin * 2) < 0.5
 
 
@@ -111,7 +111,7 @@ def test_action_bar_rises_to_keep_tall_data_bars_on_screen():
     _, ns = preview({"dataHeight": 9})
     holder, bar = rect(ns.DataBars.holder), rect(ns.ActionBars.modernFrame)
     assert holder[1] >= 0 and holder[1] + holder[3] < bar[1]
-    _, ns1 = preview({"rep_on": False})                       # one thin bar: the bar stays put
+    _, ns1 = preview({"rep_on": False, "dataText": "never"})  # one thin bar: the bar stays put
     assert abs(rect(ns1.ActionBars.modernFrame)[1] - ns1.HUD.modernBar.bottom) < 0.5
     assert abs(ns1.HUD.modernBar.bottom - 14 * ns1.HUD.modernBar.s) < 0.5
 
@@ -121,3 +121,15 @@ def test_bar_drops_back_when_reputation_goes_away():
     high = rect(ns.ActionBars.modernFrame)[1]
     rt.execute('C_Reputation.GetWatchedFactionData = function() return nil end; PREVIEW_FIRE("UPDATE_FACTION")')
     assert rect(ns.ActionBars.modernFrame)[1] < high
+
+
+def test_text_fits_inside_its_bar():
+    for mode in ("always", "hover"):
+        _, ns = preview({"dataText": mode})
+        D = ns.DataBars
+        for bar in (D.xp, D.rep):
+            assert bar.text.fsize <= rect(bar)[3], mode
+        xp, rep = rect(D.xp), rect(D.rep)
+        assert rep[1] + rep[3] <= xp[1]                              # no overlap between the bars
+    _, ns = preview({"dataText": "never"})                          # no text: as thin as asked
+    assert abs(rect(ns.DataBars.xp)[3] - 5 * ns.HUD.modernBar.s) < 0.5

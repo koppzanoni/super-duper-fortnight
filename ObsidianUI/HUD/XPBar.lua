@@ -88,11 +88,18 @@ local function shownFaction() return db().rep_on ~= false and watched() end
 
 -- Room (unscaled) the bars need between the action bar and the screen bottom; 0 once moved away.
 local MARGIN_TOP, MARGIN_BOTTOM = 4, 3
+-- Bars that can show text are at least as tall as it (thinner ones only without text).
+local TEXT_MIN = 10
+local function barHeight()
+  local h = db().dataHeight or 5
+  if textMode() ~= "never" then return math.max(h, TEXT_MIN) end
+  return h
+end
 function DataBars.Room()
   if ns.Movers.Saved("databars") then return 0 end
   local n = (showsXP() and 1 or 0) + (shownFaction() and 1 or 0)
   if n == 0 then return 0 end
-  local h = db().dataHeight or 5
+  local h = barHeight()
   return MARGIN_TOP + n * (h + GAP) - GAP + MARGIN_BOTTOM
 end
 local laidOutRoom
@@ -127,9 +134,11 @@ local function update()
   end
 
   -- Stack what is shown from the top of the holder.
-  local h = d.dataHeight or 5
+  local h = barHeight()
   local g = HUD.modernBar
   local s = g and g.s or 1
+  local size = math.max(8, math.min(12, math.floor((h - 1) * s)))
+  for _, bar in ipairs({ xp, rep }) do ns.Look.SetFont(bar.text, size) end
   local y = 0
   rested:SetShown(showXP)
   rep:SetShown(faction and true or false)
@@ -154,7 +163,6 @@ holder:SetScript("OnLeave", function() hovering = false; showText() end)
 table.insert(HUD.onResize, function()
   local g = HUD.modernBar
   for _, bar in ipairs({ rested, xp, rep }) do bar:SetStatusBarTexture(ns.Look.BarTexture()) end
-  for _, bar in ipairs({ xp, rep }) do ns.Look.SetFont(bar.text, 10) end
   holder:SetWidth(g.width)
   laidOutRoom = DataBars.Room()
   ns.Movers.Register("databars", "Barras de dados", holder, function(f)
