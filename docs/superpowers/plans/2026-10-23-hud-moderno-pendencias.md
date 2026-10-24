@@ -189,3 +189,31 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.
 - Marcadores (UI-RaidTargetingIcons), ícones de prontidão, debuffs nos quadros; ferramentas de raide:
   Pronto?, contagem e marcar o alvo funcionando sem erro.
+
+## Opções das classes (do protótipo, CLASS_OPTS)
+```js
+const CLASS_OPTS = {
+  WARRIOR: { res: ['bar', 'Fúria', 6], cards: [ { title: 'Combate', rows: [ t('Timer do ataque automático (swing)', 'c_war_swing', true), t('Aviso de Sobrepujar / Executar disponível', 'c_war_proc', true),
+    t('Barra de posturas no quadro do jogador', 'c_war_stance', false), t('Fúria em texto', 'c_war_text', true) ] } ] },
+  PALADIN: { res: ['gems', 'Poder Sagrado', 5, 3], cards: [ { title: 'Paladino', rows: [ t('Lembrete de aura e selo', 'c_pal_aura', true), t('Duração do julgamento no alvo', 'c_pal_judge', true),
+    t('Bênçãos do grupo faltando', 'c_pal_bless', true) ] } ] },
+  HUNTER: { res: ['bar', 'Foco', 5], cards: [ { title: 'Caçador', rows: [ t('Timer do Tiro Automático', 'c_hun_auto', true, 'Barra entre os tiros: não ande no fim dela.'), t('Felicidade do pet', 'c_hun_happy', true),
+    t('Vida do pet no quadro do jogador', 'c_hun_pethp', true), t('Aviso de munição acabando', 'c_hun_ammo', true), t('Lembrete de Aspecto', 'c_hun_aspect', true) ] } ] },
+  ROGUE: { res: ['gems', 'Pontos de combo', 5, 3], cards: [ { title: 'Ladino', rows: [ t('Tick de energia', 'c_rog_tick', true, 'Mostra quando chega a próxima energia (a cada 2 s).'),
+    t('Pontos de combo no alvo', 'c_rog_ontarget', false), t('Duração de Picar e Rasgar', 'c_rog_snd', true), t('Venenos acabando', 'c_rog_poison', true) ] } ] },
+  PRIEST: { res: ['bar', 'Mana', 7], cards: [ { title: 'Sacerdote', rows: [ t('Regra dos 5 segundos', 'c_pri_5sr', true, 'Marca na barra de mana: depois dela a mana volta a regenerar.'),
+    t('Escudo e Alma Enfraquecida no grupo', 'c_pri_shield', true), t('Fortitude faltando no grupo', 'c_pri_fort', true) ] } ] },
+  DEATHKNIGHT: { res: ['gems', 'Runas', 6, 4], cards: [ { title: 'Cavaleiro da Morte', rows: [ t('Runas por tipo (sangue, gelo, profano)', 'c_dk_types', true), t('Tempo de recarga em cada runa', 'c_dk_cd', true),
+    t('Poder rúnico em barra', 'c_dk_rp', true), t('Doenças no alvo', 'c_dk_dis', true) ] } ] },
+  SHAMAN: { res: ['bar', 'Mana', 7], cards: [ { title: 'Totens', rows: [ t('Barra de totens', 'c_sha_totems', true, 'Os 4 elementos com o tempo de cada totem.'), sg('Onde', 'c_sha_totpos', 'player',
+    [['player', 'Embaixo do jogador'], ['bar', 'Sobre a barra']]), t('Arma encantada acabando', 'c_sha_weapon', true), t('Escudo de Raios / Água', 'c_sha_shield', true),
+    t('Regra dos 5 segundos', 'c_sha_5sr', true) ] } ] },
+  MAGE: { res: ['gems', 'Cargas arcanas', 4, 2], cards: [ { title: 'Mago', rows: [ t('Regra dos 5 segundos', 'c_mag_5sr', true), t('Lembrete de armadura', 'c_mag_armor', true),
+    t('Gemas de mana prontas', 'c_mag_gem', true), t('Procs (Congelamento Cerebral, Lançamento Livre)', 'c_mag_procs', true) ] } ] },
+  WARLOCK: { res: ['gems', 'Fragmentos de alma', 3, 2], cards: [ { title: 'Bruxo', rows: [ t('Contador de fragmentos na mochila', 'c_wl_shards', true), t('Pedra de alma e de vida', 'c_wl_stones', true),
+    t('DoTs no alvo (tempo restante)', 'c_wl_dots', true), t('Vida e mana do demônio', 'c_wl_pet', true) ] } ] },
+  MONK: { res: ['gems', 'Chi', 5, 2], cards: [ { title: 'Monge', rows: [ t('Barra de Estagnar', 'c_mon_stagger', true), t('Chi em gemas', 'c_mon_chi', true) ] } ] },
+  DRUID: { res: ['gems', 'Pontos de combo', 5, 2], cards: [ { title: 'Druida', rows: [ t('Mana enquanto está em forma animal', 'c_dru_mana', true), t('Barra de formas', 'c_dru_forms', true),
+    t('Tick de energia em Felino', 'c_dru_tick', true), t('Pontos de combo só em Felino', 'c_dru_combo', true), t('Regra dos 5 segundos', 'c_dru_5sr', true) ] } ] },
+};
+```
