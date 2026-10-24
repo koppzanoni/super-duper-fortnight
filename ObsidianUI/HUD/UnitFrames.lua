@@ -190,7 +190,13 @@ local function updateValues(f)
     end)) then f.hpText:SetText("") end
   else
     barText(f.hpText, UnitHealth(unit), UnitHealthMax(unit))
-    barText(f.powerText, UnitPower(unit, pType), UnitPowerMax(unit, pType))
+    local powerMax = UnitPowerMax(unit, pType)
+    -- a unit with no power at all (most NPCs) shows an empty bar, not "0 / 0"
+    if not (issecretvalue and issecretvalue(powerMax)) and powerMax == 0 then
+      f.powerText:SetText("")
+    else
+      barText(f.powerText, UnitPower(unit, pType), powerMax)
+    end
   end
 end
 

@@ -414,3 +414,13 @@ def test_inventory_size_applies_live():
     w = rect(ns.Inventory.frame)[2]
     change(rt, ns, "invScale", 1.2)
     assert rect(ns.Inventory.frame)[2] > w * 1.1
+
+
+def test_no_power_text_when_the_unit_has_no_power():
+    # NPCs without mana showed "0 / 0" on the target's second bar.
+    rt = preview_render.run_addon(vbars=False, pre="""
+      local base = UnitPowerMax
+      function UnitPowerMax(u, t) if u == "target" then return 0 end return base(u, t) end
+    """)
+    t = frames(rt.globals().PREVIEW_NS).target
+    assert t.powerText.text == ""
