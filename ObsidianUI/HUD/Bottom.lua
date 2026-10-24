@@ -93,8 +93,18 @@ function HUD.Layout()
   root:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, -sink)
   root:SetSize(W, h)
 
+  -- Moderno: the stone art and the orbs give way to the Moderno pieces; HUD.h is then the top of
+  -- the Moderno action bar, which the frames placed above the HUD go by.
+  HUD.modern = ns.IsModern()
+  HUD.art:SetShown(not HUD.modern)
+  HUD.under:SetShown(not HUD.modern)
+  if HUD.modern then
+    local db = ns.db
+    HUD.modernBar = ns.Layout.ModernBar(H, db.scale or 1, db.modernRows or 2, db.modernCols or 12)
+  end
+
   local wanted = ns.db and ns.db.extraCols or 0
-  HUD.extra = math.min(wanted, ns.Layout.MaxExtraColumns(stretch, u))
+  HUD.extra = HUD.modern and 0 or math.min(wanted, ns.Layout.MaxExtraColumns(stretch, u))
   local pitch = ns.Layout.EXTRA_PITCH * u
   HUD.extraW = HUD.extra * pitch
 
@@ -113,7 +123,7 @@ function HUD.Layout()
   ns.Media.Apply(capR, style.right, true)
   for _, side in ipairs({ "left", "right" }) do
     local t, key = HUD.capOver[side], side == "left" and style.overLeft or style.overRight
-    if key then
+    if key and not HUD.modern then
       put(t, side == "left" and HUD.capX or W / 2 + barW + HUD.extraW, capW)
       ns.Media.Apply(t, key, side == "right")
       t:Show()
@@ -165,6 +175,7 @@ function HUD.Layout()
   end
 
   for _, p in ipairs(placed) do applyPlace(p) end
+  if HUD.modern then HUD.h = HUD.modernBar.bottom + HUD.modernBar.height end
   for _, fn in ipairs(HUD.onResize) do fn(u, h, W) end
 end
 

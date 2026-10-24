@@ -11,6 +11,7 @@ ns.Stack = {}
 -- Distance in screen units from the screen bottom to the top edge of the action bar art
 -- (HUD.h is already the visible height, so the sunk bottom rows are accounted for).
 function ns.Stack.BarTop()
+  if HUD.modern then return HUD.h end -- Moderno: the top of the key numbers row
   return (HUD.h or 0) - BAR_TOP_TEX_Y * (HUD.u or 0)
 end
 

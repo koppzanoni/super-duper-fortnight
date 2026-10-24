@@ -7,6 +7,16 @@ local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, ex
   -- HUD style "Moderno": an option next to the stone HUD, which stays the default
   hudTheme = "obsidian", modernColor = "black", arcaneRing = true, modernRows = 2, modernCols = 12 }
 
+-- HUD style: "obsidian" (stone, the default) or "modern". Saved variables arrive with
+-- ADDON_LOADED, after every file ran: read it at login or later, never at file load.
+function ns.IsModern() return ns.db ~= nil and ns.db.hudTheme == "modern" end
+
+-- A Moderno texture in the chosen colour: the black theme, or the concept's blue.
+function ns.ModernTex(name)
+  if ns.db and ns.db.modernColor == "blue" then return name end
+  return name .. "_black"
+end
+
 -- Event bus: ns.On(event, fn) calls fn(event, ...) every time the event fires.
 local listeners = {}
 local eventFrame = CreateFrame("Frame")

@@ -3,7 +3,7 @@
 Usage: python tools/preview_render.py OUT_DIR [--scene path.jpg]
 Writes OUT_DIR/preview_hud.png (vertical bars on), OUT_DIR/preview_inventory.png (inventory open) and
 OUT_DIR/preview_extra.png (smaller HUD with 3 extra action columns) and OUT_DIR/preview_relic.png
-(the Relicário orb caps).
+(the Relicário orb caps) and OUT_DIR/preview_modern.png (the Moderno HUD style).
 Icons and portraits come from the reference art (the game provides real ones).
 """
 import argparse
@@ -85,6 +85,7 @@ def toc_files():
 def run_addon(vbars=True, inventory=False, db=None):
     rt = lua_runtime()
     ns = rt.table()
+    rt.globals().PREVIEW_NS = ns  # the addon's namespace, for tests
     loader = rt.eval("function(src, name) return assert(loadstring(src, name)) end")
     for p in toc_files():
         loader(p.read_text(encoding="utf-8"), "@" + p.name)("ObsidianUI", ns)
@@ -298,6 +299,7 @@ def main():
     print(render(run_addon(vbars=True, inventory=True), scene, out / "preview_inventory.png"))
     print(render(run_addon(vbars=False, db={"scale": 0.7, "extraCols": 3}), scene, out / "preview_extra.png"))
     print(render(run_addon(vbars=True, db={"capStyle": "relic"}), scene, out / "preview_relic.png"))
+    print(render(run_addon(vbars=False, db={"hudTheme": "modern"}), scene, out / "preview_modern.png"))
 
 
 if __name__ == "__main__":

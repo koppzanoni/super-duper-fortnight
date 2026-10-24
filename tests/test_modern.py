@@ -66,3 +66,86 @@ def test_stone_stays_the_default(lua, ns):
     assert ns.db.modernColor == "black"
     assert ns.db.arcaneRing is True
     assert (ns.db.modernRows, ns.db.modernCols) == (2, 12)
+
+
+# ------------------------------------------------------------------ action bar grid
+import preview_render  # noqa: E402
+
+
+def preview(db=None, vbars=False):
+    rt = preview_render.run_addon(vbars=vbars, db=db)
+    return rt, rt.globals().PREVIEW_NS
+
+
+def rect(region):
+    return tuple(region.Rect(region).values())
+
+
+MODERN = {"hudTheme": "modern"}
+
+
+def test_bar_geometry(pure):
+    from conftest import load_pure
+    L = load_pure(pure, "Core/Layout.lua").Layout
+    g = L.ModernBar(1080, 1, 2, 12)
+    assert (g.slot, g.gap, g.numbers, g.bottom) == (54, 7, 18, 14)
+    assert g.width == 12 * 54 + 11 * 7 and g.height == 18 + 2 * 54 + 7
+    small = L.ModernBar(1080, 0.5, 3, 4)
+    assert small.slot == 27 and small.height == 9 + 3 * 27 + 2 * 3.5
+
+
+def test_stone_hud_stays_as_it_was():
+    _, ns = preview()
+    assert ns.HUD.art.shown and ns.HUD.under.shown
+    assert not ns.HUD.modern
+
+
+def test_modern_hides_the_stone_hud():
+    _, ns = preview(MODERN)
+    assert ns.HUD.modern
+    assert not ns.HUD.art.shown and not ns.HUD.under.shown
+
+
+def test_modern_bar_is_a_grid_in_reading_order():
+    _, ns = preview(MODERN)
+    b = ns.ActionBars.buttons
+    row1 = [rect(b[i]) for i in range(1, 13)]
+    row2 = [rect(b[i]) for i in range(19, 31)]
+    assert len({round(r[1]) for r in row1}) == 1 and len({round(r[1]) for r in row2}) == 1
+    assert row1[0][1] > row2[0][1]                            # main bar on top
+    steps = {round(row1[i + 1][0] - row1[i][0], 1) for i in range(11)}
+    assert steps == {54 + 7}
+    # centered at the bottom of the screen
+    left, right = row1[0][0], row1[-1][0] + row1[-1][2]
+    assert abs((left + right) / 2 - 960) < 1
+
+
+def test_buttons_outside_the_grid_are_hidden_and_unbound():
+    _, ns = preview(MODERN)
+    b = ns.ActionBars.buttons
+    for i in list(range(13, 19)) + list(range(31, 37)):
+        assert b[i].obEnabled is False and not b[i].IsVisible(b[i]), i
+    for i in list(range(1, 13)) + list(range(19, 31)):
+        assert b[i].obEnabled is True and b[i].IsVisible(b[i]), i
+
+
+def test_rows_and_columns_come_from_the_settings():
+    _, ns = preview({"hudTheme": "modern", "modernRows": 3, "modernCols": 12})
+    b = ns.ActionBars.buttons
+    assert all(b[i].obEnabled for i in range(1, 37))
+    assert rect(b[13])[1] < rect(b[19])[1]                    # bottom left bar is the third row
+
+
+def test_slots_have_frames_in_the_chosen_colour():
+    _, ns = preview(MODERN)
+    slot = ns.ActionBars.buttons[1].obModernSlot
+    assert slot.IsVisible(slot) and str(slot.file).endswith("mod_slot_black")
+    _, ns = preview({"hudTheme": "modern", "modernColor": "blue"})
+    assert str(ns.ActionBars.buttons[1].obModernSlot.file).endswith("mod_slot")
+
+
+def test_key_numbers_sit_above_the_first_row():
+    _, ns = preview(MODERN)
+    b = ns.ActionBars.buttons[1]
+    hk = b.HotKey
+    assert hk.points[1].point == "BOTTOM" and hk.points[1].relPoint == "TOP"

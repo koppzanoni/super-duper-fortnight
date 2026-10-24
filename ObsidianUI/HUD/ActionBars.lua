@@ -170,6 +170,90 @@ function ActionBars.UpdateBindings()
   end)
 end
 
+-- Moderno: the bar is a grid of rows x columns of slot frames with no background, the key numbers
+-- above the first row with small diamonds between them. Buttons fill it in reading order: main
+-- bar, bottom right bar, bottom left bar. Buttons past the grid wait in a hidden frame (Blizzard's
+-- grid could show a merely hidden button) and lose their key bindings.
+local MODERN_ORDER = {}
+for c = 1, 12 do MODERN_ORDER[#MODERN_ORDER + 1] = c end
+for c = 1, 12 do MODERN_ORDER[#MODERN_ORDER + 1] = 18 + c end
+for c = 13, 18 do MODERN_ORDER[#MODERN_ORDER + 1] = c end
+for c = 13, 18 do MODERN_ORDER[#MODERN_ORDER + 1] = 18 + c end
+ActionBars.MODERN_ORDER = MODERN_ORDER
+
+local spare = CreateFrame("Frame", nil, header)
+spare:Hide()
+local modernFrame = CreateFrame("Frame", "ObsidianUIModernBar", UIParent)
+ActionBars.modernFrame = modernFrame
+local diamonds = {}
+
+-- The slot frame around a button's icon (also used by the vertical bars).
+function ActionBars.ModernSlot(b, inset)
+  if not b.obModernSlot then b.obModernSlot = b:CreateTexture(nil, "BACKGROUND", nil, -8) end
+  local t = b.obModernSlot
+  t:ClearAllPoints()
+  t:SetPoint("TOPLEFT", b, "TOPLEFT", -inset, inset)
+  t:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", inset, -inset)
+  ns.Media.Apply(t, ns.ModernTex("mod_slot"))
+  t:Show()
+end
+
+local function diamond(i)
+  if not diamonds[i] then
+    local t = modernFrame:CreateTexture(nil, "ARTWORK")
+    if t.SetRotation then t:SetRotation(math.pi / 4) end
+    diamonds[i] = t
+  end
+  return diamonds[i]
+end
+
+function ActionBars.LayoutModern()
+  if not HUD.modern then return end
+  local g = HUD.modernBar
+  modernFrame:ClearAllPoints()
+  modernFrame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, g.bottom)
+  modernFrame:SetSize(g.width, g.height)
+  local inset = g.slot * ns.Data.MODERN_SLOT.inset / ns.Data.MODERN_SLOT.size
+  local n = g.rows * g.cols
+  for i, index in ipairs(MODERN_ORDER) do
+    local b = ActionBars.buttons[index]
+    if i <= n then
+      local r, c = math.floor((i - 1) / g.cols), (i - 1) % g.cols
+      b:SetParent(header)
+      b:ClearAllPoints()
+      b:SetPoint("TOPLEFT", modernFrame, "TOPLEFT", c * (g.slot + g.gap) + inset, -(g.numbers + r * (g.slot + g.gap) + inset))
+      b:SetSize(g.slot - 2 * inset, g.slot - 2 * inset)
+      b.obEnabled = true
+      ActionBars.ModernSlot(b, inset)
+      local hotkey = b.HotKey or _G[b:GetName() .. "HotKey"]
+      if hotkey and r == 0 then
+        hotkey:ClearAllPoints()
+        hotkey:SetPoint("BOTTOM", b, "TOP", 0, inset + 2 * g.s)
+        if hotkey.SetJustifyH then hotkey:SetJustifyH("CENTER") end
+      end
+      b:Show()
+    else
+      b:SetParent(spare)
+      b.obEnabled = false
+    end
+  end
+  local blue = ns.db and ns.db.modernColor == "blue"
+  for c = 1, math.max(g.cols - 1, #diamonds) do
+    local t = diamond(c)
+    if c < g.cols then
+      t:SetColorTexture(blue and 0.24 or 0.54, blue and 0.63 or 0.56, blue and 0.78 or 0.59, 1)
+      t:SetSize(5 * g.s, 5 * g.s)
+      t:ClearAllPoints()
+      t:SetPoint("CENTER", modernFrame, "TOPLEFT", c * (g.slot + g.gap) - g.gap / 2, -g.numbers / 2)
+      t:Show()
+    else
+      t:Hide()
+    end
+  end
+  ActionBars.UpdateBindings()
+end
+table.insert(HUD.onResize, function() ns.RunOutOfCombat(ActionBars.LayoutModern) end)
+
 ns.On("PLAYER_LOGIN", function()
   ns.RunOutOfCombat(function()
     -- Register every button's action slot with the game once (the template starts on action 1).
