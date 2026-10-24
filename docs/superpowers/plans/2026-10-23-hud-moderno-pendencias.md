@@ -74,6 +74,14 @@ Rastreador de missões (FEITO: HUD/QuestTracker.lua): sem NineSlice e arte dos t
 brancos com linha roxa (também em módulos novos, hook em Update), pendurado num suporte movível
 ("Missões", padrão: à esquerda das barras verticais ou sob o minimapa); recolher em combate e em
 instâncias (abre de novo depois, a não ser que o jogador tenha recolhido).
+Janelas da Blizzard (FEITO: HUD/Skins.lua): um pintor para os moldes ButtonFrame/PortraitFrame
+(NineSlice, Bg, TopTileStreaks, PortraitContainer com alpha 0; painel preto; Inset mais escuro;
+título branco; X simples; abas lisas com a selecionada branca e linha roxa via hook em
+PanelTemplates_Select/DeselectTab). Janelas do jogo (personagem, amigos, PvE, conversa, missão,
+comerciante, correio, provador, troca, banco, addons...) e as carregadas depois (talentos,
+coleções, guia de masmorras, comunidades, profissões, macros, leilão, inspecionar, mapa) no
+ADDON_LOADED. Conquistas ficam com a arte delas. Falta: botões e barras de rolagem dentro das
+janelas ainda no estilo do jogo.
 Falta (marcado "em breve" no painel): Rastreador de missões, Dicas, Janelas da Blizzard,
 Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
@@ -135,6 +143,8 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
   (qual dos três caminhos funcionou), alvo com borda roxa, nada de erro em instância.
 - Chat: borda e fundo do jogo sumindo, abas recoloridas ao trocar, caixa de digitar no lugar ao
   abrir (Enter) e depois de arrastar o chat, botão de copiar, janela de sussurro nova com o visual.
+- Janelas da Blizzard: abrir cada uma e ver se nenhuma ficou sem fundo ou com conteúdo escondido
+  atrás do painel; abas trocando de cor; o mapa.
 - Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
   UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.

@@ -45,6 +45,7 @@ HUD\Nameplates.lua
 HUD\Chat.lua
 HUD\Tooltip.lua
 HUD\QuestTracker.lua
+HUD\Skins.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Stats.lua

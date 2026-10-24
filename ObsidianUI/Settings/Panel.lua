@@ -262,7 +262,12 @@ Panel.SECTIONS = {
       toggle("Em combate", "tipCombat", true, nil, "Desligado, as dicas de quem está no mundo somem em combate; as dos botões continuam."),
     } },
   } },
-  { id = "skins", group = "Interface", name = "Janelas da Blizzard", soon = true },
+  { id = "skins", group = "Interface", name = "Janelas da Blizzard", lead = "Personagem, amigos, talentos, coleções, mapa, comerciante, correio e as outras no painel preto.", cards = {
+    { "Visual", {
+      toggle("Usar o visual da ObsidianUI", "skins_on", true, nil,
+        "Desligado, as janelas voltam ao normal depois de recarregar. A de conquistas fica com a arte dela."),
+    } },
+  } },
   { id = "cursor", group = "Interface", name = "Cursor", soon = true },
   { id = "automation", group = "Qualidade de vida", name = "Automação", soon = true },
   { id = "cooldowns", group = "Qualidade de vida", name = "Recarga nos ícones", soon = true },
