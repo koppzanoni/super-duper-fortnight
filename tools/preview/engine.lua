@@ -256,6 +256,8 @@ function Region:SetStatusBarColor(r, g, b, a) self:GetStatusBarTexture():SetVert
 -- Frames & templates ----------------------------------------------------------------------------
 -- Cooldown frames: the countdown settings the game offers, and its countdown text.
 function Region:SetHideCountdownNumbers(v) self.hideNumbers = v end
+function Region:SetCooldown(start, duration) self.cdStart, self.cdDuration = start, duration end
+function Region:Clear() self.cdStart, self.cdDuration = nil, nil end
 function Region:SetMinimumCountdownDuration(ms) self.minCountdown = ms end
 function Region:SetCountdownMillisecondsThreshold(s) self.msThreshold = s end
 function Region:GetCountdownFontString()

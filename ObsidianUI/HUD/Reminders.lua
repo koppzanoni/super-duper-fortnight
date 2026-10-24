@@ -104,7 +104,8 @@ function Reminders.Update()
     if class == "ROGUE" and db().c_rog_poison == false then poisonKnown = false end -- the rogue page's switch
     if poisonKnown and (not left or left < SOON) then
       add("poison", C_Spell.GetSpellTexture(POISONS[1]), left and ("Veneno acabando (" .. minutes(left) .. ")") or "Sem veneno nas armas")
-    elseif not poisonKnown and GetWeaponEnchantInfo then
+    -- (the shaman page has its own weapon reminder)
+    elseif not poisonKnown and GetWeaponEnchantInfo and not (class == "SHAMAN" and db().c_sha_weapon ~= false) then
       local hasMain, ms = GetWeaponEnchantInfo()
       if hasMain and ms and ms / 1000 < SOON then add("poison", ICONS.oil, "Óleo de arma acabando (" .. minutes(ms / 1000) .. ")") end
     end

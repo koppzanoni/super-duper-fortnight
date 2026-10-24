@@ -59,6 +59,7 @@ Classes\Paladin.lua
 Classes\Hunter.lua
 Classes\Priest.lua
 Classes\DeathKnight.lua
+Classes\Shaman.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Stats.lua
