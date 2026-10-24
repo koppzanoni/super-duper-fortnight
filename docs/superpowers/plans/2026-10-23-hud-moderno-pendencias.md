@@ -155,8 +155,12 @@ Visibilidade (FEITO: HUD/Visibility.lua, página Visibilidade): por elemento sem
 combate / com alvo ou em combate / ao passar o mouse / escondido, por transparência (o jogo deixa em combate;
 não briga com o mostrar/esconder dos módulos; escondido ainda aceita clique); a barra de ações leva junto o
 cabeçalho dos botões e o menu os botões; o modo de edição mostra tudo.
+Clicar para curar (FEITO: HUD/ClickCast.lua, página Clicar para curar): uma magia por Shift/Ctrl/Alt +
+esquerdo ou direito, botão do meio, 4 e 5, como atributos seguros (shift-type1 = spell) em você, nos quadros e
+células do grupo e nas células de raide; esquerdo seleciona, direito abre o menu; muda só fora de combate.
+Painel ganhou a linha de texto (kind = "text").
 Todos os módulos do painel estão feitos (nenhum "em breve"). Ainda falta:
-ancorar elementos um no outro / X e Y digitados no modo de edição, clicar para curar nos quadros de raide,
+ancorar elementos um no outro / X e Y digitados no modo de edição,
 banco; e conferir tudo no jogo quando o servidor voltar.
 
 ## Perfis (FEITO: Core/Serialize.lua + Core/Profiles.lua, página Perfis)
@@ -243,6 +247,8 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
   Pronto?, contagem e marcar o alvo funcionando sem erro.
 - Marcadores no chão: clicar mostra o círculo para escolher o lugar; o X limpa todos ("all" no idioma do jogo).
 - Visibilidade: transparência mudando em combate sem erro (barra de ações e quadros são protegidos).
+- Clicar para curar: Shift+clique num membro lança a magia nele (nome exato do livro de magias no idioma
+  do jogo); clique esquerdo ainda seleciona e direito abre o menu.
 
 ## Opções das classes (do protótipo, CLASS_OPTS)
 ```js

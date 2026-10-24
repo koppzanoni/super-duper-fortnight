@@ -220,6 +220,9 @@ Panel.SECTIONS = {
     } },
     { "Teste", { Panel.TestRow() } },
   } },
+  { id = "clickcast", group = "Grupo", name = "Clicar para curar",
+    lead = "Uma magia por tecla + botão do mouse nos quadros de grupo e raide. Esquerdo seleciona, direito abre o menu.",
+    build = function() return ns.ClickCast.Cards() end },
   { id = "plates", group = "Grupo", name = "Nameplates", lead = "As barras em cima dos inimigos, no visual da HUD.", cards = {
     { "Mostrar", {
       toggle("Usar as nameplates da ObsidianUI", "plates_on", true, function() ns.Nameplates.Refresh() end,
@@ -615,6 +618,23 @@ local function newRow()
   return r
 end
 
+-- A text box (a spell name...): Enter or leaving the box saves, Esc puts the saved text back.
+local function textBox(r, row)
+  local box = CreateFrame("EditBox", nil, r)
+  box:SetAutoFocus(false)
+  box:SetFontObject("GameFontHighlightSmall")
+  box:SetTextInsets(10, 10, 0, 0)
+  box:SetText(Panel.Get(row) or "")
+  box:SetSize(240, 26)
+  box:SetPoint("RIGHT", r, "RIGHT", 0, 0)
+  fill(box, "BACKGROUND", 0, 0, 0, 0.45):SetAllPoints(box)
+  edge(box, 0.14)
+  local function save(self) Panel.Set(row, self:GetText()); self:ClearFocus() end
+  box:SetScript("OnEnterPressed", save)
+  box:SetScript("OnEditFocusLost", function(self) Panel.Set(row, self:GetText()) end)
+  box:SetScript("OnEscapePressed", function(self) self:SetText(Panel.Get(row) or ""); self:ClearFocus() end)
+  return box
+end
 local function clearControls(r)
   for _, c in ipairs(r.controls) do c:Hide() end
   r.controls = {}
@@ -727,6 +747,7 @@ local function fillRow(r, row, where)
   elseif row.kind == "steps" then c = stepper(r, row)
   elseif row.kind == "choice" then c = segmented(r, row)
   elseif row.kind == "cycle" then c = cycler(r, row)
+  elseif row.kind == "text" then c = textBox(r, row)
   else c = flatButton(r, row.text, 130, row.run); c:SetPoint("RIGHT", r, "RIGHT", 0, 0) end
   r.control = c
   r.controls[1] = c

@@ -506,6 +506,15 @@ end
 
 function GroupFrames.Refresh() ns.RunOutOfCombat(apply) end
 
+-- Every frame that can show a group member: you, the party frames, the party cells, the raid cells.
+function GroupFrames.AllOwners()
+  local list = { GroupFrames.me }
+  for _, f in ipairs(GroupFrames.party) do list[#list + 1] = f end
+  for _, c in ipairs(GroupFrames.partyCells) do list[#list + 1] = c end
+  for _, c in ipairs(GroupFrames.raid) do list[#list + 1] = c end
+  return list
+end
+
 -- ------------------------------------------------------------------ setup and events
 ns.On("PLAYER_LOGIN", function()
   ns.RunOutOfCombat(function()
