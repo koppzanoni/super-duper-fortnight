@@ -327,3 +327,90 @@ def test_theme_and_colour_changes_ask_for_a_reload(lua, ns):
     lua.execute('STUB_FIRE("PLAYER_LOGIN")')
     assert lua.eval('type(rawget(StaticPopupDialogs, "OBSIDIANUI_RELOAD"))') == "table"
     assert lua.eval('type(rawget(rawget(StaticPopupDialogs, "OBSIDIANUI_RELOAD"), "OnAccept"))') == "function"
+
+
+# ------------------------------------------------------------------ every setting in the game's panel
+SETTINGS_PANEL = """
+  PANEL = {}
+  POPUPS = {}
+  function StaticPopup_Show(name) POPUPS[#POPUPS + 1] = name end
+  local function setting(key)
+    local s = { key = key }
+    s.SetValueChangedCallback = function(self, fn) self.cb = fn end
+    return s
+  end
+  Settings = {
+    RegisterVerticalLayoutCategory = function()
+      return { GetID = function() return 1 end }, { AddInitializer = function() end }
+    end,
+    RegisterAddOnSetting = function(cat, variable, key) local s = setting(key); PANEL[key] = s; return s end,
+    CreateCheckbox = function() end,
+    CreateSlider = function() end,
+    CreateSliderOptions = function() return { SetLabelFormatter = function() end } end,
+    CreateControlTextContainer = function() return { Add = function() end, GetData = function() return {} end } end,
+    CreateDropdown = function() end,
+    RegisterAddOnCategory = function() end,
+  }
+  MinimalSliderWithSteppersMixin = { Label = { Right = 1 } }
+"""
+
+
+def change(rt, ns, key, value):
+    """What the game's settings panel does: store the value, call the setting's callback."""
+    ns.db[key] = value
+    s = rt.globals().PANEL[key]
+    assert s is not None, f"setting {key} is not in the panel"
+    s.cb(s, value)
+
+
+def panel():
+    rt = preview_render.run_addon(vbars=False, pre=SETTINGS_PANEL)
+    return rt, rt.globals().PREVIEW_NS
+
+
+def test_the_panel_lists_every_setting():
+    rt, _ = panel()
+    keys = set(rt.globals().PANEL.keys())
+    assert keys == {"vbar1", "vbar2", "showHotkeys", "modernColor", "arcaneRing", "modernRows", "modernCols",
+                    "scale", "invScale"}
+
+
+def test_rows_columns_and_scale_relayout_the_bar_live():
+    rt, ns = panel()
+    b = ns.ActionBars.buttons
+    assert not b[13].obEnabled
+    change(rt, ns, "modernRows", 3)
+    assert b[13].obEnabled and visible(b[13])
+    change(rt, ns, "modernCols", 8)
+    assert abs(rect(ns.ActionBars.modernFrame)[2] - (8 * 54 + 7 * 7)) < 1
+    w = rect(b[1])[2]
+    change(rt, ns, "scale", 0.8)
+    assert abs(rect(b[1])[2] - w * 0.8) < 0.5
+
+
+def test_vertical_bars_and_hotkeys_switch_live():
+    rt, ns = panel()
+    change(rt, ns, "vbar1", True)
+    assert visible(ns.VerticalBars.container) and ns.VerticalBars.bars[1][1].obEnabled
+    change(rt, ns, "vbar1", False)
+    assert not visible(ns.VerticalBars.container)
+    change(rt, ns, "showHotkeys", False)
+    assert not visible(ns.ActionBars.buttons[1].HotKey)
+
+
+def test_arcane_ring_switches_live_and_colour_asks_for_a_reload():
+    rt, ns = panel()
+    change(rt, ns, "arcaneRing", False)
+    assert not visible(frames(ns).player.arcane)
+    change(rt, ns, "arcaneRing", True)
+    assert visible(frames(ns).player.arcane)
+    change(rt, ns, "modernColor", "blue")
+    assert list(rt.globals().POPUPS.values()) == ["OBSIDIANUI_RELOAD"]
+
+
+def test_inventory_size_applies_live():
+    rt, ns = panel()
+    ns.Inventory.Open()
+    w = rect(ns.Inventory.frame)[2]
+    change(rt, ns, "invScale", 1.2)
+    assert rect(ns.Inventory.frame)[2] > w * 1.1

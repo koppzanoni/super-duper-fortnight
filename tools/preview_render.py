@@ -81,8 +81,10 @@ def toc_files():
     return out
 
 
-def run_addon(vbars=True, inventory=False, db=None):
+def run_addon(vbars=True, inventory=False, db=None, pre=None):
     rt = lua_runtime()
+    if pre:
+        rt.execute(pre)  # stand-ins a test needs before the addon loads
     ns = rt.table()
     rt.globals().PREVIEW_NS = ns  # the addon's namespace, for tests
     loader = rt.eval("function(src, name) return assert(loadstring(src, name)) end")
