@@ -77,6 +77,48 @@ local function skinTab(tab)
   colourTab(tab)
 end
 
+-- ------------------------------------------------------------------ text
+-- Quest, gossip, mail and book text uses fonts made for parchment: dark brown, unreadable on the
+-- black panel. Those fonts turn light, and so does any dark text the game colours by hand.
+Skins.DARK_FONTS = { "QuestFont", "QuestFontLeft", "QuestFontNormalSmall", "QuestTitleFont", "GameFontBlack",
+  "GameFontBlackMedium", "GameFontBlackSmall", "GameFontBlackSmall2", "GameFontBlackTiny", "GameFontBlackTiny2",
+  "GameFontNormalHugeBlack", "InvoiceTextFontNormal", "InvoiceTextFontSmall", "ItemTextFontNormal",
+  "MailTextFontNormal", "SubSpellFont", "CoreAbilityFont", "DestinyFontMed", "DestinyFontLarge", "DestinyFontHuge" }
+
+-- Dark and without colour of its own (brown, black, grey): red or green warnings stay as they are.
+local function dark(r, g, b)
+  if type(r) ~= "number" or type(g) ~= "number" or type(b) ~= "number" then return false end
+  return math.max(r, g, b) < 0.45
+end
+
+local function lightenString(fs)
+  if not fs or not fs.GetTextColor then return end
+  if dark(fs:GetTextColor()) then fs:SetTextColor(W.TEXT[1], W.TEXT[2], W.TEXT[3]) end
+end
+Skins.LightenString = lightenString
+
+-- Every font string in the window and its children (a few levels: the windows are shallow).
+function Skins.Lighten(f, depth)
+  if not f or (depth or 0) > 6 then return end
+  if f.GetRegions then
+    for _, r in ipairs({ f:GetRegions() }) do
+      if r.GetObjectType and r:GetObjectType() == "FontString" then lightenString(r) end
+    end
+  end
+  if f.GetChildren then
+    for _, c in ipairs({ f:GetChildren() }) do Skins.Lighten(c, (depth or 0) + 1) end
+  end
+end
+
+function Skins.Fonts()
+  for _, name in ipairs(Skins.DARK_FONTS) do
+    local font = global(name)
+    if type(font) == "table" and font.SetTextColor and font.GetTextColor and dark(font:GetTextColor()) then
+      font:SetTextColor(W.TEXT[1], W.TEXT[2], W.TEXT[3])
+    end
+  end
+end
+
 -- ------------------------------------------------------------------ one window
 function Skins.Window(f)
   if not f or f.obFill then return end
@@ -91,6 +133,9 @@ function Skins.Window(f)
   -- the world map paints its frame on a child
   local border = rawget(f, "BorderFrame")
   if border then Skins.Window(border) end
+  Skins.Lighten(f)
+  -- pages and lists fill in when shown
+  if f.HookScript then f:HookScript("OnShow", function(self) Skins.Lighten(self) end) end
 end
 
 local function paint(list)
@@ -108,6 +153,23 @@ ns.On("PLAYER_LOGIN", function()
   end
   for _, name in ipairs({ "PanelTemplates_SelectTab", "PanelTemplates_DeselectTab" }) do
     if type(global(name)) == "function" then hooksecurefunc(name, colourTab) end
+  end
+  Skins.Fonts()
+  -- the quest window colours its text by hand for its parchment
+  for _, name in ipairs({ "QuestFrame_SetTextColor", "QuestFrame_SetTitleTextColor" }) do
+    if type(global(name)) == "function" then hooksecurefunc(name, lightenString) end
+  end
+  -- and paints parchment or stone under each page
+  if type(global("QuestFrame_SetMaterial")) == "function" then
+    hooksecurefunc("QuestFrame_SetMaterial", function(frame)
+      if type(frame) ~= "table" then return end
+      for _, k in ipairs({ "MaterialTopLeft", "MaterialTopRight", "MaterialBotLeft", "MaterialBotRight", "Bg" }) do
+        invisible(rawget(frame, k))
+      end
+    end)
+  end
+  if type(global("QuestInfo_Display")) == "function" then
+    hooksecurefunc("QuestInfo_Display", function(_, parent) Skins.Lighten(global("QuestInfoFrame") or parent) end)
   end
 end)
 ns.On("ADDON_LOADED", function(_, addon)

@@ -137,6 +137,17 @@ function Region:IsVisible()
   while r do if not r.shown then return false end r = r.parent end
   return true
 end
+local OBJECT_TYPES = { frame = "Frame", texture = "Texture", font = "FontString", mask = "MaskTexture" }
+function Region:GetObjectType() return OBJECT_TYPES[self.kind] or "Frame" end
+local function kids(self, frames)
+  local out = {}
+  for _, r in ipairs(REGIONS) do
+    if r.parent == self and (r.kind == "frame") == frames then out[#out + 1] = r end
+  end
+  return unpack(out)
+end
+function Region:GetChildren() return kids(self, true) end
+function Region:GetRegions() return kids(self, false) end
 function Region:SetParent(p) self.parent = p end
 function Region:GetParent() return self.parent end
 function Region:SetAlpha(a) self.alpha = a end

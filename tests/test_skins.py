@@ -12,6 +12,10 @@ WINDOWS = r"""
   local hsf = hooksecurefunc
   function hooksecurefunc(a, b, c) if type(a) == "string" then HOOKS[a] = b else return hsf(a, b, c) end end
   function PanelTemplates_SelectTab(tab) tab:Disable() end
+  function QuestFrame_SetTextColor() end
+  function QuestFrame_SetTitleTextColor() end
+  function QuestInfo_Display() end
+  function QuestFrame_SetMaterial() end
   function PanelTemplates_DeselectTab(tab) tab:Enable() end
   function MakeWindow(name)
     local f = CreateFrame("Frame", name, UIParent)
@@ -113,3 +117,53 @@ def test_panel_page():
     ns.Panel.Open("skins")
     labels = [r.row.label for r in ns.Panel.rows.values() if r.row is not None]
     assert "Usar o visual da ObsidianUI" in labels
+
+
+def test_dark_parchment_fonts_turn_light():
+    # Quest and gossip text uses fonts made for parchment: dark brown on the black panel.
+    rt, ns, g = preview()
+    rt.execute("""
+      QuestFont = { c = { 0.18, 0.12, 0.06 } }
+      function QuestFont:SetTextColor(r, gg, b) self.c = { r, gg, b } end
+      function QuestFont:GetTextColor() return self.c[1], self.c[2], self.c[3] end
+      PREVIEW_FIRE("PLAYER_LOGIN")
+    """)
+    assert g.QuestFont.c[1] > 0.5
+
+
+def test_dark_text_inside_windows_turns_light():
+    rt, ns, g = preview()
+    rt.execute("""
+      local f = MakeWindow("GossipFrame")
+      local inner = CreateFrame("Frame", nil, f)
+      DARK = inner:CreateFontString(nil, "OVERLAY")
+      DARK:SetTextColor(0.18, 0.12, 0.06)
+      RED = inner:CreateFontString(nil, "OVERLAY")
+      RED:SetTextColor(1, 0.1, 0.1)
+    """)
+    ns.Skins.Lighten(g.GossipFrame)
+    assert g.DARK.GetTextColor(g.DARK)[0] > 0.5
+    r, gg, b = g.RED.GetTextColor(g.RED)
+    assert (r, gg, b) == (1, 0.1, 0.1)
+
+
+def test_quest_text_recoloured_after_the_game_sets_it():
+    rt, ns, g = preview()
+    rt.execute("""
+      QUEST_TEXT = UIParent:CreateFontString(nil, "OVERLAY")
+      QUEST_TEXT:SetTextColor(0.18, 0.12, 0.06)
+    """)
+    g.HOOKS.QuestFrame_SetTextColor(g.QUEST_TEXT, "Parchment")
+    assert g.QUEST_TEXT.GetTextColor(g.QUEST_TEXT)[0] > 0.5
+
+
+def test_quest_page_parchment_hidden():
+    rt, ns, g = preview()
+    rt.execute("""
+      PAGE = CreateFrame("Frame", nil, UIParent)
+      for _, k in ipairs({ "MaterialTopLeft", "MaterialTopRight", "MaterialBotLeft", "MaterialBotRight", "Bg" }) do
+        PAGE[k] = PAGE:CreateTexture(nil, "BACKGROUND")
+      end
+    """)
+    g.HOOKS.QuestFrame_SetMaterial(g.PAGE, "Parchment")
+    assert g.PAGE.Bg.alpha == 0 and g.PAGE.MaterialTopLeft.alpha == 0
