@@ -142,6 +142,9 @@ Bruxo (FEITO: Classes/Warlock.lua): fragmentos de alma da bolsa em número no lu
 fragmento é item e as gemas não aparecem), sem pedra de vida / ninguém com pedra da alma nos Lembretes,
 DoTs no alvo (até 5, empilhados sem buraco), vida e mana do demônio em barras finas (Classes/Pet.lua,
 comum com o Caçador).
+Monge (FEITO: Classes/Monk.lua): barra de Estagnar do Mestre Cervejeiro no lugar das gemas (UnitStagger
+direto na barra; cor verde/amarelo/vermelho só com valor legível), Chi em gemas ou barra (gancho
+ClassResource.ForceBar, só para o Monge).
 Próximas classes, uma por commit: Xamã,
 Mago, Bruxo, Monge, Druida (opções de cada uma no protótipo, CLASS_OPTS).
 Falta: as outras classes na página Classes (+ modo de teste,

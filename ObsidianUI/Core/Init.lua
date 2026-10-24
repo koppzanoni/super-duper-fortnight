@@ -29,7 +29,8 @@ local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, sh
   c_dk_types = true, c_dk_cd = true, c_dk_rp = true, c_dk_dis = true,
   c_sha_totems = true, c_sha_totpos = "player", c_sha_weapon = true, c_sha_shield = true, c_sha_5sr = true,
   c_mag_5sr = true, c_mag_armor = true, c_mag_gem = true, c_mag_procs = true,
-  c_wl_shards = true, c_wl_stones = true, c_wl_dots = true, c_wl_pet = true }
+  c_wl_shards = true, c_wl_stones = true, c_wl_dots = true, c_wl_pet = true,
+  c_mon_stagger = true, c_mon_chi = true }
 
 -- A Moderno texture in the chosen colour: the black theme, or the concept's blue.
 function ns.ModernTex(name)

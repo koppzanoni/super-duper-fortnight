@@ -40,7 +40,11 @@ local current -- { powerType, token, color }
 local shownCount, litState = nil, {}
 
 local function db() return ns.db or {} end
-local function barStyle() return db().resStyle == "bar" end
+-- ForceBar: a class module wants its resource as a bar whatever the setting (the monk's chi).
+local function barStyle()
+  if ClassResource.ForceBar and ClassResource.ForceBar() then return true end
+  return db().resStyle == "bar"
+end
 
 local function specIndex()
   return GetSpecialization and GetSpecialization() or nil

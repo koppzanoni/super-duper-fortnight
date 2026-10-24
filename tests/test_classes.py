@@ -63,8 +63,8 @@ def test_other_classes_listed_and_not_built_ones_say_so():
     row = next(r for r in ns.Panel.rows.values() if r.row is not None and r.row.label == "Classe")
     names = [o[2] for o in row.row.options().values()]
     assert len(names) == 11 and names[0].startswith("Ladino")             # yours first
-    row.row.set("MONK")
-    assert ns.Classes.selected == "MONK" and "Tick de energia" not in page_labels(ns)
+    row.row.set("DRUID")
+    assert ns.Classes.selected == "DRUID" and "Tick de energia" not in page_labels(ns)
     heads = [r.label.text for r in ns.Panel.rows.values() if r.row is None]
     assert any("EM BREVE" in (h or "") for h in heads)
 
