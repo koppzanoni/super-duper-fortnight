@@ -23,8 +23,7 @@ codar, protótipo do painel e do instalador no sketch.
 ## Fase 2 — Modo de edição (FEITO: Core/Movers.lua + HUD/EditMode.lua, /obui editar)
 Feito: arrastar, grudar (grade 8 px, centro, bordas/centros dos outros) com guias, roda = tamanho,
 setas = 1 px (Shift 10), Centralizar, Restaurar, Restaurar tudo, sai em combate; salvo em db.layout.
-Falta (vai para o painel): ancorar um elemento em outro, igualar largura, X/Y digitados, inventário
-no sistema de movers (hoje tem o arrastar próprio).
+Falta: igualar largura, inventário no sistema de movers (hoje tem o arrastar próprio).
 
 ### Plano original
 - Botão nas configurações (e /obui editar) que mostra uma caixa tracejada com nome em cada elemento:
@@ -159,8 +158,11 @@ Clicar para curar (FEITO: HUD/ClickCast.lua, página Clicar para curar): uma mag
 esquerdo ou direito, botão do meio, 4 e 5, como atributos seguros (shift-type1 = spell) em você, nos quadros e
 células do grupo e nas células de raide; esquerdo seleciona, direito abre o menu; muda só fora de combate.
 Painel ganhou a linha de texto (kind = "text").
+Modo de edição (FEITO): X e Y digitados (da esquerda e do topo da tela) e "Ancorar em" na faixa do elemento
+selecionado; o ancorado guarda a distância (layout[key].to/dx/dy) e é reposicionado pelo UIParent depois do
+outro (nunca preso a ele: quadro protegido preso a um que se move em combate seria bloqueado); laços recusados;
+a faixa do modo de edição se arrasta.
 Todos os módulos do painel estão feitos (nenhum "em breve"). Ainda falta:
-ancorar elementos um no outro / X e Y digitados no modo de edição,
 banco; e conferir tudo no jogo quando o servidor voltar.
 
 ## Perfis (FEITO: Core/Serialize.lua + Core/Profiles.lua, página Perfis)

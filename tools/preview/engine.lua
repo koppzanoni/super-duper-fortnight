@@ -219,7 +219,7 @@ function Region:AddMaskTexture(m) self.mask = m end
 local FONT_PX = { GameFontNormalLarge = 17, GameFontNormal = 14, GameFontNormalSmall = 12, GameFontHighlight = 14,
   GameFontHighlightSmall = 12, NumberFontNormalSmall = 11, NumberFontNormal = 13 }
 local function autosize(self)
-  if self.fixedW then return end
+  if self.fixedW or self.ftype == "EditBox" then return end -- an edit box keeps its size, like the game
   local px = self.fsize or FONT_PX[self.font] or 12
   self.w, self.h = #(self.text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")) * px * 0.56, px + 2
 end

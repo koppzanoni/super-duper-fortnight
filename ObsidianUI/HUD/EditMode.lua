@@ -3,7 +3,9 @@ local _, ns = ...
 -- Edit mode (EllesmereUI's Unlock Mode idea): a box over every HUD element (ns.Movers). Drag a box
 -- to move its element; it sticks to the 8 px grid, to the screen's center and to the edges and
 -- centers of the other elements (gold guide lines; Alt held = free). Mouse wheel resizes, arrows
--- nudge the selected element by 1 px (Shift: 10). Out of combat only: combat ends it.
+-- nudge the selected element by 1 px (Shift: 10). The banner takes a typed X and Y (from the
+-- screen's left and top) and anchors the selected element to another one, which it then follows
+-- (Core/Movers.lua). Out of combat only: combat ends it.
 -- /obui editar or the settings page starts it; Esc or the banner's button leaves.
 local EditMode = { active = false, boxes = {} }
 ns.EditMode = EditMode
@@ -59,9 +61,16 @@ guideX:Hide(); guideY:Hide()
 -- Banner: what to do, and the buttons to reset everything or leave.
 local banner = CreateFrame("Frame", nil, UIParent)
 banner:SetFrameStrata("FULLSCREEN_DIALOG")
-banner:SetSize(560, 112)
+banner:SetSize(740, 112)
 banner:SetPoint("TOP", UIParent, "TOP", 0, -190)
 banner:Hide()
+-- the banner itself can be dragged out of the way of what is being placed
+banner:SetMovable(true)
+banner:EnableMouse(true)
+banner:RegisterForDrag("LeftButton")
+banner:SetScript("OnDragStart", function(self) self:StartMoving() end)
+banner:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+EditMode.banner = banner
 local bannerBg = banner:CreateTexture(nil, "BACKGROUND")
 bannerBg:SetAllPoints(banner)
 bannerBg:SetColorTexture(0.02, 0.025, 0.03, 0.88)
@@ -71,12 +80,67 @@ title:SetText("Modo de edição")
 title:SetTextColor(1, 1, 1)
 local help = banner:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 help:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
-help:SetWidth(532)
+help:SetWidth(712)
 help:SetJustifyH("LEFT")
-help:SetText("Arraste para mover (Alt: sem grudar). Roda do mouse: tamanho. Setas: 1 px, Shift: 10 px.")
+help:SetText("Arraste para mover (Alt: sem grudar). Roda do mouse: tamanho. Setas: 1 px, Shift: 10 px. Este quadro também se arrasta.")
 EditMode.selectedText = banner:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 EditMode.selectedText:SetPoint("TOPLEFT", banner, "TOPLEFT", 14, -56)
 EditMode.selectedText:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+
+-- Selected element: X and Y boxes and the anchor chooser (filled by EditMode.ShowSelected).
+local selRow = CreateFrame("Frame", nil, banner)
+selRow:SetPoint("TOPRIGHT", banner, "TOPRIGHT", -14, -50) -- on the selected element's line
+selRow:SetSize(470, 26)
+local function small(text, anchor, x)
+  local t = selRow:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  t:SetPoint("LEFT", anchor, anchor == selRow and "LEFT" or "RIGHT", x, 0)
+  t:SetText(text)
+  return t
+end
+local function numberBox(after)
+  local b = CreateFrame("EditBox", nil, selRow)
+  b:SetAutoFocus(false)
+  b:SetFontObject("GameFontHighlightSmall")
+  b:SetTextInsets(6, 6, 0, 0)
+  b:SetSize(56, 22)
+  b:SetPoint("LEFT", after, "RIGHT", 6, 0)
+  local bg = b:CreateTexture(nil, "BACKGROUND")
+  bg:SetAllPoints(b)
+  bg:SetColorTexture(0, 0, 0, 0.5)
+  b:SetScript("OnEscapePressed", function(self) self:ClearFocus(); EditMode.ShowSelected() end)
+  return b
+end
+local xLabel = small("X", selRow, 0)
+EditMode.xBox = numberBox(xLabel)
+local yLabel = small("Y", EditMode.xBox, 12)
+EditMode.yBox = numberBox(yLabel)
+local function typed()
+  local key = EditMode.selected
+  local x, y = tonumber(EditMode.xBox:GetText()), tonumber(EditMode.yBox:GetText())
+  if key and x and y then EditMode.SetXY(key, x, y) end
+  EditMode.xBox:ClearFocus(); EditMode.yBox:ClearFocus()
+  EditMode.ShowSelected()
+end
+EditMode.xBox:SetScript("OnEnterPressed", typed)
+EditMode.yBox:SetScript("OnEnterPressed", typed)
+
+local anchorLabel = small("Ancorar em", EditMode.yBox, 16)
+local chooser = CreateFrame("Frame", nil, selRow)
+chooser:SetSize(220, 22)
+chooser:SetPoint("LEFT", anchorLabel, "RIGHT", 8, 0)
+chooser.value = chooser:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+chooser.value:SetPoint("CENTER")
+local function arrow(text, point, dir)
+  local b = CreateFrame("Button", nil, chooser, "UIPanelButtonTemplate")
+  b:SetSize(24, 22)
+  b:SetPoint(point)
+  b:SetText(text)
+  b:SetScript("OnClick", function() EditMode.StepAnchor(dir) end)
+  return b
+end
+chooser.prev, chooser.next = arrow("<", "LEFT", -1), arrow(">", "RIGHT", 1)
+EditMode.anchorChooser = chooser
+selRow:Hide()
 
 local function button(text, x, onClick)
   local b = CreateFrame("Button", nil, banner, "UIPanelButtonTemplate")
@@ -128,6 +192,35 @@ function EditMode.MoveTo(key, left, top)
   apply(key)
 end
 
+-- X and Y as typed: the element's top-left from the screen's left and top.
+function EditMode.SetXY(key, x, y)
+  local _, H = screen()
+  EditMode.MoveTo(key, x, H - y)
+end
+
+-- Anchors `key` to `to` (nil: free). False when it would close a loop.
+function EditMode.AnchorTo(key, to)
+  if not ns.Movers.Anchor(key, to) then return false end
+  apply(key)
+  EditMode.ShowSelected()
+  return true
+end
+
+-- The anchor chooser's arrows: the next element that does not close a loop (or none).
+function EditMode.StepAnchor(dir)
+  local key = EditMode.selected
+  if not key then return end
+  local list = { false }
+  for _, k in ipairs(ns.Movers.order) do if k ~= key then list[#list + 1] = k end end
+  local current = (ns.Movers.Saved(key) or {}).to or false
+  local at = 1
+  for i, k in ipairs(list) do if k == current then at = i end end
+  for step = 1, #list do
+    local k = list[(at - 1 + dir * step) % #list + 1]
+    if EditMode.AnchorTo(key, k or nil) then return end
+  end
+end
+
 function EditMode.Resize(key, delta)
   local s = ns.Movers.Scale(key) + (delta > 0 and STEP or -STEP)
   s = math.max(0.5, math.min(2, math.floor(s * 100 + 0.5) / 100))
@@ -172,8 +265,18 @@ function EditMode.ShowSelected()
   end
   if key then
     EditMode.selectedText:SetFormattedText("%s — tamanho %d%%", ns.Movers.items[key].label, math.floor(ns.Movers.Scale(key) * 100 + 0.5))
+    local r = ns.Movers.Rect(ns.Movers.items[key].box)
+    local _, H = screen()
+    if r then
+      EditMode.xBox:SetText(tostring(math.floor(r.x + 0.5)))
+      EditMode.yBox:SetText(tostring(math.floor(H - r.y + 0.5)))
+    end
+    local to = (ns.Movers.Saved(key) or {}).to
+    chooser.value:SetText(to and ns.Movers.items[to] and ns.Movers.items[to].label or "Nada")
+    selRow:Show()
   else
     EditMode.selectedText:SetText("Clique num elemento para selecionar.")
+    selRow:Hide()
   end
 end
 

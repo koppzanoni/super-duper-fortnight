@@ -160,3 +160,99 @@ def test_reset_command_forgets_the_edit_mode_positions():
     rt.globals().SlashCmdList.OBSIDIANUI("reset")
     assert ns.db.layout is None
     assert rect(ns.Minimap.frame)[0] + rect(ns.Minimap.frame)[2] > 1880
+
+
+# ---------------------------------------------------------------- typed X/Y and anchoring
+def top_left(ns, key):
+    r = ns.Movers.Rect(ns.Movers["items"][key].box)
+    return r.x, r.y
+
+
+def test_typed_x_and_y_place_the_element():
+    _, ns = preview()
+    ns.EditMode.Start()
+    ns.EditMode.SetXY("target", 600, 200)                     # from the screen's left and top
+    x, y = top_left(ns, "target")
+    W, H = ns.HUD.W, 1080
+    assert abs(x - 600) < 0.5 and abs((H - y) - 200) < 0.5
+
+
+def test_x_and_y_boxes_show_and_take_the_selected_position():
+    _, ns = preview()
+    E = ns.EditMode
+    E.Start()
+    E.Select("player")
+    x, y = top_left(ns, "player")
+    assert E.xBox.GetText(E.xBox) == str(round(x)) and E.yBox.GetText(E.yBox) == str(round(1080 - y))
+    E.xBox.SetText(E.xBox, "420")
+    E.xBox.GetScript(E.xBox, "OnEnterPressed")(E.xBox)
+    assert abs(top_left(ns, "player")[0] - 420) < 0.5
+
+
+def test_anchored_element_follows_its_anchor():
+    _, ns = preview()
+    E = ns.EditMode
+    E.Start()
+    assert E.AnchorTo("target", "player")
+    tx, ty = top_left(ns, "target")
+    px, py = top_left(ns, "player")
+    E.MoveTo("player", px + 50, py - 30)
+    nx, ny = top_left(ns, "target")
+    assert abs(nx - (tx + 50)) < 0.5 and abs(ny - (ty - 30)) < 0.5
+    assert ns.db.layout.target.to == "player"
+
+
+def test_dragging_an_anchored_element_keeps_the_anchor():
+    _, ns = preview()
+    E = ns.EditMode
+    E.Start()
+    E.AnchorTo("focus", "player")
+    fx, fy = top_left(ns, "focus")
+    E.MoveTo("focus", fx + 10, fy)
+    px, py = top_left(ns, "player")
+    E.MoveTo("player", px + 100, py)
+    assert abs(top_left(ns, "focus")[0] - (fx + 110)) < 0.5
+
+
+def test_no_anchor_loops():
+    _, ns = preview()
+    E = ns.EditMode
+    E.Start()
+    assert E.AnchorTo("target", "player")
+    assert E.AnchorTo("targettarget", "target")
+    assert not E.AnchorTo("player", "targettarget")           # player -> tot -> target -> player
+    assert not E.AnchorTo("player", "player")
+    assert ns.db.layout.player is None or ns.db.layout.player.to is None
+
+
+def test_anchor_kept_after_a_relayout_and_cleared():
+    rt, ns = preview()
+    E = ns.EditMode
+    E.Start()
+    E.AnchorTo("info", "map")
+    ix, iy = top_left(ns, "info")
+    f = ns.Movers.Rect(ns.Movers["items"]["map"].frame)
+    rt.execute(f"PREVIEW_NS.db.layout.map = {{ x = {f.x - 200}, y = {f.y} }}")
+    ns.HUD.Layout()
+    assert abs(top_left(ns, "info")[0] - (ix - 200)) < 0.5   # placed after its anchor on every layout
+    E.AnchorTo("info", None)
+    assert ns.db.layout.info.to is None
+
+
+def test_anchor_chooser_in_the_banner():
+    _, ns = preview()
+    E = ns.EditMode
+    E.Start()
+    E.Select("target")
+    c = E.anchorChooser
+    assert c.value.text == "Nada"
+    c.next.GetScript(c.next, "OnClick")(c.next)
+    first = ns.db.layout.target.to
+    assert first is not None and first != "target"
+    assert c.value.text == ns.Movers["items"][first].label
+
+
+def test_banner_can_be_dragged_away():
+    _, ns = preview()
+    b = ns.EditMode.banner
+    assert b.GetScript(b, "OnDragStart") is not None and b.GetScript(b, "OnDragStop") is not None

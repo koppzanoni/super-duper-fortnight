@@ -28,6 +28,7 @@ function HUD.Layout()
   g.bottom = math.max(g.bottom, ns.DataBars.Room() * g.s)
   HUD.h = HUD.modernBar.bottom + HUD.modernBar.height
   for _, fn in ipairs(HUD.onResize) do fn() end
+  ns.Movers.PlaceAnchored() -- anchored elements follow their anchors' new places
 end
 
 local function relayout() ns.RunOutOfCombat(HUD.Layout) end
