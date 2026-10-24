@@ -415,6 +415,12 @@ end
 function Inventory.Layout()
   local W, H = UIParent:GetSize()
   local point, x, y, h = Inventory.DefaultPlacement(W, H, ns.HUD.h or 0.25 * H)
+  -- The bank window (Bank.lua, window style) sits on the left: both fit the screen side by side.
+  local pairW = Inventory.pairW
+  if pairW then
+    h = math.min(h, 0.96 * W * S.h / (S.w + pairW))
+    x = x + pairW / 2 * h / S.h
+  end
   frame:SetSize(h * S.w / S.h, h)
   if not frame.obPlaced then
     frame:ClearAllPoints()

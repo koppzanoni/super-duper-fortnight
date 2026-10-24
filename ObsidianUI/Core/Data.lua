@@ -58,6 +58,16 @@ Data.INV = { w = 1240, h = 780,
   bags = { x = 598, y = 702, size = 40, gap = 6 }, free = { x = 838, y = 702, w = 160, h = 40 },
   gold = { x = 1014, y = 702, w = 200, h = 40 } }
 
+-- Bank (Inventory/Bank.lua), in the inventory's design units. One bank pane, placed by the chosen
+-- model: window (its own window left of the inventory), side (over the character half), inside
+-- (over the bag grid, the search and the gold stay). Pane rows: bar (Personagem/Conta, deposit,
+-- sort), the grid (as many columns as fit), the foot (bank bags, free slots).
+Data.BANK_STYLES = { { "window", "Janela própria" }, { "side", "Ao lado das bolsas" }, { "inside", "Dentro do inventário" } }
+Data.BANK = { win = { w = 1000, head = 48, pane = { x = 20, y = 60, w = 960, h = 700 } },
+  side = { x = 16, y = 60, w = 552, h = 690 }, inside = { x = 598, y = 106, w = 616, h = 636 },
+  bar = 34, kindW = 124, depositW = 150, gap = 12, foot = 40, bag = 40, bagGap = 6, freeW = 200,
+  switch = { w = 104, h = 30, gap = 6, right = 1176 } }
+
 -- Unit frame health: grey when tapped by someone else, class color for players, else reaction.
 local HOSTILE, NEUTRAL, FRIENDLY = { 0.78, 0.16, 0.12 }, { 0.85, 0.70, 0.15 }, { 0.20, 0.62, 0.18 }
 function Data.HealthColor(tapDenied, classColor, reaction)

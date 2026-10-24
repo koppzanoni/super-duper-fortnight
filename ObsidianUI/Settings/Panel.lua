@@ -121,6 +121,10 @@ Panel.SECTIONS = {
         "Acima de 100% a janela pode cobrir parte da HUD."),
       button("Abrir inventário", "Abrir", function() Panel.Close(); if ns.Inventory then ns.Inventory.Open() end end),
     } },
+    { "Banco", {
+      choice("Modelo do banco", "bankStyle", "side", ns.Data.BANK_STYLES, function() if ns.Bank then ns.Bank.ApplyStyle() end end,
+        "Janela própria ao lado do inventário, no lugar do personagem, ou um seletor Bolsas / Banco / Conta no inventário (mostra o banco mesmo longe do banqueiro)."),
+    } },
   } },
   -- planned (the prototype has their options); listed so the panel shows where things are going
   { id = "visual", name = "Visual", lead = "Fonte, textura das barras, números e cores de toda a HUD.", cards = {

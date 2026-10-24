@@ -5,7 +5,7 @@ ns.name = addonName
 -- Default settings (also what a new profile starts from, Core/Profiles.lua).
 local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, showHotkeys = true,
   -- the HUD (the stone HUD retired: git tag hud-pedra-final)
-  modernColor = "black", glass = "smoke", frameStyle = "gloss", arcaneRing = true, modernRows = 2, modernCols = 12,
+  modernColor = "black", glass = "smoke", frameStyle = "gloss", bankStyle = "side", arcaneRing = true, modernRows = 2, modernCols = 12,
   castLag = true, castMs = true, castQueue = true,
   font = "default", outline = "OUTLINE", barTex = "gloss", numFmt = "short",
   res_on = true, resStyle = "gems", resHide = false, buffs_on = true, debuffs_on = true, buffSize = 26, buffRow = 16,

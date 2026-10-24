@@ -10,7 +10,8 @@ ns.Profiles = Profiles
 
 local DEFAULT = "Padrão"
 -- Account data that is not part of a profile.
-local META = { profiles = true, chars = true, activeProfile = true, positioned = true, seenCinematics = true }
+local META = { profiles = true, chars = true, activeProfile = true, positioned = true, seenCinematics = true,
+  bankCache = true }
 
 local function copy(v)
   if type(v) ~= "table" then return v end

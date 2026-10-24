@@ -419,7 +419,7 @@ def test_bag_scroll_bar_is_thin_without_arrows(lua, ns):
       local cf = CreateFrame
       function CreateFrame(kind, name, parent, template)
         local f = cf(kind, name, parent, template)
-        if template == "UIPanelScrollFrameTemplate" then
+        if name == "ObsidianUIBagScroll" then
           local function part()
             local p = cf()
             p.points = {}

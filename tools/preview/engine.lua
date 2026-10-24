@@ -133,8 +133,18 @@ function Region:GetLeft() return self:Rect()[1] / self:EffScale() end
 function Region:GetRight() local r = self:Rect(); return (r[1] + r[3]) / self:EffScale() end
 
 -- Visibility / hierarchy ------------------------------------------------------------------------
-function Region:Show() self.shown = true; if self.handlers.OnShow then self.handlers.OnShow(self) end end
-function Region:Hide() self.shown = false end
+function Region:Show()
+  local was = self.shown
+  self.shown = true
+  if self.handlers.OnShow then self.handlers.OnShow(self) end
+  if not was and self.hooks.OnShow then self.hooks.OnShow(self) end
+end
+function Region:Hide()
+  local was = self.shown
+  self.shown = false
+  if was and self.handlers.OnHide then self.handlers.OnHide(self) end
+  if was and self.hooks.OnHide then self.hooks.OnHide(self) end
+end
 function Region:SetShown(v) if v then self:Show() else self:Hide() end end
 function Region:IsShown() return self.shown end
 function Region:IsVisible()
@@ -194,7 +204,11 @@ function Region:GetVerticalScroll() return self.vscroll or 0 end
 -- Scripts / attributes --------------------------------------------------------------------------
 function Region:SetScript(name, fn) self.handlers[name] = fn end
 function Region:GetScript(name) return self.handlers[name] end
-function Region:HookScript(name, fn) self.hooks[name] = fn end
+-- Hooks chain like the game's: each one runs after the ones before.
+function Region:HookScript(name, fn)
+  local before = self.hooks[name]
+  self.hooks[name] = before and function(...) before(...); fn(...) end or fn
+end
 function Region:SetAttribute(k, v)
   self.attrs[k] = v
   if self.hooks.OnAttributeChanged then self.hooks.OnAttributeChanged(self, k, v) end

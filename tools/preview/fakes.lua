@@ -64,9 +64,20 @@ end
 function GetInventoryItemQuality(_, slot) return ({ 4, 3, 2, 4, 1, 3, 4, 2, 5, 3 })[slot % 10 + 1] end
 ITEM_QUALITY_COLORS = { [0] = { r = 0.62, g = 0.62, b = 0.62 }, [1] = { r = 1, g = 1, b = 1 }, [2] = { r = 0.12, g = 1, b = 0 },
   [3] = { r = 0, g = 0.44, b = 0.87 }, [4] = { r = 0.64, g = 0.21, b = 0.93 }, [5] = { r = 1, g = 0.5, b = 0 } }
+-- The bank: two character bank bags (6: 28 slots, 7: 16) and one account tab (12: 98 slots).
+local BANK_SLOTS = { [6] = 28, [7] = 16, [12] = 98 }
 C_Container = {
-  GetContainerNumSlots = function(bag) if bag == 0 then return 16 elseif bag <= 4 then return 16 elseif bag == 5 then return 0 end return 0 end,
+  GetContainerNumSlots = function(bag)
+    if BANK_SLOTS[bag] then return BANK_SLOTS[bag] end
+    if bag == 0 then return 16 elseif bag <= 4 then return 16 elseif bag == 5 then return 0 end return 0
+  end,
   GetContainerItemInfo = function(bag, slot)
+    if BANK_SLOTS[bag] then
+      local k = bag * 7 + slot
+      if (bag == 12 and slot > 30) or (bag ~= 12 and k % 3 == 0) then return nil end
+      return { iconFileID = "ICON:" .. (k % 24), stackCount = ({ 1, 20, 5, 1, 200, 12 })[k % 6 + 1],
+        quality = ({ 1, 2, 3, 4, 1, 2, 0 })[k % 7 + 1], itemID = k % 14 + 1, hyperlink = "|Hitem:" .. k .. "|h[Item]|h" }
+    end
     local k = bag * 16 + slot
     if k > 14 then return nil end
     return { iconFileID = "ICON:" .. ((k * 5) % 24), stackCount = ({ 1, 20, 1, 12, 87, 3, 1, 200, 54, 1, 5, 1, 1, 9 })[k] or 1,
@@ -94,7 +105,9 @@ function print() end
 SlashCmdList = {}
 UISpecialFrames = {}
 Enum = { PowerType = { Mana = 0, Rage = 1, Focus = 2, Energy = 3, ComboPoints = 4, Runes = 5, RunicPower = 6,
-  SoulShards = 7, HolyPower = 9, Chi = 12, ArcaneCharges = 16 } }
+  SoulShards = 7, HolyPower = 9, Chi = 12, ArcaneCharges = 16 },
+  BankType = { Character = 0, Guild = 1, Account = 2 },
+  BagIndex = { Characterbanktab = -2, Accountbanktab = -5, CharacterBankTab_1 = 6, AccountBankTab_1 = 12 } }
 PowerBarColor = setmetatable({}, { __index = function() return { r = 0.5, g = 0.5, b = 0.5 } end })
 CurveConstants = { ScaleTo100 = 1 }
 -- Blizzard's player cast bar, mid-cast.
@@ -261,3 +274,36 @@ function PREVIEW_PLATES(n)
 end
 local markerBase = GetRaidTargetIndex
 function GetRaidTargetIndex(u) if PLATE_UNITS[u] then return PLATE_UNITS[u].marker end return markerBase(u) end
+
+-- The bank (camelot: bank bags bought like tabs, the first comes with the bank). PREVIEW_BANK(true)
+-- opens it the way the game does: Blizzard's BankFrame shows and the bags open.
+local BANK_TABS = { [0] = { { ID = 6, name = "Aba 1" }, { ID = 7, name = "Aba 2" } }, [2] = { { ID = 12, name = "Conta 1" } } }
+PREVIEW_BANK_CLOSED = 0
+C_Bank = {
+  FetchPurchasedBankTabData = function(t) return BANK_TABS[t] or {} end,
+  CanViewBank = function() return true end,
+  CanPurchaseBankTab = function() return true end,
+  HasMaxBankTabs = function() return false end,
+  ShouldUsePlayerBagsInBank = function() return true end,
+  DoesBankTypeSupportAutoDeposit = function(t) return t == 2 end,
+  FetchNextPurchasableBankTabData = function() return { tabCost = 100000, canAfford = true } end,
+  CloseBankFrame = function() PREVIEW_BANK_CLOSED = (PREVIEW_BANK_CLOSED or 0) + 1 end,
+}
+C_Container.SortBankBags = function() PREVIEW_BANK_SORTED = 0 end
+C_Container.SortAccountBankBags = function() PREVIEW_BANK_SORTED = 2 end
+ItemLocation = { CreateFromBagAndSlot = function(_, bag, slot) return { bag = bag, slot = slot } end }
+C_Item.DoesItemExist = function(loc) return loc.bag == -2 and loc.slot == 2 end
+C_Item.GetItemIcon = function() return "ICON:bag" end
+PREVIEW_TAB_EVENTS = {}
+EventRegistry = { TriggerEvent = function(_, name, id)
+  PREVIEW_TAB_EVENTS[#PREVIEW_TAB_EVENTS + 1] = name .. ":" .. tostring(id)
+  if name == "BankPanelMixin.TriggerSetTabEffects" then BankFrame.activeType = id == 2 and 2 or 0 end
+end }
+BankFrame = CreateFrame("Frame", "BankFrame", UIParent)
+BankFrame:Hide()
+BankFrame.activeType = 0
+function BankFrame:GetActiveBankType() return self:IsShown() and self.activeType or nil end
+function BankFrame:GetTabIDForBankType(t) return t == 2 and 2 or 1 end
+function PREVIEW_BANK(open)
+  if open then BankFrame:Show() else BankFrame:Hide() end
+end

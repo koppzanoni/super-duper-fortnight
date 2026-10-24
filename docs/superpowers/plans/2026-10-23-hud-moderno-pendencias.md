@@ -162,8 +162,17 @@ Modo de edição (FEITO): X e Y digitados (da esquerda e do topo da tela) e "Anc
 selecionado; o ancorado guarda a distância (layout[key].to/dx/dy) e é reposicionado pelo UIParent depois do
 outro (nunca preso a ele: quadro protegido preso a um que se move em combate seria bloqueado); laços recusados;
 a faixa do modo de edição se arrasta.
-Todos os módulos do painel estão feitos (nenhum "em breve"). Ainda falta:
-banco; e conferir tudo no jogo quando o servidor voltar.
+Todos os módulos do painel estão feitos (nenhum "em breve"). Ainda falta: conferir tudo no jogo quando o
+servidor voltar.
+
+## Banco (FEITO: Inventory/Bank.lua, Inventário > Banco)
+Os três modelos dos mockups, escolhidos em "Modelo do banco" (bankStyle): Janela própria (à esquerda do
+inventário, os dois encolhem para caber), Ao lado das bolsas (padrão; no lugar do personagem), Dentro do
+inventário (Bolsas / Banco / Conta no topo; longe do banqueiro mostra a última visita, salva em
+bankCache, fora dos perfis). O BankFrame da Blizzard fica aberto, invisível e fora da tela: o clique direito
+numa bolsa deposita no tipo ativo dele, e Personagem/Conta trocam a aba dele (TriggerSetTabEffects).
+Rolagem em vez das páginas da Blizzard. Bolsas do banco no rodapé (a primeira vem com o banco), "+" compra a
+próxima (popup CONFIRM_BUY_BANK_TAB). Falta conferir no jogo: troca Personagem/Conta sem "bloqueado".
 
 ## Perfis (FEITO: Core/Serialize.lua + Core/Profiles.lua, página Perfis)
 Perfil por personagem, criar/copiar/excluir, troca ao vivo (cor pede recarga), um por

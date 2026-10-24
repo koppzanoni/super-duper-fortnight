@@ -38,10 +38,11 @@ function Inventory.bagButtons()
   return list
 end
 
-local function newButton(bag, slot)
-  local name = "ObsidianUIBag" .. bag .. "Slot" .. slot
-  local ok, b = pcall(CreateFrame, "ItemButton", name, bagFrames[bag], "ContainerFrameItemButtonTemplate")
-  if not ok then b = CreateFrame("Button", name, bagFrames[bag], "ContainerFrameItemButtonTemplate") end
+-- One container slot in the Moderno slot frame (the bags here, the bank in Bank.lua). parent: a
+-- frame whose ID is the bag, as the game's item button template reads it.
+function Inventory.NewItemButton(parent, name, slot)
+  local ok, b = pcall(CreateFrame, "ItemButton", name, parent, "ContainerFrameItemButtonTemplate")
+  if not ok then b = CreateFrame("Button", name, parent, "ContainerFrameItemButtonTemplate") end
   b:SetID(slot)
   b.Cooldown = b.Cooldown or _G[name .. "Cooldown"]
   b.IconQuestTexture = b.IconQuestTexture or _G[name .. "IconQuestTexture"]
@@ -52,6 +53,11 @@ local function newButton(bag, slot)
   local normal = b.GetNormalTexture and b:GetNormalTexture()
   if normal then normal:SetAlpha(0) end
   b:Hide()
+  return b
+end
+
+local function newButton(bag, slot)
+  local b = Inventory.NewItemButton(bagFrames[bag], "ObsidianUIBag" .. bag .. "Slot" .. slot, slot)
   buttons[bag][slot] = b
   return b
 end
@@ -106,7 +112,7 @@ local function setMarkers(b, bag, slot, info)
   end
 end
 
-local function refreshButton(b, bag, slot)
+function Inventory.FillItemButton(b, bag, slot)
   local info = C_Container.GetContainerItemInfo(bag, slot)
   setMarkers(b, bag, slot, info)
   b:SetAlpha(filteredOut(info) and 0.25 or 1)
@@ -119,6 +125,19 @@ local function refreshButton(b, bag, slot)
   -- quality colour from green up; plain items and empty slots keep the neutral frame
   if info then b.obBorder:SetVertexColor(Inventory.QualityColor(info.quality))
   else b.obBorder:SetVertexColor(1, 1, 1, 0.6) end
+end
+local refreshButton = Inventory.FillItemButton
+
+-- Size a slot button and inset its icon inside the slot frame.
+function Inventory.SizeItemButton(b, size)
+  local inset = size * ns.Data.MODERN_SLOT.inset / ns.Data.MODERN_SLOT.size
+  b:SetSize(size, size)
+  local icon = b.icon or _G[b:GetName() .. "IconTexture"]
+  if icon then
+    icon:ClearAllPoints()
+    icon:SetPoint("TOPLEFT", b, "TOPLEFT", inset, -inset)
+    icon:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -inset, inset)
+  end
 end
 
 local function collectSlots()
@@ -141,7 +160,6 @@ local function relayout()
   local pitchX = (G.slot + G.gap) * unit
   local pitchY = pitchX
   local size = G.slot * unit
-  local inset = size * ns.Data.MODERN_SLOT.inset / ns.Data.MODERN_SLOT.size
   for _, bag in ipairs(BAGS) do
     for _, b in pairs(buttons[bag]) do b:Hide() end
   end
@@ -152,13 +170,7 @@ local function relayout()
       local col, row = ns.GridModel.Pos(index, COLS)
       b:ClearAllPoints()
       b:SetPoint("TOPLEFT", child, "TOPLEFT", (col - 1) * pitchX, -(row - 1) * pitchY)
-      b:SetSize(size, size)
-      local icon = b.icon or _G[b:GetName() .. "IconTexture"]
-      if icon then
-        icon:ClearAllPoints()
-        icon:SetPoint("TOPLEFT", b, "TOPLEFT", inset, -inset)
-        icon:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -inset, inset)
-      end
+      Inventory.SizeItemButton(b, size)
       refreshButton(b, s.bag, s.slot)
       b:Show()
     end
