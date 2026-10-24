@@ -53,6 +53,7 @@ function Region:SetPoint(point, a, b, c, d)
   for i, p in ipairs(self.points) do if p.point == point then table.remove(self.points, i) break end end
   table.insert(self.points, { point = point, rel = rel or UIParent, relPoint = relPoint, x = x, y = y })
 end
+function Region:GetDrawLayer() return self.layer end
 function Region:GetPoint(i)
   local p = self.points[i or 1]
   if p then return p.point, p.rel, p.relPoint, p.x, p.y end

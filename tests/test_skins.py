@@ -188,3 +188,21 @@ def test_mail_parchment_gone():
     """)
     assert g.InboxFrameBg.alpha == 0 and g.ROW_BORDER.alpha == 0
     assert g.SendMailHorizontalBarLeft.alpha == 0 and g.BAR_RIGHT.alpha == 0
+
+
+def test_merchant_rows_plain():
+    rt, ns, g = preview()
+    rt.execute("""
+      ROW = CreateFrame("Frame", "MerchantItem1", MerchantFrame)
+      ROW.SlotTexture = ROW:CreateTexture("MerchantItem1SlotTexture", "BORDER")
+      ROW:CreateTexture("MerchantItem1NameFrame", "BACKGROUND")
+      CreateFrame("Button", "MerchantItem1ItemButton", ROW)
+      local repair = CreateFrame("Button", "MerchantRepairAllButton", MerchantFrame)
+      REPAIR_SLOT = repair:CreateTexture(nil, "BACKGROUND")
+      repair.Icon = repair:CreateTexture(nil, "BORDER")
+      MerchantFrame.obFill, MerchantFrame.obSkinned = nil, nil
+      PREVIEW_NS.Skins.Window(MerchantFrame)
+    """)
+    assert g.MerchantItem1SlotTexture.alpha == 0 and g.MerchantItem1NameFrame.alpha == 0
+    assert g.ROW.obFill is not None and g.ROW.obSquare is not None
+    assert g.REPAIR_SLOT.alpha == 0 and g.MerchantRepairAllButton.Icon.alpha == 1

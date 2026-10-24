@@ -144,7 +144,48 @@ local function hideOwnTextures(f)
   end
 end
 
+-- the background-layer art of a frame (a button's empty-slot square), keeping its icon
+local function hideBackground(f)
+  if not (f and f.GetRegions) then return end
+  for _, r in ipairs({ f:GetRegions() }) do
+    if r.GetObjectType and r:GetObjectType() == "Texture" and r.GetDrawLayer and r:GetDrawLayer() == "BACKGROUND" then
+      invisible(r)
+    end
+  end
+end
+
+-- A merchant row: the label plate (tinted red by the game for items you cannot use: the icon
+-- keeps that tint) and the empty-slot art give way to a dark row and a plain square.
+local function merchantRow(row)
+  if not row or row.obFill then return end
+  local name = row:GetName()
+  invisible(rawget(row, "SlotTexture") or global(name .. "SlotTexture"))
+  invisible(global(name .. "NameFrame"))
+  row.obFill = W.Panel(row, 0.3)
+  local button = global(name .. "ItemButton")
+  if button then
+    local r, g, b = W.Rim()
+    local square = row:CreateTexture(nil, "BORDER")
+    square:SetColorTexture(r, g, b, 0.18)
+    square:SetPoint("TOPLEFT", button, "TOPLEFT", -1, 1)
+    square:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 1, -1)
+    row.obSquare = square
+  end
+end
+
 Skins.EXTRA = {
+  MerchantFrame = function()
+    for i = 1, 12 do merchantRow(global("MerchantItem" .. i)) end
+    merchantRow(global("MerchantBuyBackItem"))
+    hideGlobals("MerchantFrameBottomLeftBorder", "BuybackBG")
+    for _, n in ipairs({ "MerchantMoneyBg", "MerchantExtraCurrencyBg" }) do hideOwnTextures(global(n)) end
+    for _, n in ipairs({ "MerchantMoneyInset", "MerchantExtraCurrencyInset" }) do skinInset(global(n)) end
+    for _, n in ipairs({ "MerchantSellAllJunkButton", "MerchantRepairAllButton", "MerchantRepairItemButton",
+      "MerchantGuildBankRepairButton", "MerchantPrevPageButton", "MerchantNextPageButton" }) do
+      hideBackground(global(n))
+    end
+    for i = 1, 2 do skinTab(global("MerchantFrameTab" .. i)) end
+  end,
   MailFrame = function()
     hideGlobals("InboxFrameBg", "SendMailHorizontalBarLeft", "SendMailHorizontalBarLeft2",
       "SendStationeryBackgroundLeft", "SendStationeryBackgroundRight")
