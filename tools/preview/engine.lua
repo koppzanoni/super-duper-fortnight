@@ -53,6 +53,10 @@ function Region:SetPoint(point, a, b, c, d)
   for i, p in ipairs(self.points) do if p.point == point then table.remove(self.points, i) break end end
   table.insert(self.points, { point = point, rel = rel or UIParent, relPoint = relPoint, x = x, y = y })
 end
+function Region:GetPoint(i)
+  local p = self.points[i or 1]
+  if p then return p.point, p.rel, p.relPoint, p.x, p.y end
+end
 function Region:SetSize(w, h) self.w, self.h = w or 0, h or 0 end
 function Region:SetWidth(w) self.w = w or 0; self.fixedW = true end
 function Region:SetHeight(h) self.h = h or 0 end
@@ -144,7 +148,7 @@ local function kids(self, frames)
   for _, r in ipairs(REGIONS) do
     if r.parent == self and (r.kind == "frame") == frames then out[#out + 1] = r end
   end
-  return unpack(out)
+  return (table.unpack or unpack)(out)
 end
 function Region:GetChildren() return kids(self, true) end
 function Region:GetRegions() return kids(self, false) end

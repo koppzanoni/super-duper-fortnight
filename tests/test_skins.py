@@ -169,3 +169,22 @@ def test_quest_page_parchment_hidden():
     """)
     g.HOOKS.QuestFrame_SetMaterial(g.PAGE, "Parchment")
     assert g.PAGE.Bg.alpha == 0 and g.PAGE.MaterialTopLeft.alpha == 0
+
+
+def test_mail_parchment_gone():
+    rt, ns, g = preview()
+    rt.execute("""
+      local f = MakeWindow("MailFrame")
+      f.GetName = function() return "MailFrame" end
+      local inbox = CreateFrame("Frame", "InboxFrame", f)
+      inbox:CreateTexture("InboxFrameBg", "BACKGROUND")
+      local row = CreateFrame("Frame", "MailItem1", inbox)
+      ROW_BORDER = row:CreateTexture(nil, "BACKGROUND")
+      local send = CreateFrame("Frame", "SendMailFrame", f)
+      local bar = send:CreateTexture("SendMailHorizontalBarLeft", "BACKGROUND")
+      BAR_RIGHT = send:CreateTexture(nil, "BACKGROUND")
+      BAR_RIGHT:SetPoint("LEFT", bar, "RIGHT")
+      PREVIEW_FIRE("ADDON_LOADED", "Blizzard_MailFrame")
+    """)
+    assert g.InboxFrameBg.alpha == 0 and g.ROW_BORDER.alpha == 0
+    assert g.SendMailHorizontalBarLeft.alpha == 0 and g.BAR_RIGHT.alpha == 0

@@ -17,13 +17,13 @@ local INSETS = { "Inset", "LeftInset", "RightInset", "InsetLeft", "InsetRight", 
 -- Windows of the game's own interface, and of the addons it loads on demand.
 Skins.WINDOWS = { "CharacterFrame", "FriendsFrame", "PVEFrame", "GossipFrame", "QuestFrame", "MerchantFrame",
   "MailFrame", "DressUpFrame", "TradeFrame", "BankFrame", "AddonList", "LootFrame", "ItemTextFrame",
-  "TabardFrame", "GuildRegistrarFrame", "PetitionFrame", "TaxiFrame", "QuestLogPopupDetailFrame" }
+  "TabardFrame", "GuildRegistrarFrame", "PetitionFrame", "TaxiFrame", "QuestLogPopupDetailFrame", "OpenMailFrame" }
 Skins.LATER = {
   Blizzard_PlayerSpells = { "PlayerSpellsFrame" }, Blizzard_Collections = { "CollectionsJournal" },
   Blizzard_EncounterJournal = { "EncounterJournal" }, Blizzard_Communities = { "CommunitiesFrame" },
   Blizzard_Professions = { "ProfessionsFrame" }, Blizzard_MacroUI = { "MacroFrame" },
   Blizzard_AuctionHouseUI = { "AuctionHouseFrame" }, Blizzard_InspectUI = { "InspectFrame" },
-  Blizzard_WorldMap = { "WorldMapFrame" },
+  Blizzard_WorldMap = { "WorldMapFrame" }, Blizzard_MailFrame = { "MailFrame", "OpenMailFrame" },
 }
 
 local function on() return not (ns.db and ns.db.skins_on == false) end
@@ -119,6 +119,49 @@ function Skins.Fonts()
   end
 end
 
+-- ------------------------------------------------------------------ window extras
+-- Art a window keeps outside the shared template: the mail's parchment and stationery.
+local function hideGlobals(...)
+  for i = 1, select("#", ...) do invisible(global((select(i, ...)))) end
+end
+-- textures hung on a named one (the unnamed right half of a bar)
+local function hideAnchoredTo(parent, ...)
+  if not (parent and parent.GetRegions) then return end
+  local named = {}
+  for i = 1, select("#", ...) do local t = global((select(i, ...))); if t then named[t] = true end end
+  for _, r in ipairs({ parent:GetRegions() }) do
+    if r.GetObjectType and r:GetObjectType() == "Texture" and r.GetPoint then
+      local _, rel = r:GetPoint(1)
+      if named[rel] then invisible(r) end
+    end
+  end
+end
+-- every texture straight on a frame (not its children): a mail row's parchment border
+local function hideOwnTextures(f)
+  if not (f and f.GetRegions) then return end
+  for _, r in ipairs({ f:GetRegions() }) do
+    if r.GetObjectType and r:GetObjectType() == "Texture" then invisible(r) end
+  end
+end
+
+Skins.EXTRA = {
+  MailFrame = function()
+    hideGlobals("InboxFrameBg", "SendMailHorizontalBarLeft", "SendMailHorizontalBarLeft2",
+      "SendStationeryBackgroundLeft", "SendStationeryBackgroundRight")
+    hideAnchoredTo(global("SendMailFrame"), "SendMailHorizontalBarLeft", "SendMailHorizontalBarLeft2")
+    for i = 1, 7 do
+      hideOwnTextures(global("MailItem" .. i))
+      local slot = global("MailItem" .. i .. "ButtonSlot")
+      if slot and slot.SetVertexColor then slot:SetVertexColor(0.35, 0.37, 0.4) end
+    end
+    for i = 1, 2 do skinTab(global("MailFrameTab" .. i)) end
+  end,
+  OpenMailFrame = function(f)
+    hideGlobals("OpenStationeryBackgroundLeft", "OpenStationeryBackgroundRight", "OpenMailHorizontalBarLeft")
+    hideAnchoredTo(f, "OpenMailHorizontalBarLeft")
+  end,
+}
+
 -- ------------------------------------------------------------------ one window
 -- overlay: a frame drawn over its window's content (the world map's border); it loses its art
 -- but gets no panel, which would cover the content.
@@ -136,6 +179,8 @@ function Skins.Window(f, overlay)
   -- the world map paints its frame on a child
   local border = rawget(f, "BorderFrame")
   if border then Skins.Window(border, true) end
+  local name = f.GetName and f:GetName()
+  if name and Skins.EXTRA[name] then Skins.EXTRA[name](f) end
   Skins.Lighten(f)
   -- pages and lists fill in when shown
   if f.HookScript then f:HookScript("OnShow", function(self) Skins.Lighten(self) end) end
