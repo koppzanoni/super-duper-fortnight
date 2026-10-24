@@ -116,7 +116,11 @@ de combate; movível "Ataque automático"), aviso Sobrepujar/Executar no meio da
 SPELL_ACTIVATION_OVERLAY_GLOW_*, Executar também por C_Spell.IsSpellUsable com alvo inimigo), barra de
 posturas da Blizzard sob o quadro do jogador (opção; ns.Stack.PlaceStance + Classes.stanceKeys),
 fúria em número no lugar das gemas.
-Próximas classes, uma por commit: Paladino, Caçador, Sacerdote, Cavaleiro da Morte, Xamã,
+Paladino (FEITO: Classes/Paladin.lua): aura faltando e bênçãos faltando (conta o grupo: vivos, online,
+à vista) nos Lembretes (Reminders.AddSource); "Sem selo!" no meio da tela em combate com alvo inimigo, só
+depois que o jogo já respondeu um selo em combate nesta sessão (resposta secreta nunca vira falso aviso);
+barra do Julgamento no alvo (Classes/Timers.lua, comum com o Ladino; aviso central em Classes.NewAlert).
+Próximas classes, uma por commit: Caçador, Sacerdote, Cavaleiro da Morte, Xamã,
 Mago, Bruxo, Monge, Druida (opções de cada uma no protótipo, CLASS_OPTS).
 Falta: as outras classes na página Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
@@ -192,6 +196,8 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
   Picar/Rasgar andando em combate (GetPlayerAuraBySpellID pode devolver nil se a aura for secreta).
 - Guerreiro: o log de combate chega para addons (senão o timer de ataque nunca aparece); posição da
   barra de posturas sob o quadro do jogador sem cobrir o quadro de foco.
+- Paladino: IDs das auras/selos/bênçãos/julgamento deste cliente (lista em Paladin.lua); se o paladino
+  daqui não tem selos nem bênçãos, esses avisos simplesmente não aparecem.
 - Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
   UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.

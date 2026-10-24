@@ -89,16 +89,7 @@ local function speedChanged()
 end
 
 -- Overpower / Execute -------------------------------------------------------------------------
-local alert = CreateFrame("Frame", nil, UIParent)
-alert:SetSize(240, 44)
-alert:SetPoint("CENTER", UIParent, "CENTER", 0, 150)
-alert.icon = alert:CreateTexture(nil, "ARTWORK")
-alert.icon:SetSize(40, 40)
-alert.icon:SetPoint("LEFT", alert, "LEFT", 0, 0)
-alert.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-alert.text = alert:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
-alert.text:SetPoint("LEFT", alert.icon, "RIGHT", 10, 0)
-alert:Hide()
+local alert = ns.Classes.NewAlert()
 Warrior.alert = alert
 local glowing = {}
 
@@ -121,12 +112,7 @@ local function alertUpdate()
     id = id or executeUsable()
     if not id then for _, x in ipairs(OVERPOWER) do if glowing[x] then id = x end end end
   end
-  if not id then alert:Hide() return end
-  alert.icon:SetTexture(C_Spell.GetSpellTexture(id))
-  ns.Look.SetFont(alert.text, 22)
-  alert.text:SetText((C_Spell.GetSpellName(id) or "") .. "!")
-  alert.text:SetTextColor(1, 0.82, 0.2)
-  alert:Show()
+  alert:Set(id)
 end
 
 local function glow(show, id)

@@ -54,6 +54,7 @@ Classes\Classes.lua
 Classes\Timers.lua
 Classes\Rogue.lua
 Classes\Warrior.lua
+Classes\Paladin.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Stats.lua

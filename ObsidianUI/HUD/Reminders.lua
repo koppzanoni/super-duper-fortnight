@@ -122,10 +122,17 @@ function Reminders.Update()
     if free <= FEW_SLOTS then add("bags", ICONS.bags, free == 1 and "Bolsas: 1 espaço livre" or ("Bolsas: " .. free .. " espaços livres")) end
   end
 
+  for _, source in ipairs(Reminders.sources) do source(add, buffs) end
   Reminders.Draw()
 end
 
 function Reminders.List() return list end
+
+-- Reminders from the class modules: source(add, buffs) runs on each check (out of combat);
+-- add(key, icon, text), buffs: the player's buffs by lower-case name.
+Reminders.sources = {}
+function Reminders.AddSource(source) Reminders.sources[#Reminders.sources + 1] = source end
+Reminders.Knows, Reminders.SpellName = knows, spellName
 
 -- Frame ---------------------------------------------------------------------------------------
 local frame = CreateFrame("Frame", "ObsidianUIReminders", UIParent)

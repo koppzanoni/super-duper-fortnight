@@ -25,6 +25,30 @@ function Classes.StanceOnPlayer()
   return key ~= nil and ns.db ~= nil and ns.db[key] == true
 end
 
+-- A spell alert in the middle of the screen (icon and gold name): alert:Set(spellID, text) or
+-- alert:Set(nil) to hide. Shared by the class modules (Overpower, missing seal...).
+function Classes.NewAlert()
+  local alert = CreateFrame("Frame", nil, UIParent)
+  alert:SetSize(240, 44)
+  alert:SetPoint("CENTER", UIParent, "CENTER", 0, 150)
+  alert.icon = alert:CreateTexture(nil, "ARTWORK")
+  alert.icon:SetSize(40, 40)
+  alert.icon:SetPoint("LEFT", alert, "LEFT", 0, 0)
+  alert.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  alert.text = alert:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
+  alert.text:SetPoint("LEFT", alert.icon, "RIGHT", 10, 0)
+  alert:Hide()
+  function alert:Set(id, text)
+    if not id then self:Hide() return end
+    self.icon:SetTexture(C_Spell.GetSpellTexture(id))
+    ns.Look.SetFont(self.text, 22)
+    self.text:SetText(text or ((C_Spell.GetSpellName(id) or "") .. "!"))
+    self.text:SetTextColor(1, 0.82, 0.2)
+    self:Show()
+  end
+  return alert
+end
+
 -- title: the card heading; rows: panel rows ({ kind = "toggle", label, key, default, ... }).
 function Classes.Register(token, title, rows) Classes.cards[token] = { title, rows } end
 
