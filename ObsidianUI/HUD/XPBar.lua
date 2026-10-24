@@ -14,8 +14,26 @@ end
 xp:SetStatusBarColor(0.79, 0.64, 0.29)
 rested:SetStatusBarColor(0.0, 0.44, 0.87, 0.6)
 xp:SetFrameLevel(rested:GetFrameLevel() + 1)
+ns.XPBar = { xp = xp, rested = rested }
+-- Moderno: a thin bar on a dark backing right under the action bar.
+local backing = rested:CreateTexture(nil, "BACKGROUND", nil, -8)
+backing:SetColorTexture(0, 0, 0, 0.55)
+backing:Hide()
 
 table.insert(HUD.onResize, function(u, _, W)
+  if HUD.modern then
+    local g = HUD.modernBar
+    for _, bar in ipairs({ rested, xp }) do
+      bar:ClearAllPoints()
+      bar:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, g.bottom - 9 * g.s)
+      bar:SetSize(g.width, 5 * g.s)
+    end
+    backing:SetPoint("TOPLEFT", rested, "TOPLEFT", -1, 1)
+    backing:SetPoint("BOTTOMRIGHT", rested, "BOTTOMRIGHT", 1, -1)
+    backing:Show()
+    return
+  end
+  backing:Hide()
   -- The groove runs under the extra columns too.
   local left = ns.Layout.MapX(D.xp.x, W, u) - (HUD.extraW or 0)
   for _, bar in ipairs({ rested, xp }) do

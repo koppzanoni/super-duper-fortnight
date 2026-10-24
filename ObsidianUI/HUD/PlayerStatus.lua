@@ -13,6 +13,7 @@ ns.PlayerStatus = PlayerStatus
 
 local well = ns.Orbs.health.well
 local holder = CreateFrame("Frame", nil, ns.HUD.over)
+PlayerStatus.holder = holder
 holder:SetAllPoints(well)
 local level = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 level:SetTextColor(0.91, 0.77, 0.42)
@@ -47,6 +48,7 @@ local function update(newLevel)
 end
 
 local function layout()
+  holder:SetShown(not ns.HUD.modern) -- Moderno: no orb; the player frame shows the level
   level:ClearAllPoints()
   level:SetPoint("TOP", holder, "TOP", 0, -0.11 * well:GetHeight())
   update()

@@ -123,6 +123,7 @@ local function makeOrb(x)
     masked = masked, wispPair = wispPair }
 
   table.insert(HUD.onResize, function(u)
+    textHolder:SetShown(not HUD.modern) -- Moderno: the player frame shows the numbers
     wave:SetHeight(math.max(2, 5 * u))
     local w = well:GetWidth()
     for i = 1, 2 do

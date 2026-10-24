@@ -241,6 +241,10 @@ Data.MENU_RIGHT = {
   { id = "pvp", label = "JxJ", candidates = { "PVPMicroButton", "LFDMicroButton" } },
 }
 
+-- Moderno: the micro menu is one row (bottom right); these entries of the two lists above, in order.
+Data.MODERN_MENU = { "character", "spellbook", "talents", "achievements", "questlog", "guild", "collections",
+  "lfg", "journal", "gamemenu" }
+
 Data.EQUIP_LEFT = { "HeadSlot", "NeckSlot", "ShoulderSlot", "BackSlot", "ChestSlot", "ShirtSlot", "TabardSlot", "WristSlot" }
 Data.EQUIP_RIGHT = { "HandsSlot", "WaistSlot", "LegsSlot", "FeetSlot", "Finger0Slot", "Finger1Slot", "Trinket0Slot", "Trinket1Slot" }
 Data.WEAPONS = { "MainHandSlot", "SecondaryHandSlot", "RangedSlot" }

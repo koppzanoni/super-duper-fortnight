@@ -6,7 +6,7 @@ local D = ns.Data.HUD
 local HUD = ns.HUD
 local M = ns.MediaManifest
 local GOLD = { 0.91, 0.77, 0.42 }
-local MenuPanels = { buttons = {} }
+local MenuPanels = { buttons = {}, byId = {} }
 ns.MenuPanels = MenuPanels
 
 local function toggleInventory()
@@ -155,6 +155,7 @@ local function realMicroButton(entry, x, y, w, h)
   micro:Show()
   pressFeedback(micro, icon)
   followMicro(micro, micro)
+  return slot
 end
 
 -- Character: the player's portrait in a circle, like the default micro button.
@@ -205,10 +206,11 @@ local function build()
     local r, c = math.floor((i - 1) / 3) + 1, (i - 1) % 3 + 1
     local x, y, w, h = D.menuCols[c], D.menuRows[r], D.menuSlot.w, D.menuSlot.h
     if entry.id == "gamemenu" then
-      realMicroButton(entry, x, y, w, h)
+      MenuPanels.byId[entry.id] = realMicroButton(entry, x, y, w, h)
     else
       local b = entry.id == "character" and characterButton(entry) or microButton(entry)
       HUD.Place(b, x, y, w, h)
+      MenuPanels.byId[entry.id] = b
     end
   end
   for i, entry in ipairs(ns.Data.MENU_RIGHT) do
@@ -216,8 +218,10 @@ local function build()
     local b = entry.bag and bagButton(entry) or microButton(entry)
     -- Right panel is the mirror of the left one; keep reading order left to right.
     HUD.Place(b, ns.Layout.MirrorX(D.width, D.menuCols[4 - c], D.menuSlot.w), D.menuRows[r], D.menuSlot.w, D.menuSlot.h)
+    MenuPanels.byId[entry.id] = b
   end
   updateBagIcons()
+  MenuPanels.LayoutModern()
 
   -- Character and bag buttons are active while the inventory window is open.
   local inv = ns.Inventory and ns.Inventory.frame
@@ -231,6 +235,62 @@ local function build()
     inv:HookScript("OnHide", function() follow(false) end)
   end
 end
+
+-- Moderno: one row of buttons on a dark band at the bottom right (its left end and arrow tip at
+-- their own size, the plain middle stretched), the money under it. Light grey icons.
+local band = CreateFrame("Frame", "ObsidianUIModernMenu", UIParent)
+band:SetFrameStrata("LOW")
+band:Hide()
+local bandLeft, bandMid = band:CreateTexture(nil, "BACKGROUND"), band:CreateTexture(nil, "BACKGROUND")
+MenuPanels.band = bandMid
+local money = band:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+local MENU_W, MENU_H, CAP = 620, 92, 40 -- mod_menu texture px; CAP: left end with the arrow tip
+
+local function updateMoney()
+  if not pcall(function() money:SetText(GetMoneyString(GetMoney(), true)) end) then money:SetText("") end
+end
+
+function MenuPanels.LayoutModern()
+  if not HUD.modern or not next(MenuPanels.byId) then return end
+  local _, H = UIParent:GetSize()
+  local s = H / 1080 * (ns.db.scale or 1)
+  local list = ns.Data.MODERN_MENU
+  local size, step, k = 28 * s, 34 * s, 0.5 * s
+  local w = (CAP + 20) * k + #list * step
+  band:ClearAllPoints()
+  band:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -10 * s, 40 * s)
+  band:SetSize(w, MENU_H * k)
+  local tex = ns.ModernTex("mod_menu")
+  bandLeft:ClearAllPoints()
+  bandLeft:SetPoint("TOPLEFT", band, "TOPLEFT")
+  bandLeft:SetSize(CAP * k, MENU_H * k)
+  ns.Media.ApplyRange(bandLeft, tex, false, 0, CAP / MENU_W)
+  bandMid:ClearAllPoints()
+  bandMid:SetPoint("TOPLEFT", bandLeft, "TOPRIGHT")
+  bandMid:SetPoint("BOTTOMRIGHT", band, "BOTTOMRIGHT")
+  ns.Media.ApplyRange(bandMid, tex, false, CAP / MENU_W, 1)
+  band:Show()
+  local wanted = {}
+  for i, id in ipairs(list) do
+    wanted[id] = true
+    local b = MenuPanels.byId[id]
+    if b then
+      b:ClearAllPoints()
+      b:SetPoint("LEFT", band, "LEFT", CAP * k + (i - 1) * step + (step - size) / 2, 0)
+      b:SetSize(size, size)
+      if b.obIcon and id ~= "character" then b.obIcon:SetVertexColor(0.86, 0.87, 0.89) end
+      b:Show()
+    end
+  end
+  for id, b in pairs(MenuPanels.byId) do
+    if not wanted[id] then b:Hide() end
+  end
+  money:ClearAllPoints()
+  money:SetPoint("TOPRIGHT", band, "BOTTOMRIGHT", -4 * s, -4 * s)
+  updateMoney()
+end
+table.insert(HUD.onResize, function() ns.RunOutOfCombat(MenuPanels.LayoutModern) end)
+ns.On("PLAYER_MONEY", updateMoney)
 
 ns.On("PLAYER_LOGIN", function() ns.RunOutOfCombat(build) end)
 ns.On("BAG_UPDATE_DELAYED", updateBagIcons)

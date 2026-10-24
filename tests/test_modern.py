@@ -149,3 +149,36 @@ def test_key_numbers_sit_above_the_first_row():
     b = ns.ActionBars.buttons[1]
     hk = b.HotKey
     assert hk.points[1].point == "BOTTOM" and hk.points[1].relPoint == "TOP"
+
+
+# ------------------------------------------------------------------ the rest of the stone HUD
+def visible(region):
+    return bool(region.IsVisible(region))
+
+
+def test_orb_numbers_and_orb_status_icons_are_hidden():
+    _, ns = preview(MODERN)
+    assert not visible(ns.Orbs.health.pct) and not visible(ns.Orbs.power.val)
+    assert not visible(ns.PlayerStatus.holder)
+    _, ns = preview()
+    assert visible(ns.Orbs.health.pct) and visible(ns.PlayerStatus.holder)
+
+
+def test_xp_bar_runs_under_the_action_bar():
+    _, ns = preview(MODERN)
+    bar = rect(ns.ActionBars.modernFrame)
+    xp = rect(ns.XPBar.xp)
+    assert xp[1] + xp[3] <= bar[1]                            # below the slots
+    assert abs(xp[0] - bar[0]) < 1 and abs(xp[2] - bar[2]) < 1
+
+
+def test_menu_is_one_row_at_the_bottom_right():
+    _, ns = preview(MODERN)
+    shown = [ns.MenuPanels.byId[i] for i in ns.Data.MODERN_MENU.values()]
+    rects = [rect(b) for b in shown]
+    assert all(visible(b) for b in shown)
+    assert len({round(r[1]) for r in rects}) == 1             # one row
+    assert all(rects[i + 1][0] > rects[i][0] for i in range(len(rects) - 1))
+    assert rects[-1][0] + rects[-1][2] <= 1920 and rects[0][0] > 1300
+    assert not visible(ns.MenuPanels.byId["bag1"])
+    assert visible(ns.MenuPanels.band) and str(ns.MenuPanels.band.file).endswith("mod_menu_black")
