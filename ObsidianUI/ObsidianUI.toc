@@ -51,6 +51,7 @@ HUD\Cursor.lua
 HUD\Automation.lua
 HUD\Reminders.lua
 Classes\Classes.lua
+Classes\Timers.lua
 Classes\Rogue.lua
 Classes\Warrior.lua
 Inventory\Filters.lua

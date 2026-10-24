@@ -5,14 +5,12 @@ local _, ns = ...
 -- Dice and Rupture timer bars driven by the game's duration objects (they keep running in combat),
 -- and the "poisons running out" switch the reminders read. Secret values hide a piece instead
 -- of erroring.
-local Rogue = { dots = {}, bars = {}, ticking = false }
+local Rogue = { dots = {}, ticking = false }
 ns.Rogue = Rogue
 
-local W = ns.Widgets
 local TICK = 2          -- seconds between energy ticks
 local TICK_JUMP = 15    -- an energy rise this big is a tick
 local DOT, DOT_GAP = 16, 4
-local BAR_W, BAR_H, BAR_GAP = 220, 11, 4
 local TIMERS = {
   { label = "Picar", unit = "player", ids = { 315496, 5171 }, color = { 1, 0.82, 0.2 } },     -- Slice and Dice
   { label = "Rasgar", unit = "target", ids = { 1943 }, color = { 0.8, 0.15, 0.15 }, mine = true }, -- Rupture
@@ -105,78 +103,9 @@ local function comboUpdate()
 end
 
 -- Slice and Dice / Rupture --------------------------------------------------------------------
-local timers = CreateFrame("Frame", "ObsidianUIRogueTimers", UIParent)
-timers:SetSize(BAR_W, BAR_H * 2 + BAR_GAP)
-Rogue.timers = timers
-
-for i, spec in ipairs(TIMERS) do
-  local b = CreateFrame("StatusBar", nil, timers)
-  b:SetSize(BAR_W, BAR_H)
-  b:SetPoint("TOP", timers, "TOP", 0, -(i - 1) * (BAR_H + BAR_GAP))
-  W.Panel(b)
-  b:SetStatusBarColor(spec.color[1], spec.color[2], spec.color[3])
-  b.label = b:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  b.label:SetPoint("LEFT", b, "LEFT", 4, 0)
-  b.label:SetText(spec.label)
-  b.time = b:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  b.time:SetPoint("RIGHT", b, "RIGHT", -4, 0)
-  b.spec = spec
-  b:Hide()
-  Rogue.bars[i] = b
-end
-
-local function findAura(spec)
-  if not UnitExists(spec.unit) then return nil end
-  for _, id in ipairs(spec.ids) do
-    local a
-    local A = C_UnitAuras
-    if spec.unit == "player" and A.GetPlayerAuraBySpellID then a = A.GetPlayerAuraBySpellID(id)
-    elseif spec.unit ~= "player" and A.GetUnitAuraBySpellID then a = A.GetUnitAuraBySpellID(spec.unit, id) end
-    if a then
-      local ok, yours = pcall(function() return a.isFromPlayerOrPlayerPet == true end)
-      if not spec.mine or (ok and yours) then return a end
-    end
-  end
-end
-
-local function timerUpdate(unit)
-  for _, b in ipairs(Rogue.bars) do
-    local spec = b.spec
-    if not unit or unit == spec.unit then
-      local a = mine() and on("c_rog_snd") and findAura(spec)
-      if a then
-        b.aura = a
-        b.timer = C_UnitAuras.GetAuraDuration and C_UnitAuras.GetAuraDuration(spec.unit, a.auraInstanceID)
-        local direction = Enum.StatusBarTimerDirection and Enum.StatusBarTimerDirection.RemainingTime or nil
-        b.driven = b.timer and b.SetTimerDuration and pcall(b.SetTimerDuration, b, b.timer, nil, direction) or false
-        b:SetStatusBarTexture(ns.Look.BarTexture())
-        b:SetStatusBarColor(spec.color[1], spec.color[2], spec.color[3])
-        ns.Look.SetFont(b.label, 10)
-        ns.Look.SetFont(b.time, 10)
-        b:Show()
-      else
-        b.aura, b.timer = nil, nil
-        b:Hide()
-      end
-    end
-  end
-end
-
--- Without the game's timer: fill and seconds from the aura's own times (when they are plain).
-local function timerTick()
-  for _, b in ipairs(Rogue.bars) do
-    local a = b.aura
-    if a and b:IsShown() then
-      local ok, left, total = pcall(function() return a.expirationTime - GetTime(), a.duration end)
-      if ok and total and total > 0 then
-        if not b.driven then b:SetMinMaxValues(0, total); b:SetValue(math.max(0, left)) end
-        b.time:SetText(string.format("%.0f", math.max(0, left)))
-      else
-        b.time:SetText("")
-      end
-    end
-  end
-end
+local timers = ns.Classes.NewTimers("ObsidianUIRogueTimers", "roguetimers", "Temporizadores (Ladino)", TIMERS)
+Rogue.timers, Rogue.bars = timers.frame, timers.bars
+local function timerUpdate(unit) timers:Update(unit, mine() and on("c_rog_snd")) end
 
 -- Setup -----------------------------------------------------------------------------------------
 function Rogue.Refresh()
@@ -189,14 +118,10 @@ function Rogue.Refresh()
     Rogue.spark:SetWidth(2)
     Rogue.spark:Hide()
   end
-  ns.Movers.Register("roguetimers", "Temporizadores (Ladino)", timers, function(f)
-    f:ClearAllPoints()
-    f:SetPoint("BOTTOM", ns.CastBar.art or ns.Stack.Anchor(), "TOP", 0, 8)
-  end)
-  ns.Movers.Place("roguetimers")
+  timers:Place()
   frame:SetScript("OnUpdate", function()
     spark()
-    timerTick()
+    timers:Tick()
   end)
   comboUpdate()
   timerUpdate()
@@ -221,7 +146,7 @@ ns.Classes.Register("ROGUE", "Ladino", {
   { kind = "toggle", label = "Tick de energia", key = "c_rog_tick", default = true,
     help = "Uma linha na barra de energia mostra quando chega a próxima (a cada 2 s)." },
   { kind = "toggle", label = "Pontos de combo no alvo", key = "c_rog_ontarget", default = false,
-    onChange = function() comboUpdate() end, help = "Gemas pequenas embaixo do quadro do alvo." },
+    onChange = function() comboUpdate() end, help = "Gemas pequenas acima da barra de vida do alvo." },
   { kind = "toggle", label = "Duração de Picar e Rasgar", key = "c_rog_snd", default = true,
     onChange = function() timerUpdate() end, help = "Duas barras acima da barra de cast; mova no modo de edição." },
   { kind = "toggle", label = "Venenos acabando", key = "c_rog_poison", default = true,
