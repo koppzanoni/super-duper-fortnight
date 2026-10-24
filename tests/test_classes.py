@@ -72,7 +72,7 @@ def test_other_classes_listed_and_not_built_ones_say_so():
 # ---------------------------------------------------------------- energy tick
 def test_energy_tick_spark_follows_the_two_second_rhythm():
     _, ns, g = preview()
-    r = ns.Rogue
+    r = ns.EnergyTick
     energy(g, 40, 1000)
     energy(g, 60, 1000.2)                                    # a tick of 20
     assert r.ticking
@@ -88,20 +88,20 @@ def test_smooth_regeneration_means_no_spark():
     _, ns, g = preview()
     for i in range(6):
         energy(g, 40 + i * 2, 1000 + i * 0.2)
-    ns.Rogue.frame.GetScript(ns.Rogue.frame, "OnUpdate")(ns.Rogue.frame, 0.1)
-    assert not ns.Rogue.ticking and not visible(ns.Rogue.spark)
+    ns.EnergyTick.frame.GetScript(ns.EnergyTick.frame, "OnUpdate")(ns.EnergyTick.frame, 0.1)
+    assert not ns.EnergyTick.ticking and not visible(ns.EnergyTick.spark)
 
 
 def test_spark_hidden_at_full_energy_and_when_off():
     _, ns, g = preview()
     energy(g, 40, 1000); energy(g, 60, 1000.2)
     energy(g, 100, 1002.2)
-    ns.Rogue.frame.GetScript(ns.Rogue.frame, "OnUpdate")(ns.Rogue.frame, 0.1)
-    assert not visible(ns.Rogue.spark)
+    ns.EnergyTick.frame.GetScript(ns.EnergyTick.frame, "OnUpdate")(ns.EnergyTick.frame, 0.1)
+    assert not visible(ns.EnergyTick.spark)
     _, ns, g = preview({"c_rog_tick": False})
     energy(g, 40, 1000); energy(g, 60, 1000.2)
-    ns.Rogue.frame.GetScript(ns.Rogue.frame, "OnUpdate")(ns.Rogue.frame, 0.1)
-    assert not visible(ns.Rogue.spark)
+    ns.EnergyTick.frame.GetScript(ns.EnergyTick.frame, "OnUpdate")(ns.EnergyTick.frame, 0.1)
+    assert not visible(ns.EnergyTick.spark)
 
 
 # ---------------------------------------------------------------- combo points on the target
@@ -163,5 +163,5 @@ def test_nothing_for_other_classes():
     rt = preview_render.run_addon(vbars=False, db={"installed": True}, pre=GAME + '\nfunction UnitClass() return "Mago", "MAGE" end\n')
     ns, g = rt.globals().PREVIEW_NS, rt.globals()
     energy(g, 40, 1000); energy(g, 60, 1000.2)
-    assert not ns.Rogue.ticking
+    assert not ns.EnergyTick.ticking
     assert "roguetimers" not in list(ns.Movers["items"].keys())
