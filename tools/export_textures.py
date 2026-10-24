@@ -9,7 +9,6 @@ import pathlib
 import numpy as np
 from PIL import Image
 
-import inventory_art
 import modern_art
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -22,10 +21,7 @@ MAX_POT = 2048
 ART_SOURCES = {
     "gem_on": ("gem_lit.png", None, 128),
     "gem_off": ("gem_socket.png", None, 128),
-    "inventory": ("inventory.png", None, None),
 }
-# Changes drawn on top of a processed piece before export.
-REWORK = {"inventory": inventory_art.rework}
 
 
 def next_pot(n):
@@ -134,12 +130,6 @@ def export_all(out_dir=MEDIA):
         img = Image.open(ART / src).convert("RGBA")
         if box:
             img = img.crop(box)
-        original = img
-        if name in REWORK:
-            img = REWORK[name](img)
-        if name == "inventory":
-            for piece, piece_img in inventory_art.pieces(img, original).items():
-                save(piece, piece_img)
         save(name, defringe(fit(img, max_side)))
     for name, fn in PROCEDURAL.items():
         save(name, fn())

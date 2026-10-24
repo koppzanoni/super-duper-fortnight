@@ -5,7 +5,6 @@ import sys
 from conftest import ROOT, load_addon_file, new_runtime, toc_files
 
 sys.path.insert(0, str(ROOT / "tools"))
-import inventory_art as ia  # noqa: E402
 
 
 def boot(lua, ns, pre=""):

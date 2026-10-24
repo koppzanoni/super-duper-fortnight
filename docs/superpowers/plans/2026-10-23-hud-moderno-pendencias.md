@@ -81,12 +81,15 @@ Recursos: gemas Moderno (mod_gem_on/off), estilo barra com marcas (funciona com 
 cor por recurso, esconder fora de combate quando vazio, liga/desliga, movível/redimensionável.
 Auras: moldura mod_slot (debuffs tingidos pelo tipo), tamanho, ícones por linha, buffs/debuffs liga/desliga.
 
-## Fase 3 — Inventário Moderno
-- Janela larga, preto fosco translúcido: personagem à esquerda (modelo, 8+8 slots, 3 armas, nível
-  de item, abas Atributos/Reputação/Moedas), mochila à direita (busca, ordenar, abas de filtro,
-  grade 9×7 com borda de raridade e pilhas, barra de rolagem, 5 bolsas, espaços livres, dinheiro).
-- Mesma lógica do inventário atual (BagGrid, Stats, Filters), só o visual e o layout novos.
-- Opção azul também.
+## Fase 3 — Inventário Moderno (FEITO)
+Janela larga preta (Data.INV 1240 x 780; Core/Widgets.lua no visual Moderno): cabeçalho com nome,
+nível, classe e fechar; personagem à esquerda (modelo com nível de item, 8+8 espaços e 3 armas na
+moldura mod_slot pela raridade, abas Atributos/Reputação/Moedas, atributos em duas colunas);
+bolsas à direita (busca e organizar, abas de filtro, grade de 9 colunas com barra fina, bolsas
+equipadas, espaços livres, ouro). Mesma lógica de antes (BagGrid, Stats, Filters, atalhos).
+A arte da janela de pedra foi aposentada (inventory_art.py e as texturas inventory, inventory_wing,
+bag_slot, plate, scroll_thumb, stone_tile); a tag hud-pedra-final guarda tudo.
+Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
 
 ## Ajustes pendentes da fase 1
 - Buffs do jogador ficam no topo central; no sketch apareciam embaixo do quadro do jogador
@@ -105,6 +108,8 @@ Auras: moldura mod_slot (debuffs tingidos pelo tipo), tamanho, ícones por linha
 - Anel arcano girando; ligar/desligar.
 - Minimapa: relógio, correio, rastreamento e calendário nos lugares novos.
 - Menu: todos os botões abrindo as janelas (sem taint).
+- Inventário Moderno: abrir com C e B, arrastar pelo cabeçalho, fechar no X e no Esc, itens
+  clicáveis, busca, organizar, abas de reputação e moedas abrindo as páginas da Blizzard.
 - Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
   UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.

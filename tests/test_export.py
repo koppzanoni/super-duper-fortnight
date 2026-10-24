@@ -44,7 +44,6 @@ def test_export_manifest(tmp_path):
     load_addon_file(rt, tmp_path / "manifest.lua", ns)
     lua_manifest = ns.MediaManifest
     assert lua_manifest["mod_unit"]["potW"] == 1024
-    assert lua_manifest["inventory"]["h"] == 1334
     assert lua_manifest["mask_circle"]["w"] == 256
     assert lua_manifest["gem_on"]["file"] == "Interface\\AddOns\\ObsidianUI\\Media\\gem_on"
 

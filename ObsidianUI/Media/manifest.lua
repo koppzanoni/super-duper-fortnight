@@ -2,13 +2,10 @@
 local _, ns = ...
 ns.MediaManifest = {
   aura_border = { file = "Interface\\AddOns\\ObsidianUI\\Media\\aura_border", w = 64, h = 64, potW = 64, potH = 64 },
-  bag_slot = { file = "Interface\\AddOns\\ObsidianUI\\Media\\bag_slot", w = 65, h = 70, potW = 128, potH = 128 },
   bar_fill = { file = "Interface\\AddOns\\ObsidianUI\\Media\\bar_fill", w = 256, h = 32, potW = 256, potH = 32 },
   gem_off = { file = "Interface\\AddOns\\ObsidianUI\\Media\\gem_off", w = 128, h = 127, potW = 128, potH = 128 },
   gem_on = { file = "Interface\\AddOns\\ObsidianUI\\Media\\gem_on", w = 123, h = 128, potW = 128, potH = 128 },
   icon_sort = { file = "Interface\\AddOns\\ObsidianUI\\Media\\icon_sort", w = 64, h = 64, potW = 64, potH = 64 },
-  inventory = { file = "Interface\\AddOns\\ObsidianUI\\Media\\inventory", w = 690, h = 1334, potW = 1024, potH = 2048 },
-  inventory_wing = { file = "Interface\\AddOns\\ObsidianUI\\Media\\inventory_wing", w = 400, h = 1334, potW = 512, potH = 2048 },
   mask_circle = { file = "Interface\\AddOns\\ObsidianUI\\Media\\mask_circle", w = 256, h = 256, potW = 256, potH = 256 },
   mod_arcane = { file = "Interface\\AddOns\\ObsidianUI\\Media\\mod_arcane", w = 256, h = 256, potW = 256, potH = 256 },
   mod_cast = { file = "Interface\\AddOns\\ObsidianUI\\Media\\mod_cast", w = 940, h = 124, potW = 1024, potH = 128 },
@@ -25,7 +22,4 @@ ns.MediaManifest = {
   mod_slot_black = { file = "Interface\\AddOns\\ObsidianUI\\Media\\mod_slot_black", w = 104, h = 104, potW = 128, potH = 128 },
   mod_unit = { file = "Interface\\AddOns\\ObsidianUI\\Media\\mod_unit", w = 720, h = 250, potW = 1024, potH = 256 },
   mod_unit_black = { file = "Interface\\AddOns\\ObsidianUI\\Media\\mod_unit_black", w = 720, h = 250, potW = 1024, potH = 256 },
-  plate = { file = "Interface\\AddOns\\ObsidianUI\\Media\\plate", w = 128, h = 32, potW = 128, potH = 32 },
-  scroll_thumb = { file = "Interface\\AddOns\\ObsidianUI\\Media\\scroll_thumb", w = 11, h = 64, potW = 16, potH = 64 },
-  stone_tile = { file = "Interface\\AddOns\\ObsidianUI\\Media\\stone_tile", w = 256, h = 256, potW = 256, potH = 256 },
 }
