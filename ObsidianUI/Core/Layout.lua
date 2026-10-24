@@ -59,6 +59,19 @@ function Layout.ModernBar(screenH, userScale, rows, cols)
   return g
 end
 
+-- Moderno cast bar: the share of the bar at its end covered by the latency, and where the spell
+-- queue window opens (fraction from the left). nil when there is nothing to show.
+function Layout.CastLag(latency, duration)
+  if not duration or duration <= 0 then return nil end
+  return math.min(1, latency / duration)
+end
+
+function Layout.CastQueue(windowMS, duration)
+  local window = windowMS / 1000
+  if not duration or duration <= window then return nil end
+  return 1 - window / duration
+end
+
 -- Screen x of a bar texture x measured from the screen center, whatever its value (extra
 -- columns have bar coordinates below the cap's width).
 function Layout.BarX(x, screenW, u)

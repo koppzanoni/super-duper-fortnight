@@ -256,3 +256,87 @@ def test_player_health_is_green():
     _, ns = preview(MODERN)
     vc = list(frames(ns).player.health.GetStatusBarTexture(frames(ns).player.health).vc.values())
     assert vc[1] > vc[0] and vc[1] > vc[2]
+
+
+# ------------------------------------------------------------------ cast bar
+def test_lag_and_queue_fractions(pure):
+    from conftest import load_pure
+    ns = load_pure(pure, "Core/Layout.lua")
+    L = ns.Layout
+    assert abs(L.CastLag(0.12, 2.5) - 0.048) < 1e-9
+    assert L.CastLag(3, 2.5) == 1
+    assert L.CastLag(0.1, 0) is None
+    assert abs(L.CastQueue(400, 2.5) - 0.84) < 1e-9
+    assert L.CastQueue(400, 0.3) is None
+
+
+def castbar(ns):
+    return ns.Resolve.First(ns.Data.FRAME_CANDIDATES.castbar)[0]
+
+
+def test_cast_bar_in_the_modern_look():
+    _, ns = preview(MODERN)
+    bar = castbar(ns)
+    assert str(ns.CastBar.art.file).endswith("mod_cast_black")
+    fill = bar.GetStatusBarTexture(bar)
+    assert str(fill.file).endswith("mod_gloss")
+    vc = list(fill.vc.values())
+    assert vc[2] > vc[0]                                      # blue
+
+
+CAST = """
+  function GetTime() return T end
+  function UnitCastingInfo(u) return "Bola de Fogo", "", 1, START_MS, END_MS end
+  function GetNetStats() return 0, 0, 30, 150 end
+  C_CVar = { GetCVar = function(k) if k == "SpellQueueWindow" then return "400" end end }
+"""
+
+
+def cast(rt, sent=True):
+    rt.execute(CAST)
+    g = rt.globals()
+    g.T, g.START_MS, g.END_MS = 10.0, 10120, 12620
+    if sent:
+        rt.execute('PREVIEW_FIRE("UNIT_SPELLCAST_SENT", "player")')
+    g.T = 10.12
+    rt.execute('PREVIEW_FIRE("UNIT_SPELLCAST_START", "player")')
+
+
+def test_latency_zone_is_the_measured_ping_in_green():
+    rt, ns = preview(MODERN)
+    cast(rt)
+    bar, lag = castbar(ns), ns.CastBar.lag
+    assert visible(lag)
+    assert abs(rect(lag)[2] - rect(bar)[2] * 0.12 / 2.5) < 0.6
+    assert abs((rect(lag)[0] + rect(lag)[2]) - (rect(bar)[0] + rect(bar)[2])) < 0.6   # at the end
+    vc = list(lag.vc.values()) if lag.color is None else list(lag.color.values())
+    assert vc[1] > vc[0] and vc[1] > vc[2]                    # green
+    assert "120" in ns.CastBar.lagText.text
+
+
+def test_latency_falls_back_to_the_world_ping():
+    rt, ns = preview(MODERN)
+    cast(rt, sent=False)
+    assert abs(ns.CastBar.latency - 0.150) < 1e-9
+
+
+def test_queue_mark_at_the_spell_queue_window():
+    rt, ns = preview(MODERN)
+    cast(rt)
+    bar, q = castbar(ns), ns.CastBar.queue
+    assert visible(q) and rect(q)[2] >= 1 and rect(q)[3] > rect(bar)[3]
+    assert abs(rect(q)[0] + rect(q)[2] / 2 - (rect(bar)[0] + rect(bar)[2] * 0.84)) < 1
+
+
+def test_secret_cast_times_hide_the_zone_instead_of_erroring():
+    rt, ns = preview(MODERN)
+    rt.execute(CAST)
+    rt.execute('function UnitCastingInfo() error("secret value") end')
+    rt.execute('PREVIEW_FIRE("UNIT_SPELLCAST_START", "player")')
+    assert not visible(ns.CastBar.lag) and not visible(ns.CastBar.queue)
+
+
+def test_stone_cast_bar_has_no_latency_zone():
+    rt, ns = preview()
+    cast(rt)
+    assert ns.CastBar.lag is None or not visible(ns.CastBar.lag)
