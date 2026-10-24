@@ -109,3 +109,82 @@ def test_planned_module_shows_em_breve():
 def test_headings_upper_case_keeps_accents():
     _, ns = preview()
     assert ns.Panel.Upper("Latência e Aparência") == "LATÊNCIA E APARÊNCIA"
+
+
+# Every control of every page that is not "em breve": clicked, the value changes, nothing errors.
+def click(b):
+    b.GetScript(b, "OnClick")(b)
+
+
+def test_every_control_of_every_built_page_works():
+    rt, ns = preview()
+    rt.execute("POPUPS = {}; function StaticPopup_Show(n) POPUPS[#POPUPS + 1] = n end")
+    checked = []
+    for sec in [s for s in ns.Panel.SECTIONS.values() if not s.soon]:
+        ns.Panel.Open(sec.id)
+        for r in rows(ns):
+            row = r.row
+            c = r.control
+            if row.kind == "toggle":
+                before = ns.Panel.Get(row)
+                click(c)
+                assert ns.Panel.Get(row) == (not before), row.label
+                click(c)
+                assert ns.Panel.Get(row) == before, row.label
+            elif row.kind == "steps":
+                before = ns.Panel.Get(row)
+                click(c.plus if before < row.max else c.minus)
+                assert ns.Panel.Get(row) != before, row.label
+                click(c.minus if before < row.max else c.plus)
+                assert abs(ns.Panel.Get(row) - before) < 1e-9, row.label
+            elif row.kind == "choice":
+                for b in c.buttons.values():
+                    click(b)
+                    assert ns.Panel.Get(row) == b.value, row.label
+            else:
+                if row.label in ("Modo de edição", "Teclas de atalho da barra"):
+                    click(c)
+                    assert not visible(ns.Panel.frame), row.label     # the panel gives way to the mode
+                    ns.EditMode.Stop(); ns.KeybindMode.Stop()
+                    ns.Panel.Open(sec.id)
+                elif row.label == "Abrir inventário":
+                    click(c)
+                    assert ns.Inventory.frame.IsShown(ns.Inventory.frame)
+                    ns.Panel.Open(sec.id)
+                else:
+                    click(c)
+            checked.append(row.label)
+    assert len(checked) == 16
+    assert "OBSIDIANUI_RELOAD" in list(rt.globals().POPUPS.values())
+
+
+def test_edit_mode_button_really_starts_the_mode():
+    _, ns = preview()
+    ns.Panel.Open("general")
+    click(row(ns, "Modo de edição").control)
+    assert ns.EditMode.active
+
+
+def test_keybind_button_really_starts_the_mode():
+    _, ns = preview()
+    ns.Panel.Open("general")
+    click(row(ns, "Teclas de atalho da barra").control)
+    assert ns.KeybindMode.active
+
+
+def test_restore_positions_button_forgets_the_layout():
+    _, ns = preview({"layout": {"map": {"x": 900, "y": 600}}})
+    ns.Panel.Open("general")
+    click(row(ns, "Restaurar posições").control)
+    assert ns.db.layout is None
+
+
+def test_header_buttons_start_the_edit_mode_and_close():
+    _, ns = preview()
+    ns.Panel.Open()
+    click(ns.Panel.editButton)
+    assert ns.EditMode.active and not visible(ns.Panel.frame)
+    ns.EditMode.Stop()
+    ns.Panel.Open()
+    click(ns.Panel.closeButton)
+    assert not visible(ns.Panel.frame)

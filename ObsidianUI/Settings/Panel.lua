@@ -199,6 +199,7 @@ local close = flatButton(header, "X", 28, function() Panel.Close() end)
 close:SetPoint("RIGHT", header, "RIGHT", -12, 0)
 local editBtn = flatButton(header, "Modo de edição", 120, function() Panel.Close(); ns.EditMode.Start() end)
 editBtn:SetPoint("RIGHT", close, "LEFT", -8, 0)
+Panel.editButton, Panel.closeButton = editBtn, close
 
 local search = CreateFrame("EditBox", "ObsidianUIConfigSearch", header)
 search:SetSize(240, 28)
