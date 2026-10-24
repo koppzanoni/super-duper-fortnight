@@ -65,6 +65,11 @@ FCFTab_UpdateColors), caixa de digitar no próprio painel logo abaixo (ns.Pin), 
 escondidos (opção), mensagens somem depois de N s (SetTimeVisible/SetFading, sem mexer em
 configuração do jogo), botão de copiar com o texto sem códigos; janelas novas e de sussurro
 pegam o visual (hook em FCF_OpenNewWindow/FCF_OpenTemporaryWindow).
+Dicas (FEITO: HUD/Tooltip.lua): GameTooltip, ItemRefTooltip, ShoppingTooltip1/2,
+EmbeddedItemTooltip num painel preto (NineSlice alpha 0, também depois de
+SharedTooltip_SetBackdropStyle), borda na cor da raridade (TooltipDataProcessor Item) ou da classe
+(Unit, nome também), linha "Alvo:", barra de vida fina; posição padrão / cursor / acima da barra de
+informações; some sobre o mundo em combate (opção).
 Falta (marcado "em breve" no painel): Rastreador de missões, Dicas, Janelas da Blizzard,
 Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.

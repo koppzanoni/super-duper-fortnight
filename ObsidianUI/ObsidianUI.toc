@@ -43,6 +43,7 @@ HUD\GroupFrames.lua
 HUD\RaidTools.lua
 HUD\Nameplates.lua
 HUD\Chat.lua
+HUD\Tooltip.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Stats.lua

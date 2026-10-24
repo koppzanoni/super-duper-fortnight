@@ -245,7 +245,15 @@ Panel.SECTIONS = {
     } },
   } },
   { id = "quests", group = "Interface", name = "Rastreador de missões", soon = true },
-  { id = "tooltip", group = "Interface", name = "Dicas (tooltip)", soon = true },
+  { id = "tooltip", group = "Interface", name = "Dicas (tooltip)", lead = "Painel preto com a borda na cor da raridade ou da classe.", cards = {
+    { "Visual", {
+      toggle("Usar as dicas da ObsidianUI", "tip_on", true, nil, "Desligado, as dicas voltam ao normal depois de recarregar."),
+    } },
+    { "Comportamento", {
+      choice("Posição", "tipAnchor", "default", { { "default", "Padrão" }, { "cursor", "No cursor" }, { "hud", "Acima da barra de informações" } }),
+      toggle("Em combate", "tipCombat", true, nil, "Desligado, as dicas de quem está no mundo somem em combate; as dos botões continuam."),
+    } },
+  } },
   { id = "skins", group = "Interface", name = "Janelas da Blizzard", soon = true },
   { id = "cursor", group = "Interface", name = "Cursor", soon = true },
   { id = "automation", group = "Qualidade de vida", name = "Automação", soon = true },
