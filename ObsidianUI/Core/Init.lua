@@ -11,7 +11,8 @@ local DEFAULTS = { vbar1 = false, vbar2 = false, scale = 1.0, invScale = 1.0, sh
   res_on = true, resStyle = "gems", resHide = false, buffs_on = true, debuffs_on = true, buffSize = 26, buffRow = 16,
   xp_on = true, rep_on = true, dataText = "hover", dataHeight = 5,
   party_on = true, raid_on = true, raidW = 72, raidH = 36, raidGrowth = "rows",
-  partyPlayer = false, partyStyle = "frames", groupDebuffs = true, raidTools = true }
+  partyPlayer = false, partyStyle = "frames", groupDebuffs = true, raidTools = true,
+  plates_on = true, plateW = 140, plateH = 10, plateHP = true, plateCast = true, plateDebuffs = true, plateFade = true }
 
 -- A Moderno texture in the chosen colour: the black theme, or the concept's blue.
 function ns.ModernTex(name)

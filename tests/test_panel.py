@@ -41,8 +41,8 @@ def test_sidebar_lists_built_and_planned_modules_in_groups():
     names = [s.name for s in ns.Panel.SECTIONS.values()]
     assert names[0] == "Geral" and names[-1] == "Perfis"
     built = {s.id for s in ns.Panel.SECTIONS.values() if not s.soon}
-    assert built == {"general", "visual", "bar", "frames", "cast", "inventory", "profiles", "infobar", "resources", "auras", "databars", "party", "raid"}
-    for planned in ("chat", "quests", "plates", "classes", "automation"):
+    assert built == {"general", "visual", "bar", "frames", "cast", "inventory", "profiles", "infobar", "resources", "auras", "databars", "party", "raid", "plates"}
+    for planned in ("chat", "quests", "tooltip", "classes", "automation"):
         assert any(s.id == planned and s.soon for s in ns.Panel.SECTIONS.values())
 
 
@@ -76,7 +76,7 @@ def test_colour_choice_asks_for_a_reload():
 def test_search_finds_options_across_modules():
     _, ns = preview()
     ns.Panel.Open()
-    ns.Panel.Search("lat")
+    ns.Panel.Search("zona da lat")
     labels = [r.row.label for r in rows(ns)]
     assert labels == ["Zona da latência (verde)"]
     ns.Panel.Search("vertical")
@@ -166,7 +166,7 @@ def test_every_control_of_every_built_page_works():
                 else:
                     click(c)
             checked.append(row.label)
-    assert len(checked) == 57
+    assert len(checked) == 64
     assert "OBSIDIANUI_RELOAD" in list(rt.globals().POPUPS.values())
 
 

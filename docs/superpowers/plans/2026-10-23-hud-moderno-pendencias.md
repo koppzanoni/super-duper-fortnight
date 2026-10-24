@@ -53,7 +53,13 @@ Também feito: você no grupo (opção), grupo em células do raide (opção), a
 (liga/desliga), marcador de raide, ícone da checagem de prontidão (some 6 s depois), ferramentas de
 raide (HUD/RaidTools.lua: Pronto?, contagem de 10 s, 8 marcadores + limpar; só líder/assistente;
 movível; liga/desliga). Ainda não: marcadores no chão (exigem macro segura).
-Falta (marcado "em breve" no painel): Nameplates, Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
+Nameplates (FEITO: HUD/Nameplates.lua): por cima das placas do jogo (UnitFrame com alpha 0, hook
+em SetAlpha), barra fina com cor por reação/classe, nome, % de vida, marcador, até 4 debuffs seus,
+cast azul / cinza (não interrompível) — SetTimerDuration(UnitCastingDuration) quando aceitar, senão
+pelos tempos, senão barra cheia; alvo com borda roxa (comparando a placa, não UnitIsUnit), outros
+apagados; largura/altura; desligar devolve o visual do jogo. Placas proibidas (aliados em
+instância) e a placa pessoal ficam como o jogo desenha. Falta: cor por ameaça (tanque), ícone de elite.
+Falta (marcado "em breve" no painel): Chat, Rastreador de missões, Dicas, Janelas da Blizzard,
 Cursor, Automação, Recarga nos ícones, Lembretes, Classes (+ modo de teste,
 visibilidade por elemento, troca de perfil por conteúdo). Cada um entra como módulo novo.
 
@@ -110,6 +116,8 @@ Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
 - Menu: todos os botões abrindo as janelas (sem taint).
 - Inventário Moderno: abrir com C e B, arrastar pelo cabeçalho, fechar no X e no Esc, itens
   clicáveis, busca, organizar, abas de reputação e moedas abrindo as páginas da Blizzard.
+- Nameplates: visual do jogo some de verdade (o hook de SetAlpha segura), cast andando em combate
+  (qual dos três caminhos funcionou), alvo com borda roxa, nada de erro em instância.
 - Grupo/raide: aparecer e sumir ao entrar/sair de grupo e raide, ícone de função (textura
   UI-LFG-ICON-PORTRAITROLES), alcance apagando em combate, borda de dissipar, clicar = alvo,
   botão direito = menu; trocar de subgrupo em combate só reorganiza depois do combate.

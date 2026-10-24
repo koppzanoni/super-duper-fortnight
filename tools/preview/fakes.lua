@@ -219,3 +219,44 @@ C_UnitAuras.GetAuraDataByIndex = function(unit, i, filter)
   end
   return auraByIndex(unit, i, filter)
 end
+
+-- Nameplates: PREVIEW_PLATES(n) makes plates nameplate1..n spread over the screen, each with the
+-- game's own unit frame inside, and fires NAME_PLATE_UNIT_ADDED. Plate 1 is the target, plate 2
+-- casts an interruptible spell, plate 3 is neutral and casts one that cannot be interrupted.
+PLATES, PLATE_UNITS = {}, {}
+C_NamePlate = { GetNamePlateForUnit = function(u) return PLATES[u] end }
+local plateBase = { UnitExists = UnitExists, UnitName = UnitName, UnitHealth = UnitHealth, UnitHealthMax = UnitHealthMax,
+  UnitHealthPercent = UnitHealthPercent, UnitReaction = UnitReaction, UnitLevel = UnitLevel }
+function UnitExists(u) return PLATE_UNITS[u] ~= nil or plateBase.UnitExists(u) end
+function UnitName(u) if PLATE_UNITS[u] then return PLATE_UNITS[u].name end return plateBase.UnitName(u) end
+function UnitHealth(u) if PLATE_UNITS[u] then return PLATE_UNITS[u].hp end return plateBase.UnitHealth(u) end
+function UnitHealthMax(u) if PLATE_UNITS[u] then return 1000 end return plateBase.UnitHealthMax(u) end
+function UnitHealthPercent(u) if PLATE_UNITS[u] then return PLATE_UNITS[u].hp / 10 end return plateBase.UnitHealthPercent(u) end
+function UnitReaction(u) if PLATE_UNITS[u] then return PLATE_UNITS[u].reaction end return plateBase.UnitReaction(u) end
+function UnitCastingInfo(u)
+  local c = PLATE_UNITS[u] and PLATE_UNITS[u].cast
+  if c then return c.name, c.name, "ICON:4", 99000, 101000, false, "id", c.locked, 1 end
+  return nil
+end
+function UnitChannelInfo() return nil end
+function PREVIEW_PLATES(n)
+  for i = 1, n do
+    local u = "nameplate" .. i
+    PLATE_UNITS[u] = { name = ({ "Ravenfang Alpha", "Xamã Sombrio", "Mercador" })[i] or ("Inimigo " .. i),
+      hp = 1000 - i * 230, reaction = i == 3 and 4 or 2,
+      cast = (i == 2 and { name = "Raio Sombrio", locked = false }) or (i == 3 and { name = "Escudo", locked = true }) or nil,
+      marker = i == 1 and 8 or nil }
+    local plate = CreateFrame("Frame", "NamePlate" .. i, UIParent)
+    plate:SetSize(160, 40)
+    plate:SetPoint("CENTER", UIParent, "CENTER", (i - 2) * 260, 160)
+    plate.UnitFrame = CreateFrame("Button", nil, plate)
+    plate.UnitFrame:SetAllPoints(plate)
+    PLATES[u] = plate
+  end
+  PLATES.target = PLATES.nameplate1
+  PREVIEW_FIRE("NAME_PLATE_CREATED")
+  for i = 1, n do PREVIEW_FIRE("NAME_PLATE_UNIT_ADDED", "nameplate" .. i) end
+  PREVIEW_FIRE("PLAYER_TARGET_CHANGED")
+end
+local markerBase = GetRaidTargetIndex
+function GetRaidTargetIndex(u) if PLATE_UNITS[u] then return PLATE_UNITS[u].marker end return markerBase(u) end

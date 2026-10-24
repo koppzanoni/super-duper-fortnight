@@ -218,7 +218,20 @@ Panel.SECTIONS = {
     } },
     { "Teste", { Panel.TestRow() } },
   } },
-  { id = "plates", group = "Grupo", name = "Nameplates", soon = true },
+  { id = "plates", group = "Grupo", name = "Nameplates", lead = "As barras em cima dos inimigos, no visual da HUD.", cards = {
+    { "Mostrar", {
+      toggle("Usar as nameplates da ObsidianUI", "plates_on", true, function() ns.Nameplates.Refresh() end,
+        "Desligado, volta o visual do jogo."),
+      toggle("Porcentagem de vida", "plateHP", true, function() ns.Nameplates.Refresh() end),
+      toggle("Barra de cast", "plateCast", true, function() ns.Nameplates.Refresh() end, "Cinza quando não dá para interromper."),
+      toggle("Seus debuffs", "plateDebuffs", true, function() ns.Nameplates.Refresh() end, "Até quatro, acima do nome."),
+      toggle("Apagar quem não é o alvo", "plateFade", true, function() ns.Nameplates.Refresh() end),
+    } },
+    { "Tamanho", {
+      steps("Largura", "plateW", 140, 80, 260, 10, int, function() ns.Nameplates.Refresh() end),
+      steps("Altura", "plateH", 10, 4, 24, 1, int, function() ns.Nameplates.Refresh() end),
+    } },
+  } },
   { id = "chat", group = "Interface", name = "Chat", soon = true },
   { id = "quests", group = "Interface", name = "Rastreador de missões", soon = true },
   { id = "tooltip", group = "Interface", name = "Dicas (tooltip)", soon = true },
