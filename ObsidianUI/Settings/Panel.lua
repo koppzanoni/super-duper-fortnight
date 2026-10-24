@@ -195,6 +195,9 @@ Panel.SECTIONS = {
     { "Quadros", {
       toggle("Mostrar", "party_on", true, function() ns.GroupFrames.Refresh() end,
         "Desligado, os quadros da Blizzard voltam depois de recarregar."),
+      toggle("Você no grupo", "partyPlayer", false, function() ns.GroupFrames.Refresh() end, "Seu quadro em cima dos outros."),
+      choice("Estilo", "partyStyle", "frames", { { "frames", "Quadros" }, { "cells", "Células do raide" } },
+        function() ns.GroupFrames.Refresh() end, "As células usam o tamanho e a direção da página Raide."),
     } },
     { "Teste", { Panel.TestRow() } },
   } },

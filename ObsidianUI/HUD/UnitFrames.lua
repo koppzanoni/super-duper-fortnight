@@ -115,9 +115,12 @@ local function buildModern(f, k, unit, mirror)
   end
 end
 
-function UnitFrames.Create(unit, kind, mirror)
+-- key: a second frame for the same unit (you inside the party) is filed under its own key; the
+-- unit events only reach frames filed under the unit itself.
+function UnitFrames.Create(unit, kind, mirror, key)
   local k = KINDS[kind]
-  local f = CreateFrame("Button", "ObsidianUI_" .. unit, UIParent, "SecureUnitButtonTemplate")
+  key = key or unit
+  local f = CreateFrame("Button", "ObsidianUI_" .. key, UIParent, "SecureUnitButtonTemplate")
   f:SetFrameStrata("LOW")
   f:SetAttribute("unit", unit)
   f:SetAttribute("type1", "target")
@@ -140,7 +143,7 @@ function UnitFrames.Create(unit, kind, mirror)
   f:SetScript("OnLeave", GameTooltip_Hide)
 
   RegisterUnitWatch(f)
-  UnitFrames.frames[unit] = f
+  UnitFrames.frames[key] = f
   return f
 end
 
@@ -202,6 +205,7 @@ local function updateAll(f)
   updateValues(f)
 end
 UnitFrames.Update = updateAll
+UnitFrames.UpdateValues = updateValues
 
 -- Test mode: stand-in values for a frame whose unit does not exist (d: name, class, level, hp).
 function UnitFrames.Fake(f, d)

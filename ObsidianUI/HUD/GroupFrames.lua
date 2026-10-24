@@ -4,9 +4,10 @@ local _, ns = ...
 -- shown in a party and hidden in a raid. Raid: a grid of compact cells by subgroup (a group per
 -- row or per column), class-coloured health, name, a thin power line, tank/healer icon, dead and
 -- offline text, a border in the colour of a debuff the player can dispel, faded when out of range.
--- Both are secure and only move or change out of combat. Test mode shows stand-ins (party or
--- raid) to place and size them while solo; combat ends it.
-local GroupFrames = { party = {}, raid = {}, testing = nil }
+-- The party can include you on top ("partyPlayer") and can use the raid cells instead
+-- ("partyStyle" = "cells"). Both are secure and only move or change out of combat. Test mode shows
+-- stand-ins (party or raid) to place and size them while solo; combat ends it.
+local GroupFrames = { party = {}, raid = {}, partyCells = {}, testing = nil }
 ns.GroupFrames = GroupFrames
 
 local PARTY, RAID, TEST_RAID = 4, 40, 20
@@ -41,9 +42,9 @@ local function edge(c, layer)
   return t
 end
 
-local function newCell(i)
-  local c = CreateFrame("Button", "ObsidianUIRaid" .. i, raidHolder, "SecureUnitButtonTemplate")
-  c.unit = "raid" .. i
+local function newCell(name, unit, parent)
+  local c = CreateFrame("Button", name, parent, "SecureUnitButtonTemplate")
+  c.unit, c.isCell = unit, true
   c:SetAttribute("unit", c.unit)
   c:SetAttribute("type1", "target")
   c:SetAttribute("type2", "togglemenu")
@@ -76,7 +77,11 @@ local function newCell(i)
   c:SetScript("OnLeave", GameTooltip_Hide)
   return c
 end
-for i = 1, RAID do GroupFrames.raid[i] = newCell(i) end
+for i = 1, RAID do GroupFrames.raid[i] = newCell("ObsidianUIRaid" .. i, "raid" .. i, raidHolder) end
+-- party cells: you first, then party1..4
+for i, unit in ipairs({ "player", "party1", "party2", "party3", "party4" }) do
+  GroupFrames.partyCells[i] = newCell("ObsidianUIPartyCell" .. i, unit, partyHolder)
+end
 
 local function frameEdges(list, owner, t)
   list[1]:ClearAllPoints(); list[1]:SetPoint("TOPLEFT", owner); list[1]:SetPoint("TOPRIGHT", owner); list[1]:SetHeight(t)
@@ -234,18 +239,48 @@ local function layoutRaid()
 end
 
 -- ------------------------------------------------------------------ party
+local function cellStyle() return db().partyStyle == "cells" end
+
+-- The party members in use, in order: you (when asked for) and party1..4, as frames or cells.
+local function partyMembers()
+  local list, withMe = {}, db().partyPlayer == true
+  if cellStyle() then
+    for i, c in ipairs(GroupFrames.partyCells) do
+      if i > 1 or withMe then list[#list + 1] = c end
+    end
+  else
+    if withMe and GroupFrames.me then list[1] = GroupFrames.me end
+    for _, f in ipairs(GroupFrames.party) do list[#list + 1] = f end
+  end
+  return list
+end
+
 local function layoutParty()
   local s = scale()
+  local list = partyMembers()
+  if cellStyle() then
+    local w, h = (db().raidW or 72) * s, (db().raidH or 36) * s
+    local gap = CELL_GAP * s
+    local down = db().raidGrowth == "columns"
+    for i, c in ipairs(list) do
+      sizeCell(c, w, h)
+      c:ClearAllPoints()
+      if down then c:SetPoint("TOPLEFT", partyHolder, "TOPLEFT", 0, -(i - 1) * (h + gap))
+      else c:SetPoint("TOPLEFT", partyHolder, "TOPLEFT", (i - 1) * (w + gap), 0) end
+    end
+    local n = #list
+    if down then partyHolder:SetSize(w, n * (h + gap) - gap) else partyHolder:SetSize(n * (w + gap) - gap, h) end
+    return
+  end
   local prev
-  for _, f in ipairs(GroupFrames.party) do
+  for _, f in ipairs(list) do
     f:ClearAllPoints()
     if prev then f:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, -10 * s)
     else f:SetPoint("TOPLEFT", partyHolder, "TOPLEFT", 0, 0) end
     prev = f
   end
-  local first = GroupFrames.party[1]
-  local w, h = first:GetSize()
-  partyHolder:SetSize(w, PARTY * h + (PARTY - 1) * 10 * s)
+  local w, h = list[1]:GetSize()
+  partyHolder:SetSize(w, #list * h + (#list - 1) * 10 * s)
 end
 
 -- ------------------------------------------------------------------ visibility and test mode
@@ -257,9 +292,21 @@ local function apply()
   local test = GroupFrames.testing
   UnregisterStateDriver(partyHolder, "visibility")
   UnregisterStateDriver(raidHolder, "visibility")
-  for i, f in ipairs(GroupFrames.party) do
-    watch(f, test ~= "party")
-    if test == "party" then f:Show(); ns.UnitFrames.Fake(f, fake(i)) end
+  -- the party style not in use stays hidden; the one in use follows its units (or the test)
+  local used = {}
+  for i, m in ipairs(partyMembers()) do
+    used[m] = true
+    watch(m, test ~= "party")
+    if test == "party" then
+      m:Show()
+      if m.isCell then fakeCell(m, fake(i)) else ns.UnitFrames.Fake(m, fake(i)) end
+    end
+  end
+  local all = { GroupFrames.me }
+  for _, f in ipairs(GroupFrames.party) do all[#all + 1] = f end
+  for _, c in ipairs(GroupFrames.partyCells) do all[#all + 1] = c end
+  for _, m in ipairs(all) do
+    if not used[m] then UnregisterUnitWatch(m); m:Hide() end
   end
   for i, c in ipairs(GroupFrames.raid) do
     watch(c, test ~= "raid")
@@ -292,7 +339,9 @@ end
 -- Refill everything from the roster (names, classes, roles; bars follow their own events).
 function GroupFrames.Update()
   if GroupFrames.testing then return end
-  for _, f in ipairs(GroupFrames.party) do ns.UnitFrames.Update(f) end
+  for _, m in ipairs(partyMembers()) do
+    if m.isCell then fillCell(m); updateDispel(m); updateRange(m) else ns.UnitFrames.Update(m) end
+  end
   for _, c in ipairs(GroupFrames.raid) do fillCell(c); updateDispel(c); updateRange(c) end
 end
 
@@ -312,6 +361,9 @@ ns.On("PLAYER_LOGIN", function()
       GroupFrames.party[i] = ns.UnitFrames.Create("party" .. i, "modernSmall")
       GroupFrames.party[i]:SetParent(partyHolder)
     end
+    GroupFrames.me = ns.UnitFrames.Create("player", "modernSmall", nil, "partyplayer")
+    GroupFrames.me:SetParent(partyHolder)
+    GroupFrames.me:Resize(select(2, UIParent:GetSize()))
     for _, f in ipairs(GroupFrames.party) do f:Resize(select(2, UIParent:GetSize())) end
     -- Blizzard's own party and raid frames give way to these (back after a reload when switched off).
     if on("party_on") then
@@ -336,15 +388,22 @@ ns.On("PLAYER_REGEN_DISABLED", function()
   if GroupFrames.testing then GroupFrames.testing = nil; apply() end
 end)
 
+-- The raid or party cell showing a unit.
+local PARTY_CELL = { player = 1, party1 = 2, party2 = 3, party3 = 4, party4 = 5 }
 local function cellFor(unit)
-  local i = unit and unit:match("^raid(%d+)$")
+  if not unit then return nil end
+  if PARTY_CELL[unit] then return cellStyle() and GroupFrames.partyCells[PARTY_CELL[unit]] or nil end
+  local i = unit:match("^raid(%d+)$")
   return i and GroupFrames.raid[tonumber(i)]
 end
 for _, ev in ipairs({ "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_POWER_FREQUENT", "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER",
   "UNIT_NAME_UPDATE", "UNIT_CONNECTION", "UNIT_FLAGS" }) do
   ns.On(ev, function(_, unit)
+    if GroupFrames.testing then return end
     local c = cellFor(unit)
-    if c and not GroupFrames.testing then fillCell(c) end
+    if c then fillCell(c) end
+    -- you inside the party: a second frame the unit frames' own events do not reach
+    if unit == "player" and GroupFrames.me and GroupFrames.me:IsVisible() then ns.UnitFrames.UpdateValues(GroupFrames.me) end
   end)
 end
 ns.On("UNIT_AURA", function(_, unit)
@@ -357,10 +416,12 @@ ns.On("UNIT_CONNECTION", function(_, unit) local f = ns.UnitFrames.frames[unit];
 local elapsed = 0
 CreateFrame("Frame"):SetScript("OnUpdate", function(_, dt)
   elapsed = elapsed + dt
-  if elapsed < 0.5 or GroupFrames.testing or not raidHolder:IsShown() then return end
+  if elapsed < 0.5 or GroupFrames.testing then return end
   elapsed = 0
-  for _, c in ipairs(GroupFrames.raid) do
-    if c:IsShown() then updateRange(c) end
+  for _, list in ipairs({ GroupFrames.raid, GroupFrames.partyCells }) do
+    for _, c in ipairs(list) do
+      if c:IsVisible() then updateRange(c) end
+    end
   end
 end)
 

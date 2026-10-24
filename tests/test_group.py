@@ -172,3 +172,48 @@ def test_dead_and_offline_turn_grey_and_text_stays_in_the_cell():
         assert abs(r - g) < 0.05 and r < 0.4, u
         h, st = rect(c[u].health), rect(c[u].status)
         assert st[1] >= h[1] - 0.5, u                                 # status not below the health area
+
+
+# ------------------------------------------------------------------ you in the party, cell style
+def party_cells(ns):
+    return [c for c in ns.GroupFrames.partyCells.values() if visible(c)]
+
+
+def test_you_in_the_party_on_top():
+    _, ns = preview({"partyPlayer": True}, group="party", n=2)
+    me = ns.GroupFrames.me
+    assert visible(me) and me.unit == "player" and me.name.text == "Você"
+    first = party(ns)[0]
+    assert rect(first)[1] + rect(first)[3] < rect(me)[1]               # the others below you
+    _, ns = preview(group="party", n=2)
+    assert not visible(ns.GroupFrames.me)                             # off by default
+
+
+def test_party_as_raid_cells():
+    _, ns = preview({"partyStyle": "cells", "partyPlayer": True}, group="party", n=3)
+    assert party(ns) == [] and not visible(ns.GroupFrames.me)
+    c = party_cells(ns)
+    assert [x.unit for x in c] == ["player", "party1", "party2", "party3"]
+    assert abs(rect(c[0])[1] - rect(c[1])[1]) < 0.5 and rect(c[1])[0] > rect(c[0])[0]   # side by side
+    assert c[1].name.text == "Membro 1"
+
+
+def test_party_cells_go_down_with_groups_in_columns():
+    _, ns = preview({"partyStyle": "cells", "raidGrowth": "columns"}, group="party", n=3)
+    c = party_cells(ns)
+    assert abs(rect(c[0])[0] - rect(c[1])[0]) < 0.5 and rect(c[1])[1] < rect(c[0])[1]
+
+
+def test_party_cells_hide_in_a_raid_and_test_mode_uses_them():
+    _, ns = preview({"partyStyle": "cells"}, group="raid", n=8)
+    assert party_cells(ns) == []
+    _, ns = preview({"partyStyle": "cells", "partyPlayer": True})
+    ns.GroupFrames.Test("party")
+    assert len(party_cells(ns)) == 5 and party(ns) == []
+
+
+def test_health_event_updates_you_in_the_party():
+    rt, ns = preview({"partyPlayer": True}, group="party", n=2)
+    rt.execute('HP_SET = true')
+    me = ns.GroupFrames.me
+    assert me.health.value == 28400
