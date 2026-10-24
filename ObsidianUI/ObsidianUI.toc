@@ -62,6 +62,7 @@ Classes\Priest.lua
 Classes\DeathKnight.lua
 Classes\Shaman.lua
 Classes\Mage.lua
+Classes\Warlock.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Stats.lua

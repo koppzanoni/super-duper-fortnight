@@ -138,6 +138,10 @@ acabando e escudo faltando nos Lembretes (o aviso genérico de óleo cede ao do 
 Mago (FEITO: Classes/Mage.lua): regra dos 5 s, armadura faltando e sem gema de mana (quando já conjura
 uma) nos Lembretes, procs no aviso central (SPELL_ACTIVATION_OVERLAY_SHOW/HIDE; o aviso agora se
 centraliza pela largura do texto).
+Bruxo (FEITO: Classes/Warlock.lua): fragmentos de alma da bolsa em número no lugar das gemas (só onde
+fragmento é item e as gemas não aparecem), sem pedra de vida / ninguém com pedra da alma nos Lembretes,
+DoTs no alvo (até 5, empilhados sem buraco), vida e mana do demônio em barras finas (Classes/Pet.lua,
+comum com o Caçador).
 Próximas classes, uma por commit: Xamã,
 Mago, Bruxo, Monge, Druida (opções de cada uma no protótipo, CLASS_OPTS).
 Falta: as outras classes na página Classes (+ modo de teste,
