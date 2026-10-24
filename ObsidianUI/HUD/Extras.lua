@@ -43,7 +43,7 @@ local function layout()
 
   ns.Pin(find("lootrolls"), function(f)
     f:ClearAllPoints()
-    f:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, ns.Stack.BarTop() + 260)
+    f:SetPoint("BOTTOM", ns.Stack.Anchor(), "TOP", 0, 260)
   end)
 
   ns.Pin(find("mirrortimers"), function(f)

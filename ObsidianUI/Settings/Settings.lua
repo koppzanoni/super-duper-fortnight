@@ -26,6 +26,9 @@ local function register()
   checkbox("vbar2", "Barra vertical direita 2", false, function() ns.VerticalBars.Refresh() end)
   checkbox("showHotkeys", "Mostrar teclas de atalho nos botões", true, function() ns.ActionBars.UpdateBindings() end)
   if CreateSettingsButtonInitializer and layout then
+    layout:AddInitializer(CreateSettingsButtonInitializer("Posição e tamanho dos elementos", "Modo de edição",
+      function() ns.EditMode.Start() end,
+      "Arraste cada elemento da HUD, mude o tamanho com a roda do mouse e ajuste com as setas. Esc sai.", true))
     layout:AddInitializer(CreateSettingsButtonInitializer("Teclas de atalho da barra", "Definir teclas",
       function() ns.KeybindMode.Start() end,
       "Feche esta janela, passe o mouse num botão da barra de ações e aperte a tecla. Backspace limpa, Esc sai.", true))

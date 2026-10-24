@@ -33,7 +33,7 @@ local function layoutGems(count)
   local size, gap = SIZE * H, GAP * H
   local total = count * size + (count - 1) * gap
   holder:ClearAllPoints()
-  holder:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, ns.Stack.BarTop() + 34)
+  holder:SetPoint("BOTTOM", ns.Stack.Anchor(), "TOP", 0, 34)
   holder:SetSize(math.max(1, total), size)
   for i, g in ipairs(gems) do
     g:ClearAllPoints()

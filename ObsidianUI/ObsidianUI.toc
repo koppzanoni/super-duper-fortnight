@@ -15,6 +15,7 @@ Core\Widgets.lua
 Core\Diag.lua
 Core\HideBlizzard.lua
 Core\Pin.lua
+Core\Movers.lua
 HUD\Bottom.lua
 HUD\XPBar.lua
 HUD\ActionBars.lua
@@ -31,6 +32,7 @@ HUD\Minimap.lua
 HUD\Extras.lua
 HUD\PlayerStatus.lua
 HUD\DefaultPositions.lua
+HUD\EditMode.lua
 Inventory\Filters.lua
 Inventory\GridModel.lua
 Inventory\Stats.lua

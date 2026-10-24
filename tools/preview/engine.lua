@@ -65,6 +65,13 @@ local function pointXY(rect, point)
   return x, y
 end
 
+-- A frame's size and anchor offsets are in its own scale: the product of its and its parents'.
+function Region:EffScale()
+  local s, r, n = 1, self, 0
+  while r and r ~= UIParent and n < 60 do s = s * (r.scale or 1); r = r.parent; n = n + 1 end
+  return s
+end
+
 function Region:Rect(depth)
   depth = (depth or 0) + 1
   if self == UIParent or depth > 60 then return { 0, 0, SCREEN_W, SCREEN_H } end
@@ -81,20 +88,23 @@ function Region:Rect(depth)
   if #self.points == 0 then
     if self.parent and self.parent.Rect then
       local pr = self.parent:Rect(depth)
-      return { pr[1], pr[2], self.w, self.h }
+      local es = self:EffScale()
+      return { pr[1], pr[2], self.w * es, self.h * es }
     end
-    return { 0, 0, self.w, self.h }
+    local es = self:EffScale()
+    return { 0, 0, self.w * es, self.h * es }
   end
   local left, right, top, bottom, cx, cy
+  local es = self:EffScale()
   for _, p in ipairs(self.points) do
     local rel = p.rel
     local rr = (rel and rel.Rect) and rel:Rect(depth) or { 0, 0, SCREEN_W, SCREEN_H }
     local ax, ay = pointXY(rr, p.relPoint)
-    ax, ay = ax + p.x, ay + p.y
+    ax, ay = ax + p.x * es, ay + p.y * es
     if p.point:find("LEFT") then left = ax elseif p.point:find("RIGHT") then right = ax else cx = ax end
     if p.point:find("TOP") then top = ay elseif p.point:find("BOTTOM") then bottom = ay else cy = ay end
   end
-  local w, h = self.w, self.h
+  local w, h = self.w * es, self.h * es
   if left and right then w = right - left elseif left then right = left + w elseif right then left = right - w
   elseif cx then left = cx - w / 2 end
   if top and bottom then h = top - bottom elseif bottom then top = bottom + h elseif top then bottom = top - h
@@ -108,12 +118,14 @@ function Region:Rect(depth)
   end
   return { left, bottom, w, h }
 end
-function Region:GetSize() local r = self:Rect(); return r[3], r[4] end
-function Region:GetWidth() return self:Rect()[3] end
-function Region:GetHeight() return self:Rect()[4] end
-function Region:GetBottom() return self:Rect()[2] end
-function Region:GetTop() local r = self:Rect(); return r[2] + r[4] end
-function Region:GetLeft() return self:Rect()[1] end
+-- Like the game: sizes and positions in the frame's own scale (screen units / effective scale).
+function Region:GetSize() local r, es = self:Rect(), self:EffScale(); return r[3] / es, r[4] / es end
+function Region:GetWidth() return self:Rect()[3] / self:EffScale() end
+function Region:GetHeight() return self:Rect()[4] / self:EffScale() end
+function Region:GetBottom() return self:Rect()[2] / self:EffScale() end
+function Region:GetTop() local r = self:Rect(); return (r[2] + r[4]) / self:EffScale() end
+function Region:GetLeft() return self:Rect()[1] / self:EffScale() end
+function Region:GetRight() local r = self:Rect(); return (r[1] + r[3]) / self:EffScale() end
 
 -- Visibility / hierarchy ------------------------------------------------------------------------
 function Region:Show() self.shown = true; if self.handlers.OnShow then self.handlers.OnShow(self) end end
@@ -142,6 +154,13 @@ end
 function Region:GetName() return self.name end
 function Region:IsProtected() return false end
 function Region:SetScale(s) self.scale = s end
+function Region:GetScale() return self.scale or 1 end
+function Region:GetEffectiveScale() return self:EffScale() end
+function Region:SetMovable() end
+function Region:StartMoving() end
+function Region:StopMovingOrSizing() end
+function Region:EnableMouseWheel() end
+function Region:RegisterForDrag() end
 -- ScrollFrame: the game pins the scroll child to the scroll frame's top-left corner.
 function Region:SetScrollChild(child)
   self.scrollChild = child

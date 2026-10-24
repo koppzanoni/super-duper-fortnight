@@ -20,7 +20,13 @@ codar, protótipo do painel e do instalador no sketch.
 - Instalador no primeiro login (/obui install): estilo (Pedra/Moderno), resolução/escala, função
   (DPS/tank/healer), classe, concluir com recarregar. Outro personagem: perfil carrega sozinho.
 
-## Fase 2 — Modo de edição (próximo)
+## Fase 2 — Modo de edição (FEITO: Core/Movers.lua + HUD/EditMode.lua, /obui editar)
+Feito: arrastar, grudar (grade 8 px, centro, bordas/centros dos outros) com guias, roda = tamanho,
+setas = 1 px (Shift 10), Centralizar, Restaurar, Restaurar tudo, sai em combate; salvo em db.layout.
+Falta (vai para o painel): ancorar um elemento em outro, igualar largura, X/Y digitados, inventário
+no sistema de movers (hoje tem o arrastar próprio).
+
+### Plano original
 - Botão nas configurações (e /obui editar) que mostra uma caixa tracejada com nome em cada elemento:
   jogador, alvo, alvo do alvo, foco, pet, barra de ações, barra de cast, minimapa, menu, barras
   verticais, buffs, inventário.

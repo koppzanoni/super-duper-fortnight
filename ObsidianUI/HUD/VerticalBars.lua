@@ -44,6 +44,12 @@ local function placeModern(on, height)
   end
 end
 
+ns.Movers.Register("vbars", "Barras verticais", container, function(f)
+  local _, screenH = UIParent:GetSize()
+  f:ClearAllPoints()
+  f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -4, -VerticalBars.TOP * screenH)
+end)
+
 function VerticalBars.Refresh()
   ns.RunOutOfCombat(function()
     local db = ns.db or {}
@@ -59,9 +65,8 @@ function VerticalBars.Refresh()
       local _, screenH = UIParent:GetSize()
       local hudH = ns.HUD.h or 0.25 * screenH
       local height = screenH * (1 - VerticalBars.TOP - VerticalBars.GAP) - hudH
-      container:ClearAllPoints()
-      container:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -4, -VerticalBars.TOP * screenH)
       placeModern(on, height)
+      ns.Movers.Place("vbars")
       container:Show()
     end
     ns.ActionBars.UpdateBindings()

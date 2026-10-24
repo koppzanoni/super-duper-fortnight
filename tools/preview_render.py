@@ -92,8 +92,12 @@ def run_addon(vbars=True, inventory=False, db=None, pre=None):
         loader(p.read_text(encoding="utf-8"), "@" + p.name)("ObsidianUI", ns)
     rt.execute('PREVIEW_FIRE("ADDON_LOADED", "ObsidianUI")')
     ns.db.vbar1, ns.db.vbar2 = vbars, vbars
+    def lua_value(v):  # nested settings (the edit mode's layout) become Lua tables
+        if isinstance(v, dict):
+            return rt.table_from({k: lua_value(x) for k, x in v.items()})
+        return v
     for k, v in (db or {}).items():
-        ns.db[k] = v
+        ns.db[k] = lua_value(v)
     rt.execute("PREVIEW_FILL_AURAS({5, 2})")
     for ev in ("PLAYER_LOGIN", "PLAYER_ENTERING_WORLD", "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED"):
         rt.execute(f'PREVIEW_FIRE("{ev}")')

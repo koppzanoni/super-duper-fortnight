@@ -47,8 +47,11 @@ local function layout()
   local w = ns.Minimap.Width()
   local _, H = UIParent:GetSize()
   local u = w / S.w
-  container:ClearAllPoints()
-  container:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -0.012 * H, -0.02 * H)
+  ns.Movers.Register("map", "Minimapa", container, function(f)
+    f:ClearAllPoints()
+    f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -0.012 * H, -0.02 * H)
+  end)
+  ns.Movers.Place("map")
   container:SetSize(w, S.h * u)
   ns.Media.Apply(ring, ns.ModernTex("mod_map"))
 

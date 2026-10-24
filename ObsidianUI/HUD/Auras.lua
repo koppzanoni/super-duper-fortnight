@@ -97,21 +97,24 @@ local function updateAll()
   update("HARMFUL")
 end
 
-for filter, y in pairs({ HELPFUL = 0.025, HARMFUL = 0.095 }) do
-  local row = CreateFrame("Frame", "ObsidianUIAuras" .. filter, UIParent)
-  row:SetSize(1, 1)
-  row.buttons, row.y = {}, y
-  Auras.rows[filter] = row
-end
+-- The debuff row hangs under the buff row (a child: they move and resize together).
+local DEBUFF_DROP = 63
+local buffs = CreateFrame("Frame", "ObsidianUIAurasHELPFUL", UIParent)
+buffs:SetSize(WRAP * STEP, DEBUFF_DROP + SIZE)
+buffs.buttons = {}
+local debuffs = CreateFrame("Frame", "ObsidianUIAurasHARMFUL", buffs)
+debuffs:SetSize(1, 1)
+debuffs:SetPoint("TOP", buffs, "TOP", 0, -DEBUFF_DROP)
+debuffs.buttons = {}
+Auras.rows.HELPFUL, Auras.rows.HARMFUL = buffs, debuffs
 
 local function layout()
   local _, H = UIParent:GetSize()
-  local scale = H / 900
-  for _, row in pairs(Auras.rows) do
-    row:SetScale(scale)
-    row:ClearAllPoints()
-    row:SetPoint("TOP", UIParent, "TOP", 0, -row.y * H / scale)
-  end
+  ns.Movers.Register("buffs", "Buffs e debuffs", buffs, function(f)
+    f:ClearAllPoints()
+    f:SetPoint("TOP", UIParent, "TOP", 0, -0.025 * H / f:GetScale())
+  end, { base = function() return H / 900 end })
+  ns.Movers.Place("buffs")
 end
 
 ns.On("PLAYER_LOGIN", function() layout(); updateAll() end)

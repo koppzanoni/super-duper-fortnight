@@ -7,15 +7,21 @@ local HUD = ns.HUD
 
 ns.Stack = {}
 
--- Distance in screen units from the screen bottom to the top of the action bar (its key numbers).
+-- Distance in screen units from the screen bottom to the top of the action bar (its key numbers),
+-- where the bar sits by default.
 function ns.Stack.BarTop()
   return HUD.h or 0
+end
+
+-- The frame the stack above the bar is anchored to (its TOP): it follows the bar when moved.
+function ns.Stack.Anchor()
+  return ns.ActionBars.modernFrame
 end
 
 local function pin(key, point, x, yAboveBar)
   ns.Pin(ns.Resolve.First(ns.Data.FRAME_CANDIDATES[key]), function(frame)
     frame:ClearAllPoints()
-    frame:SetPoint(point, UIParent, "BOTTOM", x, ns.Stack.BarTop() + yAboveBar)
+    frame:SetPoint(point, ns.Stack.Anchor(), "TOP", x, yAboveBar)
   end)
 end
 

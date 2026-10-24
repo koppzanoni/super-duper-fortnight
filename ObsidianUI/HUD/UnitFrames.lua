@@ -314,11 +314,20 @@ local function layout()
   local s = H / 1080
   local f = UnitFrames.frames
   for _, frame in pairs(f) do frame:Resize(H) end
-  f.player:ClearAllPoints(); f.player:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 18 * s, -14 * s)
-  f.target:ClearAllPoints(); f.target:SetPoint("TOPLEFT", f.player, "TOPRIGHT", 32 * s, 0)
-  f.targettarget:ClearAllPoints(); f.targettarget:SetPoint("TOPRIGHT", f.target, "TOPRIGHT", -19 * s, -124 * s)
-  f.focus:ClearAllPoints(); f.focus:SetPoint("TOPLEFT", f.player, "BOTTOMLEFT", 0, -40 * s)
-  f.pet:ClearAllPoints(); f.pet:SetPoint("TOPLEFT", f.focus, "BOTTOMLEFT", 0, -12 * s)
+  -- Defaults: player top left, target beside it, its target under the target's portrait, focus
+  -- and pet under the player. Each one can be moved and resized in the edit mode.
+  local defaults = {
+    { "player", "Jogador", function(fr) fr:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 18 * s, -14 * s) end },
+    { "target", "Alvo", function(fr) fr:SetPoint("TOPLEFT", f.player, "TOPRIGHT", 32 * s, 0) end },
+    { "targettarget", "Alvo do alvo", function(fr) fr:SetPoint("TOPRIGHT", f.target, "TOPRIGHT", -19 * s, -124 * s) end },
+    { "focus", "Foco", function(fr) fr:SetPoint("TOPLEFT", f.player, "BOTTOMLEFT", 0, -40 * s) end },
+    { "pet", "Pet", function(fr) fr:SetPoint("TOPLEFT", f.focus, "BOTTOMLEFT", 0, -12 * s) end },
+  }
+  for _, d in ipairs(defaults) do
+    local unit, label, place = d[1], d[2], d[3]
+    ns.Movers.Register(unit, label, f[unit], function(fr) fr:ClearAllPoints(); place(fr) end)
+    ns.Movers.Place(unit)
+  end
   adoptCastbar("targetcastbar", f.target)
   adoptCastbar("focuscastbar", f.focus)
 end

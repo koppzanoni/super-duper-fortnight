@@ -22,7 +22,7 @@ function HUD.Layout()
   local W, H = UIParent:GetSize()
   local db = ns.db or {}
   HUD.W = W
-  HUD.modernBar = ns.Layout.ModernBar(H, db.scale or 1, db.modernRows or 2, db.modernCols or 12)
+  HUD.modernBar = ns.Layout.ModernBar(H, (db.scale or 1) * ns.Movers.Scale("bar"), db.modernRows or 2, db.modernCols or 12)
   HUD.h = HUD.modernBar.bottom + HUD.modernBar.height
   for _, fn in ipairs(HUD.onResize) do fn() end
 end

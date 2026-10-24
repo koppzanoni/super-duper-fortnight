@@ -172,9 +172,12 @@ end
 
 function ActionBars.LayoutModern()
   local g = HUD.modernBar
-  modernFrame:ClearAllPoints()
-  modernFrame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, g.bottom)
   modernFrame:SetSize(g.width, g.height)
+  ns.Movers.Register("bar", "Barra de ações", modernFrame, function(f)
+    f:ClearAllPoints()
+    f:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, g.bottom)
+  end, { ownScale = true })
+  ns.Movers.Place("bar")
   local inset = g.slot * ns.Data.MODERN_SLOT.inset / ns.Data.MODERN_SLOT.size
   local n = g.rows * g.cols
   for i, index in ipairs(MODERN_ORDER) do

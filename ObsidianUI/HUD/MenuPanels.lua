@@ -232,7 +232,7 @@ local band = CreateFrame("Frame", "ObsidianUIModernMenu", UIParent)
 band:SetFrameStrata("LOW")
 band:Hide()
 local bandLeft, bandMid = band:CreateTexture(nil, "BACKGROUND"), band:CreateTexture(nil, "BACKGROUND")
-MenuPanels.band = bandMid
+MenuPanels.band, MenuPanels.bandFrame = bandMid, band
 local money = band:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 local MENU_W, MENU_H, CAP = 620, 92, 40 -- mod_menu texture px; CAP: left end with the arrow tip
 
@@ -243,13 +243,16 @@ end
 function MenuPanels.LayoutModern()
   if not next(MenuPanels.byId) then return end
   local _, H = UIParent:GetSize()
-  local s = H / 1080 * (ns.db.scale or 1)
+  local s = H / 1080 * (ns.db.scale or 1) * ns.Movers.Scale("menu")
   local list = ns.Data.MODERN_MENU
   local size, step, k = 28 * s, 34 * s, 0.5 * s
   local w = (CAP + 20) * k + #list * step
-  band:ClearAllPoints()
-  band:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -10 * s, 40 * s)
   band:SetSize(w, MENU_H * k)
+  ns.Movers.Register("menu", "Menu", band, function(f)
+    f:ClearAllPoints()
+    f:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -10 * s, 40 * s)
+  end, { ownScale = true })
+  ns.Movers.Place("menu")
   local tex = ns.ModernTex("mod_menu")
   bandLeft:ClearAllPoints()
   bandLeft:SetPoint("TOPLEFT", band, "TOPLEFT")

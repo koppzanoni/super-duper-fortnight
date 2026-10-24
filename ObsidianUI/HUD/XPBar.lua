@@ -22,7 +22,7 @@ table.insert(HUD.onResize, function()
   local g = HUD.modernBar
   for _, bar in ipairs({ rested, xp }) do
     bar:ClearAllPoints()
-    bar:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, g.bottom - 9 * g.s)
+    bar:SetPoint("TOP", ns.ActionBars.modernFrame, "BOTTOM", 0, -4 * g.s)
     bar:SetSize(g.width, 5 * g.s)
   end
   backing:SetPoint("TOPLEFT", rested, "TOPLEFT", -1, 1)
