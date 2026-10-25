@@ -581,6 +581,8 @@ STEEL_PIECES = {
     "map": ("1:1", "A round minimap ring with a small steel plate on top and a magenta hole inside; a slim name "
             "plate with rounded ends above it."),
     "menu": ("16:9", "A long horizontal band with a rounded left end, for a row of menu buttons."),
+    "window": ("1:1", "A square window plate with an L-shaped bracket and a rivet in each corner and an engraved "
+               "line inside its edge; the middle is plain brushed steel with no detail (it is stretched)."),
 }
 for _n, (_aspect, _desc) in STEEL_PIECES.items():
     PIECES["steel_" + _n] = (_aspect, STEEL + _desc)

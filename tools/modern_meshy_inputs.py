@@ -60,7 +60,8 @@ def steel():
                 ("cast", modern_art.cast_bar, (1376, 768), 0.9, 2),
                 ("slot", steel_art.slot_frame, (1024, 1024), 0.6, 6),
                 ("map", modern_art.minimap_ring, (1024, 1024), 0.82, 2),
-                ("menu", modern_art.menu_band, (1376, 768), 0.9, 2)):
+                ("menu", modern_art.menu_band, (1376, 768), 0.9, 2),
+                ("window", steel_art.window_panel, (1024, 1024), 0.82, 3)):
             on_magenta(clean(piece, scale), size, fill).save(ROOT / "art" / f"steel_in_{name}.png")
 
 

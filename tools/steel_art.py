@@ -17,7 +17,7 @@ from contextlib import contextmanager
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 import modern_art as ma
-from modern_art import SS, Canvas
+from modern_art import Canvas
 
 PANEL = (22, 23, 26, 244)       # graphite plate
 RIM = (30, 31, 35, 252)         # the bars' rim band
@@ -33,9 +33,9 @@ SHINE = (245, 246, 250, 230)
 
 
 def _mask(box, r):
-    x0, y0, x1, y1 = [round(v * SS) for v in box]
+    x0, y0, x1, y1 = [round(v * ma.SS) for v in box]
     m = Image.new("L", (x1 - x0, y1 - y0), 0)
-    ImageDraw.Draw(m).rounded_rectangle((0, 0, m.width - 1, m.height - 1), r * SS, fill=255)
+    ImageDraw.Draw(m).rounded_rectangle((0, 0, m.width - 1, m.height - 1), r * ma.SS, fill=255)
     return (x0, y0), m
 
 
@@ -57,7 +57,7 @@ def brushed(c, box, r, strength=26, seed=7):
     streak = Image.new("L", (1, m.height), 128)
     for y in range(m.height):
         streak.putpixel((0, y), max(0, min(255, round(128 + rnd.gauss(0, 34)))))
-    streak = streak.resize(m.size).filter(ImageFilter.GaussianBlur(radius=0.6 * SS))
+    streak = streak.resize(m.size).filter(ImageFilter.GaussianBlur(radius=0.6 * ma.SS))
     for color, part in (((0, 0, 0), lambda v: max(0, 128 - v)), ((255, 255, 255), lambda v: max(0, v - 128))):
         layer = Image.new("RGBA", m.size, color + (0,))
         layer.putalpha(ImageChops.multiply(m, streak.point(lambda v: part(v) * strength // 64)))
@@ -140,7 +140,7 @@ def ring(c, box, band=12):
     x0, y0, x1, y1 = box
     c.ellipse(box, fill=RING_FILL, layer="body")
     c.ellipse(box, outline=RING, width=2.2)
-    c.draw("top").arc(c.s((x0 + 1, y0 + 1, x1 - 1, y1 - 1)), 196, 344, fill=RING_LIT, width=round(1.4 * SS))
+    c.draw("top").arc(c.s((x0 + 1, y0 + 1, x1 - 1, y1 - 1)), 196, 344, fill=RING_LIT, width=round(1.4 * ma.SS))
     c.ellipse((x0 + band - 3, y0 + band - 3, x1 - band + 3, y1 - band + 3), outline=RING_INNER, width=2.0, layer="top")
     c.ellipse((x0 + band, y0 + band, x1 - band, y1 - band), fill=(0, 0, 0, 255), layer="top")
     if (x1 - x0) > 120:  # the portrait and map rings, not the small buttons
@@ -167,6 +167,18 @@ def slot_frame():
     return c.render(glow=0.05, shadow=0.6)
 
 
+WINDOW_TEX, WINDOW_CORNER = 256, 64  # window plate, stretched as a 9-slice (corners WINDOW_CORNER px)
+
+
+def window_panel():
+    """The windows' plate (inventory, bank, settings): the steel backing with its brackets, drawn to be
+    stretched as a 9-slice, so the corners keep their size and the middle is plain brushed steel."""
+    n = WINDOW_TEX
+    c = Canvas(n, n)
+    backing(c, (8, 8, n - 8, n - 8), 22)
+    return c.render(glow=0.1, shadow=0.7)
+
+
 @contextmanager
 def steel():
     """modern_art's pieces drawn in steel while inside the block."""
@@ -182,7 +194,8 @@ def pieces():
     """Every HUD piece in steel, by texture name."""
     with steel():
         return {"mod_unit": ma.unit_frame(), "mod_unit_small": ma.unit_frame(level=False), "mod_cast": ma.cast_bar(),
-                "mod_map": ma.minimap_ring(), "mod_menu": ma.menu_band(), "mod_slot": slot_frame()}
+                "mod_map": ma.minimap_ring(), "mod_menu": ma.menu_band(), "mod_slot": slot_frame(),
+                "mod_window": window_panel()}
 
 
 def main():
