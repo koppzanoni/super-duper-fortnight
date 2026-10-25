@@ -66,3 +66,20 @@ def test_changes_apply_live_from_the_panel():
     p = frames(ns).player
     assert p.health.GetStatusBarTexture(p.health).file == "Interface\\Buttons\\WHITE8X8"
     assert ns.db.profiles["Padrão"].barTex == "flat"
+
+
+def test_every_hud_text_is_on_the_type_scale():
+    """Names, values, labels: four sizes (Look.TYPE), all in the chosen font (the zone name used to
+    keep the game's serif)."""
+    import sys
+    from conftest import ROOT
+    sys.path.insert(0, str(ROOT / "tools"))
+    import preview_render
+    rt = preview_render.run_addon(vbars=True, db={"installed": True, "font": "arial"})
+    ns = rt.globals().PREVIEW_NS
+    sizes = set(ns.Look.TYPE.values())
+    for r in rt.globals().REGIONS.values():
+        if r.kind == "font" and r.IsVisible(r) and r.text and r.fsize:
+            assert round(r.fsize) in sizes, (r.text, r.fsize)
+    zone = [r for r in rt.globals().REGIONS.values() if r.kind == "font" and r.text == "Raven Hill"][0]
+    assert zone.fsize == ns.Look.TYPE.label

@@ -514,3 +514,13 @@ def test_everything_sits_on_one_screen_grid():
     u = cast[2] / 940
     cast_foot = 1080 - cast[1] - D.cast.b * u
     assert near((1080 - res[1] - res[3]) - cast_foot, G)
+
+
+def test_money_stays_on_screen_beside_the_menu():
+    rt, ns = preview()
+    texts = [r for r in rt.globals().REGIONS.values() if r.kind == "font" and r.text and "1.245" in str(r.text)]
+    assert texts, "money text"
+    m = rect(texts[0])
+    band, bar = rect(ns.MenuPanels.bandFrame), rect(ns.ActionBars.modernFrame)
+    assert m[1] >= 0 and m[0] + m[2] <= band[0]                         # on screen, left of the band
+    assert m[0] > bar[0] + bar[2]                                       # clear of the action bar

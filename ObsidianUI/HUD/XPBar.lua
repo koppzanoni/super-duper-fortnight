@@ -137,7 +137,7 @@ local function update()
   local h = barHeight()
   local g = HUD.modernBar
   local s = g and g.s or 1
-  local size = math.max(8, math.min(12, math.floor((h - 1) * s)))
+  local size = math.max(8, math.min(ns.Look.TYPE.small * s, math.floor((h - 1) * s))) -- small, or what fits
   for _, bar in ipairs({ xp, rep }) do ns.Look.SetFont(bar.text, size) end
   local y = 0
   rested:SetShown(showXP)

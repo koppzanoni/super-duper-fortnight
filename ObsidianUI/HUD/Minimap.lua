@@ -78,6 +78,7 @@ local function layout()
   zone:ClearAllPoints()
   zone:SetPoint("CENTER", container, "TOPLEFT", (S.plate.x + S.plate.w / 2) * u, -(S.plate.y + S.plate.h / 2) * u)
   zone:SetWidth(S.plate.w * u * 0.92)
+  ns.Look.SetType(zone, "label", H / 1080) -- the HUD's font, not the game's serif
 
   local targets = socketTargets()
   for i, s in ipairs(sockets) do

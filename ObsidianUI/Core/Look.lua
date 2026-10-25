@@ -41,6 +41,17 @@ function Look.SetFont(text, size)
   if path then text:SetFont(path, math.max(9, math.floor((size or current or 12) + 0.5)), Look.Outline()) end
 end
 
+-- The type scale: every HUD text is one of four sizes (px of a 1080 px screen). display: the
+-- player's and target's names; value: their health; label: power, cast name and time, level,
+-- info bar, zone, money; small: the small frames, the target's cast, data bars, latency.
+Look.TYPE = { display = 17, value = 15, label = 12, small = 10 }
+
+-- A text in the chosen font at its role's size; k scales it (the screen height / 1080, times a
+-- piece's own size factor).
+function Look.SetType(text, role, k)
+  Look.SetFont(text, (Look.TYPE[role] or Look.TYPE.label) * (k or 1))
+end
+
 function Look.BarTexture()
   local t = db().barTex
   local M = ns.MediaManifest

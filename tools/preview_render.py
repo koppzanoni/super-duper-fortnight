@@ -158,6 +158,11 @@ def draw_text(canvas, r, region, rect):
     if not text:
         return
     size, face, color = FONTS.get(region.font or "", (12, "sans", (1, 1, 1)))
+    path = str(region.fontPath or "").upper()
+    if "ARIAL" in path:  # the addon set the font itself (the Visual page's choice)
+        face = "sans"
+    elif "FRIZ" in path or "MORPHEUS" in path or "SKURRI" in path:
+        face = "serif"
     if region.fsize:
         size = int(region.fsize)
     if region.tcolor:

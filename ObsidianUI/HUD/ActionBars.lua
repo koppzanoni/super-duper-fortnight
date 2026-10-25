@@ -65,6 +65,7 @@ local function skin(button)
     for region, frac in pairs({ [hotkey or false] = 0.30, [count or false] = 0.34 }) do
       if region then
         local path, _, flags = region:GetFont()
+        path = ns.Look.Font() or path -- the HUD's font, like every other text
         if path then region:SetFont(path, math.max(8, math.floor(s * frac)), flags or "OUTLINE") end
       end
     end

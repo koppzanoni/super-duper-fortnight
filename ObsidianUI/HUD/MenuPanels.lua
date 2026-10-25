@@ -227,7 +227,7 @@ local function build()
 end
 
 -- Moderno: one row of buttons on a dark band at the bottom right (its rounded ends at their own
--- size, the plain middle stretched), the money under it. Light grey icons.
+-- size, the plain middle stretched), the money beside it. Light grey icons.
 local band = CreateFrame("Frame", "ObsidianUIModernMenu", UIParent)
 band:SetFrameStrata("LOW")
 band:Hide()
@@ -293,8 +293,13 @@ function MenuPanels.LayoutModern()
   for id, b in pairs(MenuPanels.byId) do
     if not wanted[id] then b:Hide() end
   end
+  -- the money left of the band, one grid gap from its visible end (under it, the band would push
+  -- it off the screen now that the band keeps the screen margin)
+  local bl = MenuPanels.BandEdges()
   money:ClearAllPoints()
-  money:SetPoint("TOPRIGHT", band, "BOTTOMRIGHT", -4 * s, -4 * s)
+  money:SetPoint("RIGHT", band, "LEFT", bl - ns.Layout.GAP * H / 1080, 0)
+  money:SetJustifyH("RIGHT")
+  ns.Look.SetType(money, "label", s)
   -- the info bar lines up with the band: place it again now that the band has its size
   if ns.Movers.items.info then ns.Movers.Place("info") end
   updateMoney()

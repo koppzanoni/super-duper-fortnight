@@ -23,11 +23,6 @@ local function statusBar(parent)
   return bar
 end
 
--- Font size follows the frame size (the default fonts ran out of the small name plate).
-local function setFontSize(text, size)
-  ns.Look.SetFont(text, size) -- the Visual page's font and outline; 9 px minimum, still readable
-end
-
 local function setRect(region, owner, spec, rect, w, h)
   local x, y, rw, rh = ns.Layout.Rect(spec.w, spec.h, w, h, rect.x, rect.y, rect.w, rect.h)
   region:ClearAllPoints()
@@ -109,13 +104,14 @@ local function buildModern(f, k, unit, mirror)
     setRect(self.name, self, spec, mirrored(spec, spec.name, mirror), w, h)
     self.name:SetWidth(spec.name.w * h / spec.h) -- a long name is cut at the plate's end
     setRect(self.levelBadge, self, spec, mirrored(spec, spec.level, mirror), w, h)
-    local u = h / spec.h
     self.health:SetStatusBarTexture(ns.Look.BarTexture())
     self.power:SetStatusBarTexture(ns.Look.BarTexture())
-    setFontSize(self.name, spec.name.h * u * 0.62)
-    setFontSize(self.levelText, spec.level.h * u * 0.62)
-    setFontSize(self.hpText, spec.health.h * u * 0.62)
-    setFontSize(self.powerText, spec.power.h * u * 0.62)
+    -- the type scale (Look.TYPE): the big frames' name, health and power; the small ones all small
+    local ks, big = screenH / 1080, not k.noLevel
+    ns.Look.SetType(self.name, big and "display" or "small", ks)
+    ns.Look.SetType(self.levelText, "label", ks)
+    ns.Look.SetType(self.hpText, big and "value" or "small", ks)
+    ns.Look.SetType(self.powerText, big and "label" or "small", ks)
     UnitFrames.Style(self)
   end
 end
@@ -573,7 +569,8 @@ local function placeCastbar(bar, f)
   bar:SetSize(underWidth(f), barH)
   if bar.Text then
     -- a little smaller than the bar, with room at both ends; long names stop short of the edge
-    setFontSize(bar.Text, barH * 0.72)
+    local _, H = UIParent:GetSize()
+    ns.Look.SetType(bar.Text, "small", H / 1080)
     bar.Text:ClearAllPoints()
     bar.Text:SetPoint("LEFT", bar, "LEFT", 4, 0)
     bar.Text:SetPoint("RIGHT", bar, "RIGHT", -4, 0)

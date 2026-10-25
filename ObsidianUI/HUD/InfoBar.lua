@@ -113,7 +113,7 @@ function InfoBar.Update()
     if on(key, item[3]) then
       local ok = pcall(VALUES[key], t)
       if not ok then t:SetText("") end
-      ns.Look.SetFont(t, 12)
+      ns.Look.SetType(t, "label", select(2, UIParent:GetSize()) / 1080)
       t:ClearAllPoints()
       t:SetPoint("LEFT", frame, "LEFT", x, 0)
       t:Show()
