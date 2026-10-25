@@ -25,6 +25,10 @@ FONTS = {"GameFontNormalLarge": (17, "serif", (1, .82, 0)), "GameFontNormal": (1
          "GameFontHighlightSmall": (12, "sans", (1, 1, 1)), "NumberFontNormalSmall": (11, "sans", (1, 1, 1)),
          "NumberFontNormal": (13, "sans", (1, 1, 1))}
 FONT_FILES = {"serif": "C:/Windows/Fonts/georgia.ttf", "sans": "C:/Windows/Fonts/arialbd.ttf"}
+# Linux (cloud sessions): metric-compatible Liberation fonts
+if not pathlib.Path(FONT_FILES["sans"]).exists():
+    FONT_FILES = {"serif": "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+                  "sans": "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"}
 
 
 def ref_icons():
@@ -154,6 +158,11 @@ def draw_text(canvas, r, region, rect):
     if not text:
         return
     size, face, color = FONTS.get(region.font or "", (12, "sans", (1, 1, 1)))
+    path = str(region.fontPath or "").upper()
+    if "ARIAL" in path:  # the addon set the font itself (the Visual page's choice)
+        face = "sans"
+    elif "FRIZ" in path or "MORPHEUS" in path or "SKURRI" in path:
+        face = "serif"
     if region.fsize:
         size = int(region.fsize)
     if region.tcolor:
@@ -177,7 +186,10 @@ def draw_text(canvas, r, region, rect):
         pts = list(region.points.values())
         point = pts[0].point if pts else "CENTER"
         x = l - bw / 2
-        if "LEFT" in point:
+        if w > 1:
+            # a set width and no height: the text is placed across that width, like the game
+            x = l + (w - bw) / 2 if region.justify not in ("LEFT", "RIGHT") else (l if region.justify == "LEFT" else l + w - bw)
+        elif "LEFT" in point:
             x = l
         elif "RIGHT" in point:
             x = l - bw
@@ -313,7 +325,11 @@ def render(rt, scene, out_path):
             mr = tuple(m.Rect(m).values())
             mbox = (int(round(mr[0])), int(round(H - (mr[1] + mr[3]))), max(1, int(round(mr[2]))), max(1, int(round(mr[3]))))
             full = Image.new("L", (W, H), 0)
-            full.paste(circle_mask((mbox[2], mbox[3])), (mbox[0], mbox[1]))
+            msrc = texture_image(str(m.file)) if m.file and "mask_circle" not in str(m.file) else None
+            if msrc is not None:  # a shaped mask (the bars' curve): its alpha, stretched over its rect
+                full.paste(msrc.getchannel("A").resize((mbox[2], mbox[3]), Image.LANCZOS), (mbox[0], mbox[1]))
+            else:
+                full.paste(circle_mask((mbox[2], mbox[3])), (mbox[0], mbox[1]))
             local = full.crop((box[0], box[1], box[0] + box[2], box[1] + box[3]))
             img.putalpha(ImageChops.multiply(img.getchannel("A"), local))
         clipper = r.parent

@@ -10,8 +10,9 @@ local KINDS = {
   -- Moderno: player and target, then focus and pet, then the target of target (widths of the
   -- screen height; spec 2026-10-23-hud-moderno).
   modern = { spec = ns.Data.MODERN_UNIT, width = 1 / 3, modern = true },
-  modernSmall = { spec = ns.Data.MODERN_UNIT, width = 0.2, modern = true },
-  modernTiny = { spec = ns.Data.MODERN_UNIT, width = 1 / 6, modern = true, tiny = true },
+  -- The small ones have no level circle: at their size it cannot hold a readable number.
+  modernSmall = { spec = ns.Data.MODERN_UNIT, width = 0.2, modern = true, noLevel = true },
+  modernTiny = { spec = ns.Data.MODERN_UNIT, width = 1 / 6, modern = true, tiny = true, noLevel = true },
 }
 UnitFrames.KINDS = KINDS
 
@@ -20,11 +21,6 @@ local function statusBar(parent)
   bar:SetStatusBarTexture(M.bar_fill.file)
   bar:SetMinMaxValues(0, 1)
   return bar
-end
-
--- Font size follows the frame size (the default fonts ran out of the small name plate).
-local function setFontSize(text, size)
-  ns.Look.SetFont(text, size) -- the Visual page's font and outline; 9 px minimum, still readable
 end
 
 local function setRect(region, owner, spec, rect, w, h)
@@ -42,10 +38,30 @@ local function mirrored(spec, r, mirror)
   return { x = ns.Layout.MirrorX(spec.w, r.x, r.w), y = r.y, w = r.w, h = r.h }
 end
 
--- A bar groove, starting at the ring's edge (the ring lies over its first part).
+-- The circle the bars' wells are cut by around the ring (tools/modern_art.py bars_around_ring).
+local function wellCircle(spec)
+  local ring = spec.ring
+  return ring.x + ring.w / 2, ring.y + ring.h / 2, ring.w / 2 + spec.clear + spec.rim
+end
+
+-- A bar's fill area: its well from the leftmost point of the curve inside it (the fill's mask,
+-- mod_unit_mask, cuts the rest of the curve, so the fill starts exactly where the well does).
 local function fromRing(spec, r)
-  local x0 = spec.ring.x + spec.ring.w - 4
+  local cx, cy, R = wellCircle(spec)
+  local dy = math.max(math.abs(r.y - cy), math.abs(r.y + r.h - cy))
+  local x0 = dy < R and math.max(r.x, cx + math.sqrt(R * R - dy * dy)) or r.x
   return { x = x0, y = r.y, w = r.x + r.w - x0, h = r.h }
+end
+
+-- The curve mask on everything drawn in a bar's fill (fill, shine, shade, spark).
+local function curve(bar)
+  if not bar.obCurve then return end
+  for _, t in ipairs({ bar:GetStatusBarTexture() or false, bar.obShine or false, bar.obShade or false, bar.obSpark or false }) do
+    if t and t.AddMaskTexture and t.obCurve ~= bar.obCurve then
+      t:AddMaskTexture(bar.obCurve)
+      t.obCurve = bar.obCurve
+    end
+  end
 end
 
 local function buildModern(f, k, unit, mirror)
@@ -53,7 +69,7 @@ local function buildModern(f, k, unit, mirror)
   f.mirror = mirror
   f.art = f:CreateTexture(nil, "ARTWORK")
   f.art:SetAllPoints(f)
-  ns.Media.Apply(f.art, ns.ModernTex("mod_unit"), mirror)
+  ns.Media.Apply(f.art, ns.ModernTex(k.noLevel and "mod_unit_small" or "mod_unit"), mirror)
 
   -- The player's arcane ring turns slowly over the portrait, under the ring (setting "arcaneRing").
   if unit == "player" then
@@ -61,6 +77,7 @@ local function buildModern(f, k, unit, mirror)
     f.arcane:SetTexture(M.mod_arcane.file)
     f.arcane:SetTexCoord(0, M.mod_arcane.w / M.mod_arcane.potW, 0, M.mod_arcane.h / M.mod_arcane.potH)
     f.arcane:SetBlendMode("ADD")
+    f.arcane:SetAlpha(0.5) -- subtle: a hint of motion, not a bright purple halo
     local spin = f.arcane:CreateAnimationGroup()
     local turn = spin:CreateAnimation("Rotation")
     turn:SetDegrees(-360)
@@ -75,6 +92,11 @@ local function buildModern(f, k, unit, mirror)
     bar:SetStatusBarTexture(M.mod_gloss.file)
     bar:SetFrameLevel(f:GetFrameLevel() + 2)
     bar:SetReverseFill(mirror and true or false)
+    ns.Smooth.Wrap(bar)
+    -- the fill ends in the same curve as the well around the ring (over the whole frame)
+    bar.obCurve = bar:CreateMaskTexture()
+    bar.obCurve:SetTexture(M[mirror and "mod_unit_mask_r" or "mod_unit_mask"].file, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    bar.obCurve:SetAllPoints(f)
     f[key] = bar
   end
   f.health:SetStatusBarColor(0.38, 0.84, 0.2)
@@ -86,7 +108,8 @@ local function buildModern(f, k, unit, mirror)
   f.levelBadge:SetFrameLevel(f:GetFrameLevel() + 3)
   f.levelText = f.levelBadge:CreateFontString(nil, "OVERLAY", "GameFontNormal")
   f.levelText:SetPoint("CENTER", f.levelBadge, "CENTER", 0, 1)
-  f.levelText:SetTextColor(0.96, 0.82, 0.44)
+  f.levelText:SetTextColor(0.92, 0.95, 0.99)
+  if k.noLevel then f.levelBadge:Hide() end
   f.hpText = f.health:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   f.hpText:SetPoint("CENTER", f.health)
   f.powerText = f.power:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -105,13 +128,15 @@ local function buildModern(f, k, unit, mirror)
     setRect(self.name, self, spec, mirrored(spec, spec.name, mirror), w, h)
     self.name:SetWidth(spec.name.w * h / spec.h) -- a long name is cut at the plate's end
     setRect(self.levelBadge, self, spec, mirrored(spec, spec.level, mirror), w, h)
-    local u = h / spec.h
     self.health:SetStatusBarTexture(ns.Look.BarTexture())
     self.power:SetStatusBarTexture(ns.Look.BarTexture())
-    setFontSize(self.name, spec.name.h * u * 0.62)
-    setFontSize(self.levelText, spec.level.h * u * 0.42)
-    setFontSize(self.hpText, spec.health.h * u * 0.62)
-    setFontSize(self.powerText, spec.power.h * u * 0.62)
+    curve(self.health); curve(self.power)
+    -- the type scale (Look.TYPE): the big frames' name, health and power; the small ones all small
+    local ks, big = screenH / 1080, not k.noLevel
+    ns.Look.SetType(self.name, big and "display" or "small", ks)
+    ns.Look.SetType(self.levelText, "label", ks)
+    ns.Look.SetType(self.hpText, big and "value" or "small", ks)
+    ns.Look.SetType(self.powerText, big and "label" or "small", ks)
     UnitFrames.Style(self)
   end
 end
@@ -123,8 +148,9 @@ end
 UnitFrames.STYLES = ns.Widgets.FRAME_STYLES
 local STYLE = {
   flat = {},
-  gloss = { shine = 0.45, shade = 0.35, ring = "metal", badgeGlow = true },
-  arcane = { shine = 0.3, ring = "glow", goldLine = true, diamond = true },
+  -- the level is a clean baked chip now; the old gold glow disc and diamond behind it are gone
+  gloss = { shine = 0.45, shade = 0.35, ring = "metal" },
+  arcane = { shine = 0.3, ring = "glow", goldLine = true },
   plate = { shine = 0.15, plate = true },
 }
 
@@ -161,18 +187,23 @@ function UnitFrames.Style(f)
   if not f.portrait then return end
   local st = STYLE[ns.db and ns.db.frameStyle or "gloss"] or STYLE.gloss
   local pw = width(f.portrait)
-  -- light on the top half of each bar, shade on the bottom quarter
+  -- light on the top half of each bar's fill, shade on its bottom quarter. On the fill only: over
+  -- the whole bar they turned the empty groove into a grey shine. The fill texture is replaced
+  -- when the bar texture changes, so they are anchored again here.
   for _, key in ipairs({ "health", "power" }) do
     local bar = f[key]
     if bar and not bar.obShine then
       bar.obShine = bar:CreateTexture(nil, "ARTWORK", nil, 7)
-      bar.obShine:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, 0)
-      bar.obShine:SetPoint("BOTTOMRIGHT", bar, "RIGHT", 0, 0)
       bar.obShade = bar:CreateTexture(nil, "ARTWORK", nil, 7)
-      bar.obShade:SetPoint("BOTTOMLEFT", bar, "BOTTOMLEFT", 0, 0)
-      bar.obShade:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", 0, 0)
     end
     if bar then
+      local fill = bar.GetStatusBarTexture and bar:GetStatusBarTexture() or bar
+      bar.obShine:ClearAllPoints()
+      bar.obShine:SetPoint("TOPLEFT", fill, "TOPLEFT", 0, 0)
+      bar.obShine:SetPoint("BOTTOMRIGHT", fill, "RIGHT", 0, 0)
+      bar.obShade:ClearAllPoints()
+      bar.obShade:SetPoint("BOTTOMLEFT", fill, "BOTTOMLEFT", 0, 0)
+      bar.obShade:SetPoint("BOTTOMRIGHT", fill, "BOTTOMRIGHT", 0, 0)
       gradient(bar.obShine, 1, 1, 1, 0, st.shine or 0)
       bar.obShine:SetShown((st.shine or 0) > 0)
       bar.obShade:SetHeight(math.max(1, width(bar) > 0 and (bar.GetHeight and bar:GetHeight() or 4) * 0.3 or 2))
@@ -213,6 +244,27 @@ function UnitFrames.Style(f)
       f.obDiamond:SetShown(st.diamond == true)
     end
   end
+  -- leading-edge spark: a thin, faint white glow riding the fill's edge, so a changing bar reads
+  -- as alive without covering the value text (setting barSpark). Anchored to the StatusBar's fill
+  -- region, it follows the value and is re-anchored here because the fill texture is replaced
+  -- when the bar texture changes.
+  local sparkOn = not (ns.db and ns.db.barSpark == false)
+  for _, key in ipairs({ "health", "power" }) do
+    local bar = f[key]
+    if bar then
+      if not bar.obSpark then
+        bar.obSpark = ns.Widgets.SoftTexture(bar, "OVERLAY", 1, 1, 1, 0.22, 2)
+        bar.obSpark:SetBlendMode("ADD")
+      end
+      local h = (bar.GetHeight and bar:GetHeight()) or 0
+      if type(h) ~= "number" then h = 0 end
+      local fillTex = bar.GetStatusBarTexture and bar:GetStatusBarTexture()
+      bar.obSpark:ClearAllPoints()
+      if fillTex then bar.obSpark:SetPoint("CENTER", fillTex, f.mirror and "LEFT" or "RIGHT", 0, 0) end
+      bar.obSpark:SetSize(math.max(2, h * 0.10), math.max(2, h * 0.9))
+      bar.obSpark:SetShown(sparkOn and fillTex ~= nil)
+    end
+  end
   -- a gold line under the bars, fading away from the portrait
   if st.goldLine and not f.obGold and f.power then
     f.obGold = f:CreateTexture(nil, "ARTWORK", nil, 2)
@@ -247,11 +299,38 @@ function UnitFrames.Style(f)
     f.obPlate:SetPoint(far, f.power, far, -out * 2, 0)
     f.obPlate:SetShown(st.plate == true)
   end
+  -- the shine, shade and spark made above end in the bars' curve too
+  if f.health then curve(f.health) end
+  if f.power then curve(f.power) end
 end
 
 function UnitFrames.ApplyStyle()
   for _, f in pairs(UnitFrames.frames) do UnitFrames.Style(f) end
 end
+
+-- Fade a frame in when its unit appears (RegisterUnitWatch shows it): a new target or focus
+-- eases in instead of popping (setting frameFade). Driven by OnUpdate so it needs no animation
+-- API and is frame-rate independent. SetAlpha is allowed on protected frames in combat, and the
+-- Visibility module leaves "always" elements' alpha alone, so the two never fight.
+local fading = setmetatable({}, { __mode = "k" }) -- frame -> elapsed so far
+local FADE = 0.28
+local fadeDriver = CreateFrame("Frame")
+fadeDriver:SetScript("OnUpdate", function(_, elapsed)
+  if type(elapsed) ~= "number" then return end
+  for f, t in pairs(fading) do
+    t = t + elapsed
+    if t >= FADE then f:SetAlpha(1); fading[f] = nil
+    else f:SetAlpha(t / FADE); fading[f] = t end
+  end
+end)
+UnitFrames.fadeDriver = fadeDriver
+local function fadeIn(f)
+  if (ns.db and ns.db.frameFade == false) or (ns.EditMode and ns.EditMode.active) then
+    fading[f] = nil; f:SetAlpha(1); return
+  end
+  f:SetAlpha(0); fading[f] = 0
+end
+UnitFrames.FadeIn = fadeIn
 
 -- key: a second frame for the same unit (you inside the party) is filed under its own key; the
 -- unit events only reach frames filed under the unit itself.
@@ -280,6 +359,7 @@ function UnitFrames.Create(unit, kind, mirror, key)
   end)
   f:SetScript("OnLeave", GameTooltip_Hide)
 
+  f:HookScript("OnShow", fadeIn)
   RegisterUnitWatch(f)
   UnitFrames.frames[key] = f
   return f
@@ -306,9 +386,73 @@ local function barText(text, cur, max)
   if not pcall(function() text:SetText(AbbreviateNumbers(cur)) end) then text:SetText("") end
 end
 
+-- The unit's health as a fraction 0..1, or nil when the values are secret (combat) or missing:
+-- the pulse never guesses, so a secret value never raises a false "low health" alarm.
+local function healthFraction(unit)
+  if UnitHealthPercent then
+    local ok, p = pcall(UnitHealthPercent, unit, true)
+    if ok and type(p) == "number" then return p / 100 end
+  end
+  local ok, cur, max = pcall(function() return UnitHealth(unit), UnitHealthMax(unit) end)
+  if ok and type(cur) == "number" and type(max) == "number" and max > 0 then return cur / max end
+  return nil
+end
+
+-- A red glow over a frame's health bar that breathes while the unit is low (setting lowHpPulse).
+-- Driven by one OnUpdate (a sine), so it works on any client and is the same at any frame rate.
+local LOW_HP = 0.35
+local pulsing = setmetatable({}, { __mode = "k" }) -- frames currently pulsing
+local pulseClock = 0
+
+local function lowGlow(f)
+  if f.obLowGlow then return f.obLowGlow end
+  local g = f.health:CreateTexture(nil, "ARTWORK", nil, 6) -- over the fill, under the number
+  g:SetAllPoints(f.health)
+  g.obSoft = ns.Widgets.Soft(g, "soft_fill", 10)
+  g:SetBlendMode("ADD")
+  ns.Widgets.SetSoftColor(g, 0.95, 0.15, 0.12, 1)
+  g:SetAlpha(0)
+  g:Hide()
+  f.obLowGlow = g
+  return g
+end
+
+local pulseDriver = CreateFrame("Frame")
+pulseDriver:SetScript("OnUpdate", function(_, elapsed)
+  if type(elapsed) ~= "number" then return end
+  pulseClock = pulseClock + elapsed
+  local a = 0.1 + 0.22 * (0.5 + 0.5 * math.sin(pulseClock * 3.4)) -- 0.1 .. 0.32, a slow breath
+  for f in pairs(pulsing) do
+    if f.obLowGlow then f.obLowGlow:SetAlpha(a) end
+  end
+end)
+UnitFrames.pulseDriver = pulseDriver
+
+-- Show or hide a frame's low-health pulse from its current health fraction.
+local function updatePulse(f)
+  if KINDS[f.kind].tiny then return end
+  local g = lowGlow(f)
+  local on = not (ns.db and ns.db.lowHpPulse == false)
+  local frac = on and healthFraction(f.unit) or nil
+  if frac ~= nil and frac < LOW_HP then
+    g:Show()
+    pulsing[f] = true
+  else
+    pulsing[f] = nil
+    g:SetAlpha(0); g:Hide()
+  end
+end
+UnitFrames.UpdatePulse = updatePulse
+
 local function updateValues(f)
   local unit = f.unit
   if not UnitExists(unit) then return end
+  -- A new unit in this frame: land the bars at once instead of sliding across from the old one.
+  local guid = UnitGUID(unit)
+  if guid ~= f.obGUID then
+    f.obGUID = guid
+    ns.Smooth.Snap(f.health); ns.Smooth.Snap(f.power)
+  end
   -- Unit flags can be secret on some units: keep the last color instead of erroring.
   local ok, r, g, b = pcall(healthColor, unit)
   if unit == "player" then ok, r, g, b = true, 0.38, 0.84, 0.2 end -- the player's bar: green
@@ -336,6 +480,7 @@ local function updateValues(f)
       barText(f.powerText, UnitPower(unit, pType), powerMax)
     end
   end
+  updatePulse(f)
 end
 
 local function updateAll(f)
@@ -452,7 +597,8 @@ local function placeCastbar(bar, f)
   bar:SetSize(underWidth(f), barH)
   if bar.Text then
     -- a little smaller than the bar, with room at both ends; long names stop short of the edge
-    setFontSize(bar.Text, barH * 0.72)
+    local _, H = UIParent:GetSize()
+    ns.Look.SetType(bar.Text, "small", H / 1080)
     bar.Text:ClearAllPoints()
     bar.Text:SetPoint("LEFT", bar, "LEFT", 4, 0)
     bar.Text:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
@@ -497,14 +643,36 @@ local function layout()
   local s = H / 1080
   local f = UnitFrames.frames
   for _, frame in pairs(f) do frame:Resize(H) end
-  -- Defaults: player top left, target beside it, its target under the target's portrait, focus
-  -- and pet under the player. Each one can be moved and resized in the edit mode.
+  -- Defaults on the screen grid, by the frames' visible edges: the player at the margin of the top
+  -- left, the target beside it (two gaps), its target under the target's portrait (one gap, right
+  -- edges lined up), focus under the player (two gaps) and pet under the focus (one gap). Each one
+  -- can be moved and resized in the edit mode.
+  local M, G = ns.Layout.MARGIN * s, ns.Layout.GAP * s
+  local function edges(fr)
+    local e = ns.Data.ART_EDGE[KINDS[fr.kind].noLevel and "unitSmall" or "unit"]
+    return ns.Layout.Edges(e, KINDS[fr.kind].spec.w, fr:GetWidth(), fr.mirror)
+  end
+  -- fr hangs under `above` with its visible top `gap` below the visible bottom of `above`,
+  -- lined up on the side `side` ("LEFT" or "RIGHT")
+  local function under(fr, above, gap, side)
+    local al, _, ar, ab = edges(above)
+    local fl, ft, fr2 = edges(fr)
+    local x = side == "LEFT" and (al - fl) or (fr2 - ar)
+    fr:SetPoint("TOP" .. side, above, "BOTTOM" .. side, x, ab - gap + ft)
+  end
   local defaults = {
-    { "player", "Jogador", function(fr) fr:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 18 * s, -14 * s) end },
-    { "target", "Alvo", function(fr) fr:SetPoint("TOPLEFT", f.player, "TOPRIGHT", 32 * s, 0) end },
-    { "targettarget", "Alvo do alvo", function(fr) fr:SetPoint("TOPRIGHT", f.target, "TOPRIGHT", -19 * s, -124 * s) end },
-    { "focus", "Foco", function(fr) fr:SetPoint("TOPLEFT", f.player, "BOTTOMLEFT", 0, -40 * s) end },
-    { "pet", "Pet", function(fr) fr:SetPoint("TOPLEFT", f.focus, "BOTTOMLEFT", 0, -12 * s) end },
+    { "player", "Jogador", function(fr)
+      local l, t = edges(fr)
+      fr:SetPoint("TOPLEFT", UIParent, "TOPLEFT", M - l, -(M - t))
+    end },
+    { "target", "Alvo", function(fr)
+      local _, _, pr = edges(f.player)
+      local tl = edges(fr)
+      fr:SetPoint("TOPLEFT", f.player, "TOPRIGHT", 2 * G - pr - tl, 0)
+    end },
+    { "targettarget", "Alvo do alvo", function(fr) under(fr, f.target, G, "RIGHT") end },
+    { "focus", "Foco", function(fr) under(fr, f.player, 2 * G, "LEFT") end },
+    { "pet", "Pet", function(fr) under(fr, f.focus, G, "LEFT") end },
   }
   for _, d in ipairs(defaults) do
     local unit, label, place = d[1], d[2], d[3]

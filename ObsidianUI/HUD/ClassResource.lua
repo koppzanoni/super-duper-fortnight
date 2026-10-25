@@ -16,6 +16,12 @@ function ClassResource.HalfWidth(count)
   return (count * SIZE + (count - 1) * GAP) * H / 2
 end
 
+-- Height of the gem row, for the cast bar stacked above it.
+function ClassResource.Height()
+  local _, H = UIParent:GetSize()
+  return SIZE * H
+end
+
 local holder = CreateFrame("Frame", "ObsidianUIClassResource", UIParent)
 holder:SetFrameStrata("LOW")
 ClassResource.holder = holder
@@ -25,6 +31,7 @@ for i = 1, MAX_GEMS do gems[i] = holder:CreateTexture(nil, "ARTWORK") end
 local bar = CreateFrame("StatusBar", nil, holder)
 bar:SetAllPoints(holder)
 bar:SetMinMaxValues(0, 1)
+ns.Smooth.Wrap(bar)
 local barBg = bar:CreateTexture(nil, "BACKGROUND")
 barBg:SetAllPoints(bar)
 barBg:SetColorTexture(0, 0, 0, 0.6)
@@ -34,6 +41,29 @@ for i = 1, MAX_GEMS - 1 do
   ClassResource.ticks[i] = t
 end
 ClassResource.bar = bar
+
+-- Gem pop (setting gemPop): a soft burst of light over a gem the moment it lights up (a combo
+-- point gained, a holy power charge). One OnUpdate fades every active burst out.
+local pops = {}
+ClassResource.pops = pops
+local popping = {} -- gem index -> elapsed so far
+local POP = 0.28
+local popDriver = CreateFrame("Frame")
+popDriver:SetScript("OnUpdate", function(_, e)
+  if type(e) ~= "number" then return end
+  for i, t in pairs(popping) do
+    t = t + e
+    local p = pops[i]
+    if t >= POP then
+      if p then p:SetAlpha(0); p:Hide() end
+      popping[i] = nil
+    else
+      if p then p:SetAlpha(0.75 * (1 - t / POP)) end
+      popping[i] = t
+    end
+  end
+end)
+ClassResource.popDriver = popDriver
 
 local current -- { powerType, token, color }
 -- Last drawn state: redraw only what changed (combo/energy events fire many times a second).
@@ -63,7 +93,7 @@ local function place(count)
   holder:SetSize(math.max(1, total), barStyle() and size * 0.45 or size)
   ns.Movers.Register("res", "Recurso de classe", holder, function(f)
     f:ClearAllPoints()
-    f:SetPoint("BOTTOM", ns.Stack.Anchor(), "TOP", 0, 34)
+    f:SetPoint("BOTTOM", ns.Stack.Anchor(), "TOP", 0, ns.Stack.ResBottom())
   end)
   ns.Movers.Place("res")
 end
@@ -79,6 +109,16 @@ local function layoutGems(count)
     g:SetSize(size, size)
     g:SetPoint("LEFT", holder, "LEFT", (i - 1) * (size + gap), 0)
     g:SetShown(not barStyle() and i <= count)
+    if not pops[i] then
+      pops[i] = holder:CreateTexture(nil, "OVERLAY", nil, 3)
+      pops[i].obSoft = ns.Widgets.Soft(pops[i], "soft_fill", 10)
+      pops[i]:SetBlendMode("ADD")
+      pops[i]:SetAlpha(0); pops[i]:Hide()
+    end
+    pops[i]:ClearAllPoints()
+    pops[i]:SetPoint("CENTER", g, "CENTER")
+    pops[i]:SetSize(size * 1.7, size * 1.7) -- a little wider than the gem, so the burst spills out
+    ns.Widgets.SetSoftColor(pops[i], 1, 1, 1, 1)
   end
   bar:SetShown(barStyle())
   if barStyle() then
@@ -93,9 +133,18 @@ local function layoutGems(count)
   end
 end
 
+local function popGem(i)
+  if ns.db and ns.db.gemPop == false then return end
+  if barStyle() or not pops[i] then return end
+  popping[i] = 0
+  pops[i]:Show()
+end
+
 local function setLit(i, lit)
   if litState[i] == lit then return end
+  local was = litState[i]
   litState[i] = lit
+  if lit and was == false then popGem(i) end -- gained a point (not the first draw, where was is nil)
   local g = gems[i]
   ns.Media.Apply(g, lit and "mod_gem_on" or ns.ModernTex("mod_gem_off"))
   if not (lit and current) then g:SetVertexColor(1, 1, 1) return end
@@ -150,6 +199,7 @@ ClassResource.Update = update
 -- Forget what was drawn (new resource, new colour, new style or new screen size).
 local function redraw()
   shownCount, litState = nil, {}
+  ns.Smooth.Snap(bar) -- a new resource or style: don't slide from the old value
   update()
 end
 ClassResource.Redraw = redraw

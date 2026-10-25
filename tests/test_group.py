@@ -40,7 +40,7 @@ def test_party_frames_stack_down_in_the_moderno_look():
     _, ns = preview(group="party", n=3)
     p = party(ns)
     assert [f.unit for f in p] == ["party1", "party2", "party3"]
-    assert p[0].name.text == "Membro 1" and str(p[0].art.file).endswith("mod_unit_black")
+    assert p[0].name.text == "Membro 1" and str(p[0].art.file).endswith("mod_unit_small_black")
     a, b = rect(p[0]), rect(p[1])
     assert abs(a[0] - b[0]) < 0.5 and b[1] + b[3] < a[1]               # same column, the next below
     assert p[0].health.value == 9000 and p[0].health.max == 10000

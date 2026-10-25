@@ -28,8 +28,8 @@ xp:SetAllPoints(rested)
 xp:SetMinMaxValues(0, 1)
 xp:SetValue(0)
 xp:SetFrameLevel(rested:GetFrameLevel() + 1)
-xp:SetStatusBarColor(0.79, 0.64, 0.29)
-rested:SetStatusBarColor(0.0, 0.44, 0.87, 0.6)
+xp:SetStatusBarColor(0.56, 0.42, 0.95)
+rested:SetStatusBarColor(0.17, 0.67, 0.87, 0.45)
 local rep = newBar(holder)
 for _, bar in ipairs({ xp, rep }) do
   bar.text = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -87,7 +87,7 @@ end
 local function shownFaction() return db().rep_on ~= false and watched() end
 
 -- Room (unscaled) the bars need between the action bar and the screen bottom; 0 once moved away.
-local MARGIN_TOP, MARGIN_BOTTOM = 4, 3
+local MARGIN_TOP, MARGIN_BOTTOM = 7, ns.Layout.MARGIN -- the action slots' gap above, the screen margin under
 -- Bars that can show text are at least as tall as it (thinner ones only without text).
 local TEXT_MIN = 10
 local function barHeight()
@@ -137,7 +137,7 @@ local function update()
   local h = barHeight()
   local g = HUD.modernBar
   local s = g and g.s or 1
-  local size = math.max(8, math.min(12, math.floor((h - 1) * s)))
+  local size = math.max(8, math.min(ns.Look.TYPE.small * s, math.floor((h - 1) * s))) -- small, or what fits
   for _, bar in ipairs({ xp, rep }) do ns.Look.SetFont(bar.text, size) end
   local y = 0
   rested:SetShown(showXP)

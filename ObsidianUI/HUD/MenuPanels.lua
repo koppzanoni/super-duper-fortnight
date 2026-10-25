@@ -226,8 +226,8 @@ local function build()
   end
 end
 
--- Moderno: one row of buttons on a dark band at the bottom right (its left end and arrow tip at
--- their own size, the plain middle stretched), the money under it. Light grey icons.
+-- Moderno: one row of buttons on a dark band at the bottom right (its rounded ends at their own
+-- size, the plain middle stretched), the money beside it. Light grey icons.
 local band = CreateFrame("Frame", "ObsidianUIModernMenu", UIParent)
 band:SetFrameStrata("LOW")
 band:Hide()
@@ -236,10 +236,15 @@ local bandLeft, bandMid = band:CreateTexture(nil, "BACKGROUND"), band:CreateText
 local bandRight = band:CreateTexture(nil, "BACKGROUND")
 MenuPanels.band, MenuPanels.bandFrame, MenuPanels.bandRight = bandMid, band, bandRight
 local money = band:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-local MENU_W, MENU_H, CAP = 620, 92, 40 -- mod_menu texture px; CAP: left end with the arrow tip
+local MENU_W, MENU_H, CAP = 620, 92, 40 -- mod_menu texture px; CAP: the rounded left end
 
 local function updateMoney()
   if not pcall(function() money:SetText(GetMoneyString(GetMoney(), true)) end) then money:SetText("") end
+end
+
+-- The band's visible edges inside its frame (l, t, r, b px), for pieces lined up with it.
+function MenuPanels.BandEdges()
+  return ns.Layout.Edges(ns.Data.ART_EDGE.menu, MENU_W, band:GetHeight() * MENU_W / MENU_H)
 end
 
 function MenuPanels.LayoutModern()
@@ -252,7 +257,10 @@ function MenuPanels.LayoutModern()
   band:SetSize(w, MENU_H * k)
   ns.Movers.Register("menu", "Menu", band, function(f)
     f:ClearAllPoints()
-    f:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -10 * s, 40 * s)
+    -- the band's visible right end and foot at the screen margin
+    local _, _, r, b = MenuPanels.BandEdges()
+    local m = ns.Layout.MARGIN * H / 1080
+    f:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -(m - r), m - b)
   end, { ownScale = true })
   ns.Movers.Place("menu")
   local tex = ns.ModernTex("mod_menu")
@@ -270,12 +278,13 @@ function MenuPanels.LayoutModern()
   ns.Media.ApplyRange(bandMid, tex, false, CAP / MENU_W, 1 - CAP / MENU_W)
   band:Show()
   local wanted = {}
+  local pad = (w - #list * step) / 2 -- the row centred in the band
   for i, id in ipairs(list) do
     wanted[id] = true
     local b = MenuPanels.byId[id]
     if b then
       b:ClearAllPoints()
-      b:SetPoint("LEFT", band, "LEFT", CAP * k + (i - 1) * step + (step - size) / 2, 0)
+      b:SetPoint("LEFT", band, "LEFT", pad + (i - 1) * step + (step - size) / 2, 0)
       b:SetSize(size, size)
       if b.obIcon and id ~= "character" then b.obIcon:SetVertexColor(0.86, 0.87, 0.89) end
       b:Show()
@@ -284,8 +293,15 @@ function MenuPanels.LayoutModern()
   for id, b in pairs(MenuPanels.byId) do
     if not wanted[id] then b:Hide() end
   end
+  -- the money left of the band, one grid gap from its visible end (under it, the band would push
+  -- it off the screen now that the band keeps the screen margin)
+  local bl = MenuPanels.BandEdges()
   money:ClearAllPoints()
-  money:SetPoint("TOPRIGHT", band, "BOTTOMRIGHT", -4 * s, -4 * s)
+  money:SetPoint("RIGHT", band, "LEFT", bl - ns.Layout.GAP * H / 1080, 0)
+  money:SetJustifyH("RIGHT")
+  ns.Look.SetType(money, "label", s)
+  -- the info bar lines up with the band: place it again now that the band has its size
+  if ns.Movers.items.info then ns.Movers.Place("info") end
   updateMoney()
 end
 table.insert(HUD.onResize, function() ns.RunOutOfCombat(MenuPanels.LayoutModern) end)

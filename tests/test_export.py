@@ -37,7 +37,7 @@ def test_mask_circle_alpha():
 
 def test_export_manifest(tmp_path):
     manifest = ex.export_all(tmp_path)
-    assert (manifest["mod_unit"]["w"], manifest["mod_unit"]["h"]) == (720, 250)
+    assert (manifest["mod_unit"]["w"], manifest["mod_unit"]["h"]) == (720, 262)
     assert (tmp_path / "mod_unit.tga").exists()
     rt = new_runtime(with_stub=False)
     ns = rt.table()

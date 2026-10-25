@@ -111,6 +111,67 @@ end)
 -- Channels run backwards: no zone at their end.
 ns.On("UNIT_SPELLCAST_CHANNEL_START", function(_, unit) if unit == "player" then hideZone() end end)
 
+-- Finish and interrupt (setting castFlash): a soft wash over the groove that fades out — pale
+-- green when the cast lands, red when it is interrupted or fails. Its own frame, over the bar
+-- but outliving it (Blizzard hides the bar the instant a cast ends), driven by one OnUpdate so
+-- it needs no animation API. Blizzard's own finish/interrupt art stays hidden (HIDDEN_REGIONS).
+local flashFrame, flash
+local flashClock, flashDur, flashPeak = 0, 0, 0
+local casting, interrupted = false, false
+
+local function ensureFlash()
+  if flashFrame then return end
+  flashFrame = CreateFrame("Frame", nil, UIParent)
+  flashFrame:SetFrameStrata("HIGH")
+  flash = flashFrame:CreateTexture(nil, "OVERLAY")
+  flash:SetAllPoints(flashFrame)
+  flash.obSoft = ns.Widgets.Soft(flash, "soft_fill", 10)
+  flash:SetBlendMode("ADD")
+  flash:SetAlpha(0)
+  ns.CastBar.flash = flash
+  flashFrame:Hide()
+  flashFrame:SetScript("OnUpdate", function(_, e)
+    if type(e) ~= "number" then return end
+    flashClock = flashClock + e
+    if flashClock >= flashDur then flash:SetAlpha(0); flashFrame:Hide(); return end
+    flash:SetAlpha(flashPeak * (1 - flashClock / flashDur)) -- fade from the peak to nothing
+  end)
+  ns.CastBar.flashFrame = flashFrame
+end
+
+local function doFlash(r, g, b, peak, dur)
+  if ns.db and ns.db.castFlash == false then return end
+  local bar = castbar()
+  if not (bar and barW) then return end
+  ensureFlash()
+  flashFrame:ClearAllPoints()
+  flashFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, 0)
+  flashFrame:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", 0, 0)
+  ns.Widgets.SetSoftColor(flash, r, g, b, 1)
+  flashClock, flashDur, flashPeak = 0, dur, peak
+  flash:SetAlpha(peak)
+  flashFrame:Show()
+end
+ns.CastBar.Flash = doFlash
+
+local function onStart(_, unit) if unit == "player" then casting, interrupted = true, false end end
+ns.On("UNIT_SPELLCAST_START", onStart)
+ns.On("UNIT_SPELLCAST_CHANNEL_START", onStart)
+local function onInterrupt(_, unit)
+  if unit ~= "player" or not casting then return end
+  interrupted = true
+  doFlash(0.9, 0.2, 0.15, 0.5, 0.4) -- red
+end
+ns.On("UNIT_SPELLCAST_INTERRUPTED", onInterrupt)
+ns.On("UNIT_SPELLCAST_FAILED", onInterrupt)
+local function onStop(_, unit)
+  if unit ~= "player" or not casting then return end
+  casting = false
+  if not interrupted then doFlash(0.35, 0.9, 0.5, 0.4, 0.35) end -- pale green: it landed
+end
+ns.On("UNIT_SPELLCAST_STOP", onStop)
+ns.On("UNIT_SPELLCAST_CHANNEL_STOP", onStop)
+
 local function modernParts(bar)
   local lag = bar:CreateTexture(nil, "OVERLAY", nil, 1)
   lag:SetColorTexture(0.27, 0.86, 0.35, 0.45)
@@ -122,7 +183,7 @@ local function modernParts(bar)
   lagText:SetTextColor(0.55, 0.94, 0.6)
   lagText:SetPoint("TOPRIGHT", bar, "BOTTOMRIGHT", 0, -2)
   local time = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  time:SetTextColor(0.93, 0.78, 0.38)
+  time:SetTextColor(0.80, 0.88, 0.94)
   ns.CastBar.lag, ns.CastBar.queue, ns.CastBar.lagText, ns.CastBar.time = lag, queue, lagText, time
   hideZone()
   -- "elapsed / total" from the bar itself, quietly blank when the values are secret
@@ -162,7 +223,9 @@ local function layout()
   end
   -- The StatusBar itself fills exactly the groove; the frame art sits around it. Pinned:
   -- Blizzard re-anchors the bar on some casts, in combat too (the bar is not protected).
-  local x, y = -w / 2 + S.bar.x * u, 64 + (S.h - S.bar.y - S.bar.h) * u
+  -- the panel's visible foot one stack gap above the class gems
+  local foot = ns.Data.ART_EDGE.cast.b * u
+  local x, y = -w / 2 + S.bar.x * u, ns.Stack.CastBottom() - foot + (S.h - S.bar.y - S.bar.h) * u
   ns.Movers.Register("cast", "Barra de cast", bar, function(b)
     b:ClearAllPoints()
     b:SetPoint("BOTTOMLEFT", ns.Stack.Anchor(), "TOP", x, y)
@@ -181,7 +244,7 @@ local function layout()
     bar.Icon:Show()
   end
   for _, t in ipairs({ bar.Text or false, ns.CastBar.time or false, ns.CastBar.lagText or false }) do
-    if t then ns.Look.SetFont(t, t == bar.Text and S.name.h * u * 0.55 or barH * 0.6) end
+    if t then ns.Look.SetType(t, t == ns.CastBar.lagText and "small" or "label", H / 1080) end
   end
   if ns.CastBar.time then
     -- the time sits left of the queue mark, the latency under the bar's end

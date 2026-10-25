@@ -38,7 +38,7 @@ def test_minimap_spec_matches_the_art():
     s = data().MODERN_MAP
     m = modern_art.MAP
     assert (s.w, s.h) == (m["w"], m["h"])
-    for key in ("hole", "plate", "button"):
+    for key in ("hole", "plate"):
         assert box(s[key]) == m[key], key
 
 
@@ -80,7 +80,7 @@ def test_bar_geometry(pure):
     from conftest import load_pure
     L = load_pure(pure, "Core/Layout.lua").Layout
     g = L.ModernBar(1080, 1, 2, 12)
-    assert (g.slot, g.gap, g.numbers, g.bottom) == (54, 7, 18, 14)
+    assert (g.slot, g.gap, g.numbers, g.bottom) == (54, 7, 18, L.MARGIN)  # the screen margin
     assert g.width == 12 * 54 + 11 * 7 and g.height == 18 + 2 * 54 + 7
     assert L.ModernBar(1080, 1, 4, 18).rows == 2               # 36 buttons at most
     small = L.ModernBar(1080, 0.5, 3, 4)
@@ -161,6 +161,34 @@ def test_menu_is_one_row_at_the_bottom_right():
     assert visible(ns.MenuPanels.band) and str(ns.MenuPanels.band.file).endswith("mod_menu_black")
 
 
+def test_menu_row_is_centred_in_its_band():
+    _, ns = preview(MODERN)
+    band = rect(ns.MenuPanels.bandFrame)
+    shown = [rect(ns.MenuPanels.byId[i]) for i in ns.Data.MODERN_MENU.values()]
+    left = shown[0][0] - band[0]
+    right = band[0] + band[2] - (shown[-1][0] + shown[-1][2])
+    assert abs(left - right) < 0.5
+
+
+def test_nothing_in_the_art_is_cut_by_its_texture_edge():
+    """The level circle under the portrait ring (and its rim) stays inside the unit frame
+    texture; the minimap ring stays inside its texture. Only the faint tail of a soft shadow
+    may reach an edge."""
+    import numpy as np
+    faint = 32
+    for art in (modern_art.unit_frame(), modern_art.minimap_ring(), modern_art.cast_bar()):
+        a = np.asarray(art)[..., 3]
+        assert max(a[:2].max(), a[-2:].max(), a[:, :2].max(), a[:, -2:].max()) < faint
+
+
+def test_minimap_is_round_and_its_name_centred_over_it():
+    m = modern_art.MAP
+    x0, y0, x1, y1 = m["hole"]
+    assert x1 - x0 == y1 - y0                                 # a square opening: the map is not squashed
+    px0, _, px1, _ = m["plate"]
+    assert (px0 + px1) / 2 == (x0 + x1) / 2
+
+
 # ------------------------------------------------------------------ unit frames
 def frames(ns):
     return ns.UnitFrames.frames
@@ -202,6 +230,20 @@ def test_texts_numbers_and_level_badge():
     assert p.levelText.text == "58"
     lv, badge = rect(p.levelText), rect(p.levelBadge)
     assert abs((lv[0] + lv[2] / 2) - (badge[0] + badge[2] / 2)) < 2
+
+
+def test_small_frames_have_no_level_circle_too_small_for_its_number():
+    """Focus, pet and target of target: a level circle of ~10 px cannot hold a readable number,
+    so they use the art without it and hide the number; player and target keep theirs."""
+    _, ns = preview(MODERN)
+    f = frames(ns)
+    for key in ("focus", "pet", "targettarget"):
+        assert str(f[key].art.file).endswith("mod_unit_small_black"), key
+        assert not visible(f[key].levelText), key
+    for key in ("player", "target"):
+        assert str(f[key].art.file).endswith("mod_unit_black"), key
+        assert visible(f[key].levelText), key
+        assert rect(f[key].levelBadge)[2] >= 16                      # room for the number
 
 
 def test_arcane_ring_is_a_setting():
@@ -428,3 +470,100 @@ def test_no_power_text_when_the_unit_has_no_power():
     """)
     t = frames(rt.globals().PREVIEW_NS).target
     assert t.powerText.text == ""
+
+
+# ------------------------------------------------------------------ the screen grid
+def visible_box(region, edge, tex_w, mirror=False):
+    """A piece's visible box (left, top, right, bottom from the screen's top left), without the
+    transparent edges of its texture."""
+    l, b, w, h = rect(region)
+    u = w / tex_w
+    el, er = (edge.r, edge.l) if mirror else (edge.l, edge.r)
+    return l + el * u, 1080 - (b + h) + edge.t * u, l + w - er * u, 1080 - b - edge.b * u
+
+
+def test_everything_sits_on_one_screen_grid():
+    """One margin to every screen edge, one gap between neighbours, two between groups; nothing
+    overlaps."""
+    _, ns = preview(vbars=True)
+    D, M, G = ns.Data.ART_EDGE, ns.Layout.MARGIN, ns.Layout.GAP
+    f = frames(ns)
+    player = visible_box(f.player, D.unit, 720)
+    target = visible_box(f.target, D.unit, 720, True)
+    tot = visible_box(f.targettarget, D.unitSmall, 720, True)
+    focus = visible_box(f.focus, D.unitSmall, 720)
+    pet = visible_box(f.pet, D.unitSmall, 720)
+    mp = visible_box(ns.Minimap.frame, D.map, 340)
+    band = ns.MenuPanels.bandFrame
+    k = rect(band)[3] / 92
+    bl, bb, bw, bh = rect(band)
+    menu = (bl + 6 * k, 1080 - (bb + bh) + 10 * k, bl + bw - 6 * k, 1080 - bb - 10 * k)
+    il, ib, iw, ih = rect(ns.InfoBar.frame)
+    info = (il, 1080 - (ib + ih), il + iw, 1080 - ib)
+    xl, xb, xw, xh = rect(ns.DataBars.holder)
+    near = lambda a, b: abs(a - b) < 1
+    assert near(player[0], M) and near(player[1], M)
+    assert near(mp[1], M) and near(1920 - mp[2], M)
+    assert near(1920 - menu[2], M) and near(1080 - menu[3], M)
+    assert near(xb, M)                                                       # the XP bar's foot
+    assert near(1920 - rect(ns.VerticalBars.container)[0] - rect(ns.VerticalBars.container)[2], M)
+    assert near(target[0] - player[2], 2 * G) and near(focus[1] - player[3], 2 * G)
+    assert near(pet[1] - focus[3], G) and near(tot[1] - target[3], G) and near(tot[2], target[2])
+    assert near(menu[1] - info[3], G) and near(info[2], menu[2])
+    cast, res = rect(ns.CastBar.art), rect(ns.ClassResource.holder)
+    u = cast[2] / 940
+    cast_foot = 1080 - cast[1] - D.cast.b * u
+    assert near((1080 - res[1] - res[3]) - cast_foot, G)
+
+
+def test_money_stays_on_screen_beside_the_menu():
+    rt, ns = preview()
+    texts = [r for r in rt.globals().REGIONS.values() if r.kind == "font" and r.text and "1.245" in str(r.text)]
+    assert texts, "money text"
+    m = rect(texts[0])
+    band, bar = rect(ns.MenuPanels.bandFrame), rect(ns.ActionBars.modernFrame)
+    assert m[1] >= 0 and m[0] + m[2] <= band[0]                         # on screen, left of the band
+    assert m[0] > bar[0] + bar[2]                                       # clear of the action bar
+
+
+# ------------------------------------------------------------------ the bars' curve around the ring
+def test_unit_curve_spec_matches_the_art():
+    s, u = data().MODERN_UNIT, modern_art.UNIT
+    assert (s.clear, s.rim) == (u["clear"], u["rim"])
+
+
+def test_bars_end_in_a_curve_around_the_ring():
+    """The fill starts on the circle the well is cut by (concentric with the ring), and a mask with
+    that circle cuts the rest of its left end, mirrored for the target."""
+    import math
+    _, ns = preview(MODERN)
+    spec = ns.Data.MODERN_UNIT
+    for key, mask in (("player", "mod_unit_mask"), ("target", "mod_unit_mask_r")):
+        f = frames(ns)[key]
+        l, b, w, h = rect(f)
+        u = w / spec.w
+        cx = spec.ring.x + spec.ring.w / 2
+        cy = spec.ring.y + spec.ring.h / 2
+        R = spec.ring.w / 2 + spec.clear + spec.rim
+        for bar, r in ((f.health, spec.health), (f.power, spec.power)):
+            dy = max(abs(r.y - cy), abs(r.y + r.h - cy))
+            x0 = cx + math.sqrt(R * R - dy * dy)                       # leftmost point of the curve
+            bl, _, bw, _ = rect(bar)
+            start = (bl - l) / u if key == "player" else (l + w - (bl + bw)) / u
+            assert abs(start - x0) < 0.5, (key, start, x0)
+            fill = bar.GetStatusBarTexture(bar)
+            for t in (fill, bar.obShine, bar.obShade, bar.obSpark):
+                assert t.mask is not None and str(t.mask.file).endswith(mask), key
+        assert abs(rect(f.health.obCurve)[2] - w) < 0.5                  # the mask spans the frame
+
+
+def test_mask_hole_is_the_wells_circle():
+    import numpy as np
+    m = np.asarray(modern_art.unit_mask())[..., 3]
+    u = modern_art.UNIT
+    cx, cy, r = modern_art.ring_circle(u["rim"])
+    sx, sy = m.shape[1] / u["w"], m.shape[0] / u["h"]
+    assert m[round(cy * sy), round((cx + r - 3) * sx)] < 20                # inside: cut
+    assert m[round(cy * sy), round((cx + r + 3) * sx)] > 235               # outside: kept
+    flip = np.asarray(modern_art.unit_mask(mirror=True))[..., 3]
+    assert (flip == m[:, ::-1]).mean() > 0.99

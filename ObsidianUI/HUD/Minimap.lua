@@ -49,7 +49,10 @@ local function layout()
   local u = w / S.w
   ns.Movers.Register("map", "Minimapa", container, function(f)
     f:ClearAllPoints()
-    f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -0.012 * H, -0.02 * H)
+    -- the ring's right edge and the zone plate's top at the screen margin
+    local _, t, r = ns.Layout.Edges(ns.Data.ART_EDGE.map, S.w, w)
+    local m = ns.Layout.MARGIN * H / 1080
+    f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -(m - r), -(m - t))
   end)
   ns.Movers.Place("map")
   container:SetSize(w, S.h * u)
@@ -75,6 +78,7 @@ local function layout()
   zone:ClearAllPoints()
   zone:SetPoint("CENTER", container, "TOPLEFT", (S.plate.x + S.plate.w / 2) * u, -(S.plate.y + S.plate.h / 2) * u)
   zone:SetWidth(S.plate.w * u * 0.92)
+  ns.Look.SetType(zone, "label", H / 1080) -- the HUD's font, not the game's serif
 
   local targets = socketTargets()
   for i, s in ipairs(sockets) do

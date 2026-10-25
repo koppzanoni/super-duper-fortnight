@@ -1,0 +1,311 @@
+"""The "Aço" look (2026-10-25): crafted but modern and subtle steel. Graphite brushed plates with
+silver edges, a bevel that gives them thickness, an engraved line inside the panels, small corner
+brackets and rivets, a machined plate on top of the portrait ring. No blue.
+
+It redraws modern_art's pieces with the same geometry (so everything stays on the screen grid):
+the pieces call modern_art.backing/groove/ring, which are swapped for the steel ones while drawing.
+Its pieces are also the moulds Meshy redraws with real metal (tools/meshy_gen.py, pieces steel_*).
+
+Usage: python tools/steel_art.py OUT_DIR   (writes the steel pieces as PNG)
+"""
+import math
+import pathlib
+import random
+import sys
+from contextlib import contextmanager
+from functools import lru_cache
+
+import numpy as np
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
+
+import modern_art as ma
+from modern_art import Canvas
+
+PANEL = (22, 23, 26, 244)       # graphite plate
+RIM = (58, 58, 60, 252)         # the bars' rim band (the metal's mean, for the flat bits)
+EDGE = (150, 154, 162, 245)     # the silver edge line
+LIT = (240, 242, 246, 220)      # light along top edges
+RING = (150, 154, 162, 255)
+RING_FILL = (26, 27, 31, 255)
+RING_LIT = (240, 242, 246, 230)
+RING_INNER = (58, 60, 66, 255)
+SLOT = (128, 132, 140, 255)
+METAL = (150, 154, 162, 255)    # brackets, rivets, plates
+SHINE = (245, 246, 250, 230)
+
+
+# The metal itself: the brushed plate Meshy drew for the action slot (art/meshy_steel), made neutral
+# grey and brought to each part's brightness. Our shapes stay exact; only their surface is Meshy's.
+MATERIAL = pathlib.Path(__file__).resolve().parent.parent / "art" / "meshy_steel" / "steel_slot.png"
+MATERIAL_BOX = (150, 150, 874, 874)  # the plain plate inside that slot
+
+
+@lru_cache(maxsize=None)
+def _material_source():
+    img = Image.open(MATERIAL).convert("L").crop(MATERIAL_BOX)
+    a = np.asarray(img).astype(np.float32)
+    return (a - a.mean()) / max(1.0, a.std())  # brushed grain and sheen, around 0
+
+
+def material(size, mean, spread=15.0):
+    """A size (w, h) px piece of the brushed metal at brightness `mean` (0-255), as an L image."""
+    src = Image.fromarray(_material_source())
+    a = np.asarray(src.resize(size, Image.LANCZOS)).astype(np.float32)
+    return Image.fromarray(np.clip(mean + a * spread, 0, 255).astype(np.uint8))
+
+
+def material_ring(size, inner, mean, spread=15.0):
+    """The metal brushed in circles (the plate's grain bent around the centre), for rings."""
+    w, h = size
+    src = _material_source()
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    cx, cy = (w - 1) / 2, (h - 1) / 2
+    r = np.hypot(xx - cx, yy - cy)
+    th = (np.arctan2(yy - cy, xx - cx) + math.pi) / (2 * math.pi)
+    rr = np.clip((r - inner) / max(1.0, w / 2 - inner), 0, 1)
+    u = (th * (src.shape[1] - 1)).astype(int)
+    v = (src.shape[0] * 0.3 + rr * src.shape[0] * 0.4).astype(int)  # a band of the plate, across the ring
+    return Image.fromarray(np.clip(mean + src[v, u] * spread, 0, 255).astype(np.uint8))
+
+
+def _paint(c, layer, at, grey, mask, tint=(0, 0, 2)):
+    """Paint the grey metal into c's layer at `at`, where `mask` (L) allows."""
+    rgb = [grey.point(lambda v, t=t: min(255, v + t)) for t in tint]
+    piece = Image.merge("RGBA", (*rgb, mask))
+    c.layers[layer].alpha_composite(piece, at)
+
+
+def _mask(box, r):
+    x0, y0, x1, y1 = [round(v * ma.SS) for v in box]
+    m = Image.new("L", (x1 - x0, y1 - y0), 0)
+    ImageDraw.Draw(m).rounded_rectangle((0, 0, m.width - 1, m.height - 1), r * ma.SS, fill=255)
+    return (x0, y0), m
+
+
+def sheen(c, box, r, strength=20):
+    """A soft light across the top half of a plate."""
+    at, m = _mask(box, r)
+    ramp = Image.new("L", (1, m.height))
+    for y in range(m.height):
+        ramp.putpixel((0, y), round(strength * max(0.0, 1 - y / max(1, m.height - 1) / 0.5)))
+    light = Image.new("RGBA", m.size, (255, 255, 255, 0))
+    light.putalpha(ImageChops.multiply(m, ramp.resize(m.size)))
+    c.layers["body"].alpha_composite(light, at)
+
+
+def brushed(c, box, r, strength=26, seed=7):
+    """Brushed steel: fine horizontal streaks of light and dark, clipped to a plate."""
+    rnd = random.Random(seed)
+    at, m = _mask(box, r)
+    streak = Image.new("L", (1, m.height), 128)
+    for y in range(m.height):
+        streak.putpixel((0, y), max(0, min(255, round(128 + rnd.gauss(0, 34)))))
+    streak = streak.resize(m.size).filter(ImageFilter.GaussianBlur(radius=0.6 * ma.SS))
+    for color, part in (((0, 0, 0), lambda v: max(0, 128 - v)), ((255, 255, 255), lambda v: max(0, v - 128))):
+        layer = Image.new("RGBA", m.size, color + (0,))
+        layer.putalpha(ImageChops.multiply(m, streak.point(lambda v: part(v) * strength // 64)))
+        c.layers["body"].alpha_composite(layer, at)
+
+
+def bevel(c, box, r, w=1.4):
+    """Plate thickness: a light line along the top inside edge, a dark one along the bottom."""
+    x0, y0, x1, y1 = box
+    c.line([(x0 + r * 0.7, y0 + w), (x1 - r * 0.7, y0 + w)], (255, 255, 255, 70), w, layer="top")
+    c.line([(x0 + r * 0.7, y1 - w), (x1 - r * 0.7, y1 - w)], (0, 0, 0, 150), w, layer="top")
+
+
+def etch(c, box, r, inset=6):
+    """An engraved line inside a plate's edge: a dark cut with a fine light lip under it."""
+    x0, y0, x1, y1 = box
+    b = (x0 + inset, y0 + inset, x1 - inset, y1 - inset)
+    rr = max(1, r - inset)
+    c.rrect(b, rr, outline=(0, 0, 0, 120), width=1.0, layer="top")
+    c.rrect((b[0] + 0.8, b[1] + 0.8, b[2] + 0.8, b[3] + 0.8), rr, outline=(255, 255, 255, 26), width=0.8, layer="top")
+
+
+def rivet(c, x, y, s=2.2):
+    c.ellipse((x - s - 0.6, y - s - 0.6, x + s + 0.6, y + s + 0.6), fill=(0, 0, 0, 200), layer="top")
+    c.ellipse((x - s, y - s, x + s, y + s), fill=METAL, layer="top")
+    c.ellipse((x - s * 0.5, y - s * 0.7, x + s * 0.2, y - s * 0.1), fill=SHINE, layer="top")
+
+
+def bracket(c, x, y, sx, sy, k=14, t=3.2):
+    """An L-shaped corner fitting with a rivet: (x, y) the corner, sx/sy the inward directions."""
+    def ell(o, i):
+        return [(x + sx * o, y + sy * o), (x + sx * (k - o), y + sy * o), (x + sx * (k - o), y + sy * (t - i)),
+                (x + sx * (t - i), y + sy * (t - i)), (x + sx * (t - i), y + sy * (k - o)), (x + sx * o, y + sy * (k - o))]
+    c.poly(ell(0, 0), (0, 0, 0, 180), layer="top")
+    c.poly(ell(0.8, 0.4), METAL, layer="top")
+    rivet(c, x + sx * (t + 3.2), y + sy * (t + 3.2), 1.7)
+
+
+def keystone(c, cx, y, w=40, h=10):
+    """A small machined plate seated on an edge (the top of the portrait ring)."""
+    pts = [(cx - w / 2, y), (cx + w / 2, y), (cx + w / 2 - h * 0.7, y + h), (cx - w / 2 + h * 0.7, y + h)]
+    c.poly([(p[0], p[1] - 1) for p in pts], (0, 0, 0, 200), layer="top")
+    c.poly(pts, (128, 132, 140, 255), layer="top")
+    c.line([(cx - w / 2 + 2, y + 1.2), (cx + w / 2 - 2, y + 1.2)], (240, 242, 246, 220), 1.0, layer="top")
+    rivet(c, cx, y + h / 2, 1.6)
+
+
+# ------------------------------------------------------------------ the pieces' parts in steel
+GLASS_ALPHA = 178   # the smoked glass in the plates (of 255): the scene shows faintly through
+FRAME_W = 5         # the steel frame around a plate's glass
+
+
+def glass(c, box, r):
+    """Smoked glass: dark, faintly see-through, a soft light across its top half and one diagonal
+    reflection streak, the brushed grain barely there."""
+    at, m = _mask(box, r)
+    _paint(c, "body", at, material(m.size, 26, spread=5), m.point(lambda v: v * GLASS_ALPHA // 255))
+    w, h = m.size
+    top = Image.new("L", (1, h))
+    for y in range(h):
+        top.putpixel((0, y), round(30 * max(0.0, 1 - y / max(1, h - 1) / 0.55)))
+    streak = Image.new("L", (w, h), 0)
+    k = h * 0.9  # the streak leans: it runs from the top edge down to the left
+    x0 = w * 0.18
+    ImageDraw.Draw(streak).polygon([(x0, 0), (x0 + h * 0.35, 0), (x0 + h * 0.35 - k, h), (x0 - k, h)], fill=24)
+    streak = streak.filter(ImageFilter.GaussianBlur(radius=h * 0.08))
+    light = ImageChops.multiply(m, ImageChops.lighter(top.resize((w, h)), streak))
+    layer = Image.new("RGBA", (w, h), (255, 255, 255, 0))
+    layer.putalpha(light)
+    c.layers["body"].alpha_composite(layer, at)
+
+
+def backing(c, box, r=20):
+    """A plate: smoked glass held in a thin brushed steel frame (opaque), the frame's silver edge."""
+    x0, y0, x1, y1 = box
+    at, m = _mask(box, r)
+    inner = (x0 + FRAME_W, y0 + FRAME_W, x1 - FRAME_W, y1 - FRAME_W)
+    _, hole = _mask(inner, max(1, r - FRAME_W))
+    frame = m.copy()
+    frame.paste(ImageChops.subtract(m.crop((round(FRAME_W * ma.SS), round(FRAME_W * ma.SS),
+                                            round(FRAME_W * ma.SS) + hole.width, round(FRAME_W * ma.SS) + hole.height)), hole),
+                (round(FRAME_W * ma.SS), round(FRAME_W * ma.SS)))
+    _paint(c, "body", at, material(m.size, 58), frame)
+    glass(c, inner, max(1, r - FRAME_W))
+    c.rrect(inner, max(1, r - FRAME_W), outline=(0, 0, 0, 150), width=1.0, layer="top")
+    c.rrect(box, r, outline=EDGE, width=1.3)
+    c.line([(x0 + r + 2, y0 + 1.2), (x1 - r - 2, y0 + 1.2)], LIT, 1.0, layer="top")
+    bevel(c, box, r)
+    if (x1 - x0) > 120 and (y1 - y0) > 40:  # big plates only: on small ones the details turn to noise
+        for x, sx in ((x0 + 2, 1), (x1 - 2, -1)):
+            for y, sy in ((y0 + 2, 1), (y1 - 2, -1)):
+                bracket(c, x, y, sx, sy)
+
+
+def groove(c, box, r=8, rim=7):
+    x0, y0, x1, y1 = box
+    outer = (x0 - rim, y0 - rim, x1 + rim, y1 + rim)
+    at, m = _mask(outer, r + rim)
+    _paint(c, "body", at, material(m.size, 58), m)
+    c.rrect(outer, r + rim, outline=EDGE, width=1.3)
+    c.rrect((x0 - 1.5, y0 - 1.5, x1 + 1.5, y1 + 1.5), r + 1.5, outline=(0, 0, 0, 255), width=1.6, layer="body")
+    c.rrect(box, r, fill=(2, 2, 3, 255), layer="body")
+    c.line([(x0 + 16, y0 - rim + 1.2), (x1 - 16, y0 - rim + 1.2)], LIT, 1.0, layer="top")
+    bevel(c, outer, r + rim, w=1.1)
+    if (y1 - y0) > 20:  # a rivet at each end of a tall rim
+        for x in (x0 - rim / 2, x1 + rim / 2):
+            rivet(c, x, (y0 + y1) / 2, 1.5)
+
+
+def ring(c, box, band=12):
+    x0, y0, x1, y1 = box
+    s0 = [round(v * ma.SS) for v in box]
+    size = (s0[2] - s0[0], s0[3] - s0[1])
+    m = Image.new("L", size, 0)
+    ImageDraw.Draw(m).ellipse((0, 0, size[0] - 1, size[1] - 1), fill=255)
+    _paint(c, "body", (s0[0], s0[1]), material_ring(size, (band - 3) * ma.SS, 62), m)
+    c.ellipse(box, outline=RING, width=2.2)
+    c.draw("top").arc(c.s((x0 + 1, y0 + 1, x1 - 1, y1 - 1)), 196, 344, fill=RING_LIT, width=round(1.4 * ma.SS))
+    c.ellipse((x0 + band - 3, y0 + band - 3, x1 - band + 3, y1 - band + 3), outline=RING_INNER, width=2.0, layer="top")
+    c.ellipse((x0 + band, y0 + band, x1 - band, y1 - band), fill=(0, 0, 0, 255), layer="top")
+    if (x1 - x0) > 120:  # the portrait and map rings, not the small buttons
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        keystone(c, cx, y0 - 3)
+        c.ellipse((x0 + band / 2, y0 + band / 2, x1 - band / 2, y1 - band / 2), outline=(0, 0, 0, 110), width=1.0, layer="top")
+        rr = (x1 - x0) / 2 - band / 2
+        for a in (205, 335):
+            rivet(c, cx + rr * math.cos(math.radians(a)), cy + rr * math.sin(math.radians(a)), 1.8)
+
+
+def slot_frame():
+    n = ma.SLOT_TEX
+    c = Canvas(n, n)
+    b = (6, 6, n - 6, n - 6)
+    at, m = _mask(b, 9)
+    _paint(c, "body", at, material(m.size, 58), m)
+    c.rrect((b[0] - 1.4, b[1] - 1.4, b[2] + 1.4, b[3] + 1.4), 10, outline=(0, 0, 0, 255), width=1.6, layer="body")
+    c.rrect(b, 9, outline=SLOT, width=1.8)
+    c.line([(b[0] + 11, b[1] + 0.8), (b[2] - 11, b[1] + 0.8)], LIT, 1.0, layer="top")
+    bevel(c, b, 9, w=1.6)
+    for x, y in ((b[0] + 5, b[1] + 5), (b[2] - 5, b[1] + 5), (b[0] + 5, b[3] - 5), (b[2] - 5, b[3] - 5)):
+        rivet(c, x, y, 1.6)
+    c.cut((b[0] + 4, b[1] + 4, b[2] - 4, b[3] - 4), 6)
+    return c.render(glow=0.05, shadow=0.6)
+
+
+WINDOW_TEX, WINDOW_CORNER = 256, 64  # window plate, stretched as a 9-slice (corners WINDOW_CORNER px)
+
+
+def window_panel():
+    """The windows' plate (inventory, bank, settings): the steel backing with its brackets, drawn to be
+    stretched as a 9-slice, so the corners keep their size and the middle is plain brushed steel."""
+    n = WINDOW_TEX
+    c = Canvas(n, n)
+    backing(c, (8, 8, n - 8, n - 8), 22)
+    return c.render(glow=0.1, shadow=0.7)
+
+
+def gem_socket():
+    """Class resource point, empty: a slim diamond of the metal with a silver edge, dark inside."""
+    n = ma.GEM_TEX
+    c = Canvas(n, n)
+    m = n / 2
+
+    def diamond(r):
+        return [(m, m - r), (m + r, m), (m, m + r), (m - r, m)]
+    c.poly(diamond(34), (0, 0, 0, 255), layer="body")
+    s0 = round(ma.SS * (m - 32.5)), round(ma.SS * (m - 32.5))
+    size = (round(ma.SS * 65), round(ma.SS * 65))
+    mask = Image.new("L", size, 0)
+    ImageDraw.Draw(mask).polygon([(size[0] / 2, 0), (size[0], size[1] / 2), (size[0] / 2, size[1]), (0, size[1] / 2)], fill=255)
+    _paint(c, "body", s0, material(size, 58), mask)
+    c.line(diamond(32.5) + [diamond(32.5)[0]], EDGE, 1.3)
+    c.poly(diamond(21), (2, 2, 3, 255), layer="top")
+    c.line([(m - 31, m - 1), (m, m - 32)], LIT, 1.0, layer="top")
+    return c.render(glow=0.1, shadow=0.5)
+
+
+@contextmanager
+def steel():
+    """modern_art's pieces drawn in steel while inside the block."""
+    names = ("backing", "groove", "ring", "GROOVE_RIM", "GROOVE_EDGE", "MARKER")
+    saved = {n: getattr(ma, n) for n in names}
+    for n, v in zip(names, (backing, groove, ring, RIM, EDGE, ((170, 174, 182), (244, 245, 248)))):
+        setattr(ma, n, v)
+    try:
+        yield
+    finally:
+        for n, v in saved.items():
+            setattr(ma, n, v)
+
+
+def pieces():
+    """Every HUD piece in steel, by texture name."""
+    with steel():
+        return {"mod_unit": ma.unit_frame(), "mod_unit_small": ma.unit_frame(level=False), "mod_cast": ma.cast_bar(),
+                "mod_map": ma.minimap_ring(), "mod_menu": ma.menu_band(), "mod_slot": slot_frame(),
+                "mod_window": window_panel(), "mod_gem_off": gem_socket()}
+
+
+def main():
+    out = pathlib.Path(sys.argv[1])
+    out.mkdir(parents=True, exist_ok=True)
+    for name, img in pieces().items():
+        img.save(out / f"{name}.png")
+
+
+if __name__ == "__main__":
+    main()

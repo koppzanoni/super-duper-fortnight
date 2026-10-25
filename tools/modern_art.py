@@ -1,6 +1,8 @@
 """Art of the "Moderno" HUD style, copied from the concept art/concept_modern.png (the user's Meshy
-agent image "WoW Modern Clean HUD"): near-black navy panels, thin teal hairlines with a faint glow,
-small arrow tips at the ends of the lines, gold only on the level badge. The action bar is the
+agent image "WoW Modern Clean HUD"): near-black navy panels, thin teal hairlines with a faint glow.
+The clean look (the unit frame's, followed by the cast bar, minimap and menu band): one rounded
+backing panel per group, bars in thick dark rims, round parts in the portrait's ring; no arrow
+tips and no gold. The action bar is the
 concept's without its wings, gems and gold rails (the user's call).
 
 Colors are sampled from the concept. Each piece is drawn at SS times its texture size and scaled
@@ -120,46 +122,156 @@ def hairline_box(c, box, r, lit=True, width=1.6):
         c.line([(x0 + r + 2, y0 + 0.2), (x1 - r - 2, y0 + 0.2)], LINE_LIT + (200,), 0.9, layer="top")
 
 
-def tip(c, x, y, direction, size=5, color=LINE):
-    """Small arrow tip where a hairline ends (direction: -1 points left, 1 right, 2 down)."""
-    if direction == 2:
-        c.poly([(x - size * 0.7, y), (x + size * 0.7, y), (x, y + size)], color + (255,))
-    else:
-        c.poly([(x, y - size * 0.7), (x, y + size * 0.7), (x + direction * size, y)], color + (255,))
-
-
 # ------------------------------------------------------------------ unit frame (player, target)
-# Rects in px of the 700x220 texture (Data.MODERN_UNIT mirrors them).
-UNIT = {"w": 720, "h": 250, "ring": (12, 12, 232, 232), "portrait": (28, 28, 216, 216),
+# Rects in px of the 720x262 texture (Data.MODERN_UNIT mirrors them); room under the level circle.
+UNIT = {"w": 720, "h": 262, "ring": (12, 12, 232, 232), "portrait": (28, 28, 216, 216),
         "name": (250, 26, 704, 80), "health": (186, 91, 694, 141), "power": (186, 157, 686, 195),
-        "level": (4, 168, 80, 244)}
+        # the bars end in a curve around the ring: `clear` px of gap outside it, then their `rim`
+        "clear": 6, "rim": 8,
+        # a small round level badge on the ring's bottom edge (6 o'clock)
+        "level": (103, 212, 141, 250)}
 
 
-def unit_frame():
-    c = Canvas(UNIT["w"], UNIT["h"])
-    for key in ("health", "power"):
-        x0, y0, x1, y1 = UNIT[key]
-        r, rim = 8, 8
-        # each bar in its own thick dark rim (the user found the bars too close together): a teal
-        # line outside it, a dark line where it meets the groove, the groove dark inside
-        c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, fill=(4, 14, 24, 250), layer="body")
-        c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, outline=(40, 112, 140, 255), width=2.0)
-        c.rrect((x0 - 1.5, y0 - 1.5, x1 + 1.5, y1 + 1.5), r + 1.5, outline=(0, 0, 0, 255), width=1.6, layer="body")
-        c.rrect((x0, y0, x1, y1), r, fill=(1, 6, 11, 255), layer="body")
-        c.line([(x0 + 16, y0 - rim + 1.2), (x1 - 16, y0 - rim + 1.2)], (96, 170, 196, 170), 1.0, layer="top")
-    # the ring: a thick dark navy band between a teal line outside and a dark edge inside
-    x0, y0, x1, y1 = UNIT["ring"]
-    c.ellipse((x0, y0, x1, y1), fill=(5, 18, 30, 255), layer="body")
-    c.ellipse((x0, y0, x1, y1), outline=(58, 150, 182, 255), width=2.6)
+def _radial_vignette(w, h, inner=0.66, edge=165):
+    """A dark ring fading from the circle's edge inward to clear, so a cropped 2D portrait melts
+    into the frame instead of ending in a hard circular cut."""
+    import numpy as np
+    yy, xx = np.mgrid[0:h, 0:w]
+    cx, cy, radius = w / 2, h / 2, w / 2
+    d = np.hypot(xx - cx, yy - cy) / radius
+    t = np.clip((d - inner) / (1 - inner), 0, 1)
+    a = edge * t * t
+    a[d >= 1.0] = 0
+    out = np.zeros((h, w, 4), np.uint8)
+    out[..., 2] = 8  # the shadow keeps a faint navy tint
+    out[..., 3] = a.astype(np.uint8)
+    return Image.fromarray(out, "RGBA")
+
+
+def backing(c, box, r=20):
+    """The clean look's panel: one dark rounded piece under a group of parts (they read as one
+    piece, nothing looks cut), a teal edge and a lit line along its top."""
+    x0, y0, x1, y1 = box
+    c.rrect(box, r, fill=(4, 13, 22, 236), layer="body")
+    c.rrect(box, r, outline=(40, 112, 140, 210), width=1.6)
+    c.line([(x0 + r + 2, y0 + 1.3), (x1 - r - 2, y0 + 1.3)], (96, 170, 196, 150), 1.0, layer="top")
+
+
+# The bars' rim colours and the accent of small marks (a look such as tools/steel_art.py swaps
+# them while it draws).
+GROOVE_RIM, GROOVE_EDGE = (4, 14, 24, 250), (40, 112, 140, 255)
+MARKER = ((60, 170, 210), (150, 222, 244))
+
+
+def groove(c, box, r=8, rim=8):
+    """A bar's groove in its own thick dark rim: a teal line outside, a dark line where the rim
+    meets the groove, the groove dark inside, a lit line along the rim's top."""
+    x0, y0, x1, y1 = box
+    c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, fill=GROOVE_RIM, layer="body")
+    c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, outline=GROOVE_EDGE, width=2.0)
+    c.rrect((x0 - 1.5, y0 - 1.5, x1 + 1.5, y1 + 1.5), r + 1.5, outline=(0, 0, 0, 255), width=1.6, layer="body")
+    c.rrect(box, r, fill=(1, 6, 11, 255), layer="body")
+    c.line([(x0 + 16, y0 - rim + 1.2), (x1 - 16, y0 - rim + 1.2)], (96, 170, 196, 170), 1.0, layer="top")
+
+
+def ring(c, box, band=12):
+    """The portrait ring: a thick dark navy band between a teal line outside (lit across the top)
+    and a dark edge inside; black inside it (cut out by the caller)."""
+    x0, y0, x1, y1 = box
+    c.ellipse(box, fill=(5, 18, 30, 255), layer="body")
+    c.ellipse(box, outline=(58, 150, 182, 255), width=2.6)
     c.draw("top").arc(c.s((x0 + 1, y0 + 1, x1 - 1, y1 - 1)), 196, 344, fill=(140, 214, 236, 220), width=round(1.6 * SS))
-    c.ellipse((x0 + 9, y0 + 9, x1 - 9, y1 - 9), outline=(22, 70, 92, 255), width=2.0, layer="top")
-    c.ellipse((x0 + 12, y0 + 12, x1 - 12, y1 - 12), fill=(0, 0, 0, 255), layer="top")
+    c.ellipse((x0 + band - 3, y0 + band - 3, x1 - band + 3, y1 - band + 3), outline=(22, 70, 92, 255), width=2.0, layer="top")
+    c.ellipse((x0 + band, y0 + band, x1 - band, y1 - band), fill=(0, 0, 0, 255), layer="top")
+
+
+def ring_circle(extra=0):
+    """Centre and radius of the circle that cuts the bars: the ring plus the gap (and `extra`)."""
+    x0, y0, x1, y1 = UNIT["ring"]
+    return (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) / 2 + UNIT["clear"] + extra
+
+
+def _disk(size, cx, cy, r):
+    m = Image.new("L", size, 0)
+    ImageDraw.Draw(m).ellipse([v * SS for v in (cx - r, cy - r, cx + r, cy + r)], fill=255)
+    return m
+
+
+def bars_around_ring(c, keys):
+    """The bars' grooves, their left ends cut by a circle concentric with the portrait ring, `clear`
+    px outside it: the rim turns along the curve (its edge line following it), the dark well starts
+    `rim` px further in. The ring is drawn over them afterwards."""
+    g = Canvas(c.w, c.h)
+    for key in keys:
+        groove(g, UNIT[key])
+    size = g.layers["body"].size
+    cx, cy, r = ring_circle()
+    rim = UNIT["rim"]
+    shape = g.layers["body"].getchannel("A")
+    wells = Image.new("L", size, 0)
+    for key in keys:
+        x0, y0, x1, y1 = UNIT[key]
+        ImageDraw.Draw(wells).rounded_rectangle([v * SS for v in (x0, y0, x1, y1)], 8 * SS, fill=255)
+    # the rim band along the curve, over the well's end; a dark line where it meets the well
+    band = ImageChops.multiply(_disk(size, cx, cy, r + rim), wells)
+    paint = Image.new("RGBA", size, GROOVE_RIM[:3] + (0,))
+    paint.putalpha(band.point(lambda v: v * GROOVE_RIM[3] // 255))
+    g.layers["body"].alpha_composite(paint)
+    seam = ImageChops.subtract(_disk(size, cx, cy, r + rim + 0.8), _disk(size, cx, cy, r + rim - 0.8))
+    dark = Image.new("RGBA", size, (0, 0, 0, 0))
+    dark.putalpha(ImageChops.multiply(seam, wells))
+    g.layers["body"].alpha_composite(dark)
+    # the rim's edge line turning along the curve
+    edge = ImageChops.subtract(_disk(size, cx, cy, r + 2.0), _disk(size, cx, cy, r))
+    line = Image.new("RGBA", size, GROOVE_EDGE[:3] + (0,))
+    line.putalpha(ImageChops.multiply(edge, shape))
+    g.layers["lines"].alpha_composite(line)
+    g.cut((cx - r, cy - r, cx + r, cy + r), ellipse=True)
+    for k in c.layers:
+        c.layers[k].alpha_composite(g.layers[k])
+
+
+def unit_mask(mirror=False, size=(1024, 512)):
+    """The mask the game lays over the bars' fill (HUD/UnitFrames.lua): white over the whole frame
+    but the circle the bars are cut by, so the fill starts on the same curve as the well. Drawn at
+    a power-of-two size and stretched over the frame (no texture coordinates needed)."""
+    sx, sy = size[0] / UNIT["w"], size[1] / UNIT["h"]
+    cx, cy, r = ring_circle(UNIT["rim"])
+    if mirror:
+        cx = UNIT["w"] - cx
+    k = 4
+    a = Image.new("L", (size[0] * k, size[1] * k), 255)
+    ImageDraw.Draw(a).ellipse(((cx - r) * sx * k, (cy - r) * sy * k, (cx + r) * sx * k, (cy + r) * sy * k), fill=0)
+    img = Image.new("RGBA", size, (255, 255, 255, 255))
+    img.putalpha(a.resize(size, Image.LANCZOS))
+    return img
+
+
+def unit_frame(level=True):
+    """The unit frame; level=False for the small frames (focus, pet, target of target, party),
+    where a level circle is too small to hold a readable number."""
+    c = Canvas(UNIT["w"], UNIT["h"])
+    # Backing panel behind the ring and the bars so they read as one continuous piece: it fills the
+    # gap where the scene used to show between the round portrait and the bars (the "cut" look). The
+    # portrait is cut out of its left end, so the circle still sits in front.
+    backing(c, (118, 18, 706, 206))
+    # each bar in its own thick dark rim (the user found the bars too close together), its left
+    # end curved around the ring
+    bars_around_ring(c, ("health", "power"))
+    ring(c, UNIT["ring"])
     c.cut(UNIT["portrait"], ellipse=True)
-    # level badge: dark disc in a gold ring, overlapping the portrait ring
+    # soft inner vignette so the 2D portrait fades into the ring instead of ending in a hard cut
+    px0, py0, px1, py1 = UNIT["portrait"]
+    vig = _radial_vignette(round((px1 - px0) * SS), round((py1 - py0) * SS))
+    c.layers["top"].alpha_composite(vig, (round(px0 * SS), round(py0 * SS)))
+    if not level:
+        return c.render()
+    # level: a minimalist circle on the ring's bottom edge with a clean light rim and (in Lua) a
+    # white number — small but clearly visible, no gold.
     lx0, ly0, lx1, ly1 = UNIT["level"]
-    c.ellipse((lx0 - 3, ly0 - 3, lx1 + 3, ly1 + 3), fill=(4, 12, 20, 255), layer="top")
-    c.ellipse((lx0, ly0, lx1, ly1), fill=(8, 12, 16, 255), outline=GOLD + (255,), width=3.4, layer="top")
-    c.draw("top").arc(c.s((lx0 + 1, ly0 + 1, lx1 - 1, ly1 - 1)), 200, 330, fill=(250, 222, 140, 230), width=round(1.2 * SS))
+    c.ellipse((lx0 - 2, ly0 - 2, lx1 + 2, ly1 + 2), fill=EDGE + (255,), layer="top")
+    c.ellipse((lx0, ly0, lx1, ly1), fill=(9, 18, 28, 255), outline=(206, 220, 234, 255), width=2.2, layer="top")
+    c.draw("top").arc(c.s((lx0 + 1, ly0 + 1, lx1 - 1, ly1 - 1)), 200, 340, fill=(240, 248, 255, 200), width=round(1.1 * SS))
     return c.render()
 
 
@@ -198,29 +310,18 @@ def arcane_ring(color=(170, 70, 255), seed=3):
 
 
 # ------------------------------------------------------------------ cast bar
-CASTBAR = {"w": 940, "h": 124, "icon": (14, 14, 110, 110), "tab": (122, 8, 520, 62),
-           "bar": (122, 64, 906, 106), "name": (140, 12, 510, 60)}
+# The unit frame's clean look: one backing panel holding the icon (square, in a thick rim like
+# the bars') and the groove; the spell name on the panel above the groove. No arrow tips.
+CASTBAR = {"w": 940, "h": 132, "panel": (6, 6, 934, 124), "icon": (22, 22, 110, 110),
+           "bar": (134, 68, 910, 108), "name": (140, 16, 620, 56)}
 
 
 def cast_bar():
     c = Canvas(CASTBAR["w"], CASTBAR["h"])
-    ix0, iy0, ix1, iy1 = CASTBAR["icon"]
-    c.rrect((ix0 - 4, iy0 - 4, ix1 + 4, iy1 + 4), 8, fill=PANEL + (235,), layer="body")
-    hairline_box(c, (ix0 - 4, iy0 - 4, ix1 + 4, iy1 + 4), 8, width=2.2)
-    tip(c, ix0 - 7, (iy0 + iy1) / 2, -1, 7)
-    tip(c, (ix0 + ix1) / 2, iy1 + 6, 2, 6)
-    # name tab: dark plate and a hairline along its top, both fading out to the right (no hard
-    # end); the groove below is drawn after the fade, so it stays whole
-    tx0, ty0, tx1, ty1 = CASTBAR["tab"]
-    bx0, by0, bx1, by1 = CASTBAR["bar"]
-    c.rrect((tx0, ty0, tx1 + 60, ty1 + 10), 14, fill=PANEL + (190,), layer="body")
-    c.line([(tx0 + 10, ty0), (tx1 + 50, ty0)], LINE_DIM + (255,), 1.4)
-    c.hfade((tx0 + (tx1 - tx0) * 0.55, ty0 - 4, tx1 + 62, by0))
-    # progress groove, pointed at the right end
-    c.rrect((bx0, by0, bx1, by1), (by1 - by0) / 2, fill=(1, 8, 14, 240), layer="body")
-    hairline_box(c, (bx0, by0, bx1, by1), (by1 - by0) / 2)
-    tip(c, bx1 + 1, (by0 + by1) / 2, 1, 8)
-    c.cut((ix0, iy0, ix1, iy1), 5)
+    backing(c, CASTBAR["panel"], 18)
+    groove(c, CASTBAR["icon"], r=4, rim=7)
+    groove(c, CASTBAR["bar"])
+    c.cut(CASTBAR["icon"], 4)
     return c.render()
 
 
@@ -267,44 +368,34 @@ def nine_slice(tex, w, h, corner):
 
 
 # ------------------------------------------------------------------ minimap
-MAP = {"w": 340, "h": 360, "hole": (26, 72, 314, 360 - 2), "plate": (10, 4, 270, 50), "button": (282, 4, 330, 52)}
+# The map in the portrait's ring (thick dark band, teal line lit across the top); the zone name on
+# a pill in the backing panel's look, centred over it. No arrow tips.
+MAP = {"w": 340, "h": 384, "hole": (26, 72, 314, 360), "plate": (40, 4, 300, 50)}
 
 
 def minimap_ring():
     c = Canvas(MAP["w"], MAP["h"])
     x0, y0, x1, y1 = MAP["hole"]
-    c.ellipse((x0 - 4, y0 - 4, x1 + 4, y1 + 4), fill=EDGE + (255,), layer="body")
-    c.ellipse((x0 - 2.5, y0 - 2.5, x1 + 2.5, y1 + 2.5), outline=(150, 196, 214, 255), width=2.6)
+    band = 12
+    ring(c, (x0 - band, y0 - band, x1 + band, y1 + band), band)
     c.cut((x0, y0, x1, y1), ellipse=True)
-    # N marker: a small teal diamond on top of the ring
-    cx = (x0 + x1) / 2
-    c.poly([(cx, y0 - 14), (cx + 10, y0), (cx, y0 + 14), (cx - 10, y0)], (60, 170, 210, 255), layer="top")
-    c.poly([(cx, y0 - 14), (cx + 10, y0), (cx, y0 + 2)], (130, 214, 240, 255), layer="top")
-    # zone plate: dark band with hairlines top and bottom, an arrow tip at the left end
+    # N marker: a small diamond in the accent colour sitting on the ring's top edge
+    cx, ny = (x0 + x1) / 2, y0 - band
+    c.poly([(cx, ny - 9), (cx + 7, ny), (cx, ny + 9), (cx - 7, ny)], MARKER[0] + (255,), layer="top")
+    c.poly([(cx, ny - 9), (cx + 7, ny), (cx, ny + 1)], MARKER[1] + (255,), layer="top")
+    # the zone name on a pill centred over the map (the calendar sits on the ring, like mail and
+    # tracking)
     px0, py0, px1, py1 = MAP["plate"]
-    c.rrect(MAP["plate"], 6, fill=PANEL + (200,), layer="body")
-    c.line([(px0 + 6, py0), (px1, py0)], LINE_DIM + (255,), 1.3)
-    c.line([(px0 + 6, py1), (px1 - 30, py1)], LINE + (255,), 1.3)
-    tip(c, px0 - 2, (py0 + py1) / 2, -1, 7)
-    c.line([(px0 + 4, (py0 + py1) / 2 - 10), (px0 - 2, (py0 + py1) / 2)], LINE + (255,), 1.3)
-    c.line([(px0 + 4, (py0 + py1) / 2 + 10), (px0 - 2, (py0 + py1) / 2)], LINE + (255,), 1.3)
-    # round button socket (calendar / day-night) at its right
-    bx0, by0, bx1, by1 = MAP["button"]
-    c.ellipse((bx0, by0, bx1, by1), fill=PANEL + (235,), layer="body")
-    c.ellipse((bx0, by0, bx1, by1), outline=LINE + (255,), width=1.8)
+    backing(c, MAP["plate"], (py1 - py0) / 2)
     return c.render()
 
 
 # ------------------------------------------------------------------ micro menu band
 def menu_band(w=620, h=92):
-    """Dark band with a hairline on top and bottom, arrow tips at the left end (stretched
-    horizontally in game: the middle is uniform)."""
+    """The backing panel's look as a band with a rounded left end (the game mirrors the left
+    end for the right one and stretches the middle, which is uniform)."""
     c = Canvas(w, h)
-    c.vgrad((20, 10, w, h - 10), 0, (6, 18, 28), PANEL, (215, 230))
-    c.line([(20, 10), (w, 10)], LINE + (255,), 1.6)
-    c.line([(20, h - 10), (w, h - 10)], LINE + (255,), 1.6)
-    c.line([(20, 10), (4, h / 2), (20, h - 10)], LINE + (255,), 1.6)
-    tip(c, 4, h / 2, -1, 6)
+    backing(c, (6, 10, w + 40, h - 10), 18)
     return c.render()
 
 
@@ -514,26 +605,49 @@ def blackify(img, alpha=0.72):
 GEM_TEX = 96
 
 
+def _diamond(m, r):
+    return [(m, m - r), (m + r, m), (m, m + r), (m - r, m)]
+
+
 def gem_socket():
-    """Class resource point, empty: a dark diamond with the teal hairline."""
+    """Class resource point, empty: a slim diamond in the clean look's rim (dark band, teal line
+    lit along its upper edges), dark inside."""
     c = Canvas(GEM_TEX, GEM_TEX)
     m = GEM_TEX / 2
-    r = m - 8
-    c.poly([(m, m - r), (m + r, m), (m, m + r), (m - r, m)], EDGE + (255,), layer="body")
-    c.poly([(m, m - r + 3), (m + r - 3, m), (m, m + r - 3), (m - r + 3, m)], (52, 92, 108, 255))
-    c.poly([(m, m - r + 7), (m + r - 7, m), (m, m + r - 7), (m - r + 7, m)], (4, 10, 16, 245), layer="top")
-    return c.render(glow=0.4, shadow=0.5)
+    c.poly(_diamond(m, 34), EDGE + (255,), layer="body")
+    c.poly(_diamond(m, 32.5), (40, 112, 140, 255))
+    c.poly(_diamond(m, 29.5), (4, 14, 24, 255), layer="top")
+    c.poly(_diamond(m, 21), (1, 6, 11, 255), layer="top")
+    c.line([(m - 31, m - 1), (m, m - 32)], (96, 170, 196, 200), 1.0, layer="top")
+    c.line([(m, m - 32), (m + 31, m - 1)], (96, 170, 196, 120), 1.0, layer="top")
+    return c.render(glow=0.35, shadow=0.5)
 
 
 def gem_lit():
-    """Class resource point, full: a bright faceted diamond, greyscale (tinted by the resource's
-    colour in game), with a soft glow around it."""
+    """Class resource point, full: the socket's dark rim around a smaller smooth core, greyscale
+    (the game tints it with the resource's colour): lit from the top, a fine bright edge and a
+    soft glow, no hard facets."""
     c = Canvas(GEM_TEX, GEM_TEX)
     m = GEM_TEX / 2
-    r = m - 10
-    c.poly([(m, m - r - 4), (m + r + 4, m), (m, m + r + 4), (m - r - 4, m)], (200, 200, 200, 160))
-    c.poly([(m, m - r), (m + r, m), (m, m + r), (m - r, m)], (215, 215, 215, 255), layer="top")
-    c.poly([(m, m - r), (m + r, m), (m, m)], (255, 255, 255, 255), layer="top")
-    c.poly([(m, m), (m + r, m), (m, m + r)], (165, 165, 165, 255), layer="top")
-    c.poly([(m, m - r * 0.55), (m + r * 0.3, m - r * 0.1), (m, m), (m - r * 0.3, m - r * 0.1)], (255, 255, 255, 255), layer="top")
-    return c.render(glow=1.4, shadow=0.4)
+    c.poly(_diamond(m, 34), EDGE + (255,), layer="body")
+    c.poly(_diamond(m, 32.5), (190, 190, 190, 255))
+    c.poly(_diamond(m, 29.5), (14, 14, 14, 255), layer="body")
+    # the core: a vertical gradient (light on top), clipped to a diamond
+    r = 22
+    x0, y0, x1, y1 = [round(v * SS) for v in (m - r, m - r, m + r, m + r)]
+    g = Image.new("RGBA", (1, y1 - y0))
+    for y in range(g.height):
+        f = y / max(1, g.height - 1)
+        v = round(255 - 80 * f)
+        g.putpixel((0, y), (v, v, v, 255))
+    g = g.resize((x1 - x0, g.height))
+    mask = Image.new("L", g.size, 0)
+    ImageDraw.Draw(mask).polygon([(g.width / 2, 0), (g.width, g.height / 2), (g.width / 2, g.height), (0, g.height / 2)], fill=255)
+    core = Image.new("RGBA", g.size, (0, 0, 0, 0))
+    core.paste(g, (0, 0), mask)
+    c.layers["top"].alpha_composite(core, (x0, y0))
+    # a soft glow from the core (drawn on the lines layer so render() blurs it)
+    c.poly(_diamond(m, 24.5), (230, 230, 230, 170))
+    # a fine highlight along the core's upper left edge
+    c.line([(m - r + 5, m - 2), (m - 2, m - r + 5)], (255, 255, 255, 230), 1.4, layer="top")
+    return c.render(glow=1.2, shadow=0.4)

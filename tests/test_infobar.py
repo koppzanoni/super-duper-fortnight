@@ -43,7 +43,8 @@ def test_defaults_show_the_everyday_items_above_the_menu():
     assert "62" in t["fps"] and "41" in t["ms"] and "20%" in t["dur"] and "10:24" in t["clock"]
     assert "4" in t["friends"]
     r, m, bar = rect(ns.InfoBar.frame), rect(ns.MenuPanels.bandFrame), rect(ns.ActionBars.modernFrame)
-    assert abs((r[0] + r[2]) - (m[0] + m[2])) < 0.5 and r[1] > m[1] + m[3]
+    _, _, band_r, _ = ns.MenuPanels.BandEdges()             # lined up with the band's visible end
+    assert abs((r[0] + r[2]) - (m[0] + m[2] - band_r)) < 0.5 and r[1] > m[1] + m[3]
     assert r[0] > bar[0] + bar[2]                            # clear of the action bar
 
 
