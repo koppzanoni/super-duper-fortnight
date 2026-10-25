@@ -208,6 +208,30 @@ A arte da janela de pedra foi aposentada (inventory_art.py e as texturas invento
 bag_slot, plate, scroll_thumb, stone_tile); a tag hud-pedra-final guarda tudo.
 Falta: brilho atrás do modelo (como no protótipo), conferir no jogo.
 
+## Movimento e brilho (FEITO: Core/Smooth.lua + efeitos nos módulos, página "Movimento e brilho")
+Toques de transição e personalidade, todos sutis, configuráveis e desligáveis (defaults em Init.lua),
+seguros em combate/valores secretos:
+- Barras deslizantes (smoothBars): Core/Smooth.lua envolve uma StatusBar (Smooth.Wrap) e uma barra
+  anda até o novo valor por um só driver OnUpdate (aproximação exponencial, igual em qualquer FPS).
+  Valor secreto ou não-número passa direto para o SetValue real (sem aritmética); Smooth.Snap faz a
+  próxima troca cair de uma vez (nova unidade no quadro, novo recurso). Aplicado em vida/mana dos
+  quadros (UnitFrames, snap por UnitGUID) e na barra de recurso (ClassResource). A cast bar fica
+  precisa de propósito (não brigar com a zona de latência/fila).
+- Spark na ponta (barSpark): um fio de luz aditivo preso à borda do preenchimento (UnitFrames.Style,
+  reancorado quando a textura da barra muda), espelhado no alvo.
+- Pulso de vida baixa (lowHpPulse): brilho vermelho que respira sobre a barra de vida abaixo de 35%
+  (UnitFrames; fração por UnitHealthPercent/pcall, some quando o valor é secreto para não dar alarme
+  falso; driver OnUpdate em seno).
+- Transição ao trocar de alvo (frameFade): o quadro aparece com um fade ao RegisterUnitWatch mostrá-lo
+  (hook OnShow + driver OnUpdate; SetAlpha vale em combate e não briga com Visibility no modo "always").
+- Flash da cast (castFlash): overlay próprio sobre a barra (os efeitos da Blizzard já estão ocultos),
+  verde-claro ao concluir (STOP/CHANNEL_STOP sem interrupção), vermelho ao interromper/falhar; frame
+  próprio que sobrevive ao sumiço da barra, driver OnUpdate.
+- Pop nas gemas (gemPop): estouro de luz aditivo quando uma gema acende (só ganho, não o primeiro
+  desenho; só no estilo gemas), um driver OnUpdate por ClassResource.
+Testes: tests/test_smooth.py (6) e tests/test_motion.py (12). Falta: conferir o feel no jogo e ajustar
+TAU/intensidades se preciso.
+
 ## Ajustes pendentes da fase 1
 - Buffs do jogador ficam no topo central; no sketch apareciam embaixo do quadro do jogador
   (decidir com o usuário).

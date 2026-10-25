@@ -75,6 +75,7 @@ local function buildModern(f, k, unit, mirror)
     bar:SetStatusBarTexture(M.mod_gloss.file)
     bar:SetFrameLevel(f:GetFrameLevel() + 2)
     bar:SetReverseFill(mirror and true or false)
+    ns.Smooth.Wrap(bar)
     f[key] = bar
   end
   f.health:SetStatusBarColor(0.38, 0.84, 0.2)
@@ -213,6 +214,26 @@ function UnitFrames.Style(f)
       f.obDiamond:SetShown(st.diamond == true)
     end
   end
+  -- leading-edge spark: a soft white glow riding the fill's edge, so a changing bar reads as
+  -- alive (setting barSpark). Anchored to the StatusBar's fill region, it follows the value and
+  -- is re-anchored here because the fill texture is replaced when the bar texture changes.
+  local sparkOn = not (ns.db and ns.db.barSpark == false)
+  for _, key in ipairs({ "health", "power" }) do
+    local bar = f[key]
+    if bar then
+      if not bar.obSpark then
+        bar.obSpark = ns.Widgets.SoftTexture(bar, "OVERLAY", 1, 1, 1, 0.5, 2)
+        bar.obSpark:SetBlendMode("ADD")
+      end
+      local h = (bar.GetHeight and bar:GetHeight()) or 0
+      if type(h) ~= "number" then h = 0 end
+      local fillTex = bar.GetStatusBarTexture and bar:GetStatusBarTexture()
+      bar.obSpark:ClearAllPoints()
+      if fillTex then bar.obSpark:SetPoint("CENTER", fillTex, f.mirror and "LEFT" or "RIGHT", 0, 0) end
+      bar.obSpark:SetSize(math.max(2, h * 0.34), math.max(2, h * 1.15))
+      bar.obSpark:SetShown(sparkOn and fillTex ~= nil)
+    end
+  end
   -- a gold line under the bars, fading away from the portrait
   if st.goldLine and not f.obGold and f.power then
     f.obGold = f:CreateTexture(nil, "ARTWORK", nil, 2)
@@ -253,6 +274,30 @@ function UnitFrames.ApplyStyle()
   for _, f in pairs(UnitFrames.frames) do UnitFrames.Style(f) end
 end
 
+-- Fade a frame in when its unit appears (RegisterUnitWatch shows it): a new target or focus
+-- eases in instead of popping (setting frameFade). Driven by OnUpdate so it needs no animation
+-- API and is frame-rate independent. SetAlpha is allowed on protected frames in combat, and the
+-- Visibility module leaves "always" elements' alpha alone, so the two never fight.
+local fading = setmetatable({}, { __mode = "k" }) -- frame -> elapsed so far
+local FADE = 0.28
+local fadeDriver = CreateFrame("Frame")
+fadeDriver:SetScript("OnUpdate", function(_, elapsed)
+  if type(elapsed) ~= "number" then return end
+  for f, t in pairs(fading) do
+    t = t + elapsed
+    if t >= FADE then f:SetAlpha(1); fading[f] = nil
+    else f:SetAlpha(t / FADE); fading[f] = t end
+  end
+end)
+UnitFrames.fadeDriver = fadeDriver
+local function fadeIn(f)
+  if (ns.db and ns.db.frameFade == false) or (ns.EditMode and ns.EditMode.active) then
+    fading[f] = nil; f:SetAlpha(1); return
+  end
+  f:SetAlpha(0); fading[f] = 0
+end
+UnitFrames.FadeIn = fadeIn
+
 -- key: a second frame for the same unit (you inside the party) is filed under its own key; the
 -- unit events only reach frames filed under the unit itself.
 function UnitFrames.Create(unit, kind, mirror, key)
@@ -280,6 +325,7 @@ function UnitFrames.Create(unit, kind, mirror, key)
   end)
   f:SetScript("OnLeave", GameTooltip_Hide)
 
+  f:HookScript("OnShow", fadeIn)
   RegisterUnitWatch(f)
   UnitFrames.frames[key] = f
   return f
@@ -306,9 +352,73 @@ local function barText(text, cur, max)
   if not pcall(function() text:SetText(AbbreviateNumbers(cur)) end) then text:SetText("") end
 end
 
+-- The unit's health as a fraction 0..1, or nil when the values are secret (combat) or missing:
+-- the pulse never guesses, so a secret value never raises a false "low health" alarm.
+local function healthFraction(unit)
+  if UnitHealthPercent then
+    local ok, p = pcall(UnitHealthPercent, unit, true)
+    if ok and type(p) == "number" then return p / 100 end
+  end
+  local ok, cur, max = pcall(function() return UnitHealth(unit), UnitHealthMax(unit) end)
+  if ok and type(cur) == "number" and type(max) == "number" and max > 0 then return cur / max end
+  return nil
+end
+
+-- A red glow over a frame's health bar that breathes while the unit is low (setting lowHpPulse).
+-- Driven by one OnUpdate (a sine), so it works on any client and is the same at any frame rate.
+local LOW_HP = 0.35
+local pulsing = setmetatable({}, { __mode = "k" }) -- frames currently pulsing
+local pulseClock = 0
+
+local function lowGlow(f)
+  if f.obLowGlow then return f.obLowGlow end
+  local g = f.health:CreateTexture(nil, "ARTWORK", nil, 6) -- over the fill, under the number
+  g:SetAllPoints(f.health)
+  g.obSoft = ns.Widgets.Soft(g, "soft_fill", 10)
+  g:SetBlendMode("ADD")
+  ns.Widgets.SetSoftColor(g, 0.95, 0.15, 0.12, 1)
+  g:SetAlpha(0)
+  g:Hide()
+  f.obLowGlow = g
+  return g
+end
+
+local pulseDriver = CreateFrame("Frame")
+pulseDriver:SetScript("OnUpdate", function(_, elapsed)
+  if type(elapsed) ~= "number" then return end
+  pulseClock = pulseClock + elapsed
+  local a = 0.1 + 0.22 * (0.5 + 0.5 * math.sin(pulseClock * 3.4)) -- 0.1 .. 0.32, a slow breath
+  for f in pairs(pulsing) do
+    if f.obLowGlow then f.obLowGlow:SetAlpha(a) end
+  end
+end)
+UnitFrames.pulseDriver = pulseDriver
+
+-- Show or hide a frame's low-health pulse from its current health fraction.
+local function updatePulse(f)
+  if KINDS[f.kind].tiny then return end
+  local g = lowGlow(f)
+  local on = not (ns.db and ns.db.lowHpPulse == false)
+  local frac = on and healthFraction(f.unit) or nil
+  if frac ~= nil and frac < LOW_HP then
+    g:Show()
+    pulsing[f] = true
+  else
+    pulsing[f] = nil
+    g:SetAlpha(0); g:Hide()
+  end
+end
+UnitFrames.UpdatePulse = updatePulse
+
 local function updateValues(f)
   local unit = f.unit
   if not UnitExists(unit) then return end
+  -- A new unit in this frame: land the bars at once instead of sliding across from the old one.
+  local guid = UnitGUID(unit)
+  if guid ~= f.obGUID then
+    f.obGUID = guid
+    ns.Smooth.Snap(f.health); ns.Smooth.Snap(f.power)
+  end
   -- Unit flags can be secret on some units: keep the last color instead of erroring.
   local ok, r, g, b = pcall(healthColor, unit)
   if unit == "player" then ok, r, g, b = true, 0.38, 0.84, 0.2 end -- the player's bar: green
@@ -336,6 +446,7 @@ local function updateValues(f)
       barText(f.powerText, UnitPower(unit, pType), powerMax)
     end
   end
+  updatePulse(f)
 end
 
 local function updateAll(f)

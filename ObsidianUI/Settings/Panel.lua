@@ -157,6 +157,29 @@ Panel.SECTIONS = {
         set = function(v) Panel.ColorSet("MANA", v) end, help = "Escolha entre cores prontas; \"Padrão\" volta à original." },
     } },
   } },
+  { id = "motion", name = "Movimento e brilho", lead = "Transições suaves e toques de luz; tudo sutil e desligável.", cards = {
+    { "Barras", {
+      toggle("Barras deslizantes", "smoothBars", true, function()
+        if ns.UnitFrames then ns.UnitFrames.RefreshAll() end
+      end, "Vida, mana e recurso deslizam até o novo valor em vez de pular."),
+      toggle("Brilho na ponta das barras", "barSpark", true, function()
+        if ns.UnitFrames then ns.UnitFrames.ApplyStyle() end
+      end, "Um fio de luz acompanhando a borda do preenchimento."),
+      toggle("Pulso de vida baixa", "lowHpPulse", true, function()
+        if ns.UnitFrames then ns.UnitFrames.RefreshAll() end
+      end, "Brilho vermelho suave no quadro quando a vida cai abaixo de 35%."),
+    } },
+    { "Quadros e cast", {
+      toggle("Transição ao trocar de alvo", "frameFade", true, nil,
+        "O quadro aparece com um leve fade em vez de surgir de uma vez."),
+      toggle("Flash ao concluir / interromper cast", "castFlash", true, nil,
+        "Verde-claro quando a magia termina, vermelho quando é interrompida."),
+    } },
+    { "Recurso", {
+      toggle("Pop nas gemas", "gemPop", true, nil,
+        "Um estouro de luz quando um ponto (combo, poder sagrado…) acende."),
+    } },
+  } },
   { id = "resources", group = "HUD", name = "Recursos de classe",
     lead = "Pontos de combo, poder sagrado, runas, fragmentos, chi e cargas arcanas. Posição e tamanho: modo de edição.", cards = {
     { "Visual", {

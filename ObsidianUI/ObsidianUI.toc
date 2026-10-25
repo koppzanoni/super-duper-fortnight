@@ -17,6 +17,7 @@ Core\HideBlizzard.lua
 Core\Pin.lua
 Core\Movers.lua
 Core\Look.lua
+Core\Smooth.lua
 Core\Serialize.lua
 Core\Profiles.lua
 HUD\Bottom.lua

@@ -111,6 +111,67 @@ end)
 -- Channels run backwards: no zone at their end.
 ns.On("UNIT_SPELLCAST_CHANNEL_START", function(_, unit) if unit == "player" then hideZone() end end)
 
+-- Finish and interrupt (setting castFlash): a soft wash over the groove that fades out — pale
+-- green when the cast lands, red when it is interrupted or fails. Its own frame, over the bar
+-- but outliving it (Blizzard hides the bar the instant a cast ends), driven by one OnUpdate so
+-- it needs no animation API. Blizzard's own finish/interrupt art stays hidden (HIDDEN_REGIONS).
+local flashFrame, flash
+local flashClock, flashDur, flashPeak = 0, 0, 0
+local casting, interrupted = false, false
+
+local function ensureFlash()
+  if flashFrame then return end
+  flashFrame = CreateFrame("Frame", nil, UIParent)
+  flashFrame:SetFrameStrata("HIGH")
+  flash = flashFrame:CreateTexture(nil, "OVERLAY")
+  flash:SetAllPoints(flashFrame)
+  flash.obSoft = ns.Widgets.Soft(flash, "soft_fill", 10)
+  flash:SetBlendMode("ADD")
+  flash:SetAlpha(0)
+  ns.CastBar.flash = flash
+  flashFrame:Hide()
+  flashFrame:SetScript("OnUpdate", function(_, e)
+    if type(e) ~= "number" then return end
+    flashClock = flashClock + e
+    if flashClock >= flashDur then flash:SetAlpha(0); flashFrame:Hide(); return end
+    flash:SetAlpha(flashPeak * (1 - flashClock / flashDur)) -- fade from the peak to nothing
+  end)
+  ns.CastBar.flashFrame = flashFrame
+end
+
+local function doFlash(r, g, b, peak, dur)
+  if ns.db and ns.db.castFlash == false then return end
+  local bar = castbar()
+  if not (bar and barW) then return end
+  ensureFlash()
+  flashFrame:ClearAllPoints()
+  flashFrame:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, 0)
+  flashFrame:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", 0, 0)
+  ns.Widgets.SetSoftColor(flash, r, g, b, 1)
+  flashClock, flashDur, flashPeak = 0, dur, peak
+  flash:SetAlpha(peak)
+  flashFrame:Show()
+end
+ns.CastBar.Flash = doFlash
+
+local function onStart(_, unit) if unit == "player" then casting, interrupted = true, false end end
+ns.On("UNIT_SPELLCAST_START", onStart)
+ns.On("UNIT_SPELLCAST_CHANNEL_START", onStart)
+local function onInterrupt(_, unit)
+  if unit ~= "player" or not casting then return end
+  interrupted = true
+  doFlash(0.9, 0.2, 0.15, 0.5, 0.4) -- red
+end
+ns.On("UNIT_SPELLCAST_INTERRUPTED", onInterrupt)
+ns.On("UNIT_SPELLCAST_FAILED", onInterrupt)
+local function onStop(_, unit)
+  if unit ~= "player" or not casting then return end
+  casting = false
+  if not interrupted then doFlash(0.35, 0.9, 0.5, 0.4, 0.35) end -- pale green: it landed
+end
+ns.On("UNIT_SPELLCAST_STOP", onStop)
+ns.On("UNIT_SPELLCAST_CHANNEL_STOP", onStop)
+
 local function modernParts(bar)
   local lag = bar:CreateTexture(nil, "OVERLAY", nil, 1)
   lag:SetColorTexture(0.27, 0.86, 0.35, 0.45)
