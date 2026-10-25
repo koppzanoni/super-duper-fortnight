@@ -530,26 +530,49 @@ def blackify(img, alpha=0.72):
 GEM_TEX = 96
 
 
+def _diamond(m, r):
+    return [(m, m - r), (m + r, m), (m, m + r), (m - r, m)]
+
+
 def gem_socket():
-    """Class resource point, empty: a dark diamond with the teal hairline."""
+    """Class resource point, empty: a slim diamond in the clean look's rim (dark band, teal line
+    lit along its upper edges), dark inside."""
     c = Canvas(GEM_TEX, GEM_TEX)
     m = GEM_TEX / 2
-    r = m - 8
-    c.poly([(m, m - r), (m + r, m), (m, m + r), (m - r, m)], EDGE + (255,), layer="body")
-    c.poly([(m, m - r + 3), (m + r - 3, m), (m, m + r - 3), (m - r + 3, m)], (52, 92, 108, 255))
-    c.poly([(m, m - r + 7), (m + r - 7, m), (m, m + r - 7), (m - r + 7, m)], (4, 10, 16, 245), layer="top")
-    return c.render(glow=0.4, shadow=0.5)
+    c.poly(_diamond(m, 34), EDGE + (255,), layer="body")
+    c.poly(_diamond(m, 32.5), (40, 112, 140, 255))
+    c.poly(_diamond(m, 29.5), (4, 14, 24, 255), layer="top")
+    c.poly(_diamond(m, 21), (1, 6, 11, 255), layer="top")
+    c.line([(m - 31, m - 1), (m, m - 32)], (96, 170, 196, 200), 1.0, layer="top")
+    c.line([(m, m - 32), (m + 31, m - 1)], (96, 170, 196, 120), 1.0, layer="top")
+    return c.render(glow=0.35, shadow=0.5)
 
 
 def gem_lit():
-    """Class resource point, full: a bright faceted diamond, greyscale (tinted by the resource's
-    colour in game), with a soft glow around it."""
+    """Class resource point, full: the socket's dark rim around a smaller smooth core, greyscale
+    (the game tints it with the resource's colour): lit from the top, a fine bright edge and a
+    soft glow, no hard facets."""
     c = Canvas(GEM_TEX, GEM_TEX)
     m = GEM_TEX / 2
-    r = m - 10
-    c.poly([(m, m - r - 4), (m + r + 4, m), (m, m + r + 4), (m - r - 4, m)], (200, 200, 200, 160))
-    c.poly([(m, m - r), (m + r, m), (m, m + r), (m - r, m)], (215, 215, 215, 255), layer="top")
-    c.poly([(m, m - r), (m + r, m), (m, m)], (255, 255, 255, 255), layer="top")
-    c.poly([(m, m), (m + r, m), (m, m + r)], (165, 165, 165, 255), layer="top")
-    c.poly([(m, m - r * 0.55), (m + r * 0.3, m - r * 0.1), (m, m), (m - r * 0.3, m - r * 0.1)], (255, 255, 255, 255), layer="top")
-    return c.render(glow=1.4, shadow=0.4)
+    c.poly(_diamond(m, 34), EDGE + (255,), layer="body")
+    c.poly(_diamond(m, 32.5), (190, 190, 190, 255))
+    c.poly(_diamond(m, 29.5), (14, 14, 14, 255), layer="body")
+    # the core: a vertical gradient (light on top), clipped to a diamond
+    r = 22
+    x0, y0, x1, y1 = [round(v * SS) for v in (m - r, m - r, m + r, m + r)]
+    g = Image.new("RGBA", (1, y1 - y0))
+    for y in range(g.height):
+        f = y / max(1, g.height - 1)
+        v = round(255 - 80 * f)
+        g.putpixel((0, y), (v, v, v, 255))
+    g = g.resize((x1 - x0, g.height))
+    mask = Image.new("L", g.size, 0)
+    ImageDraw.Draw(mask).polygon([(g.width / 2, 0), (g.width, g.height / 2), (g.width / 2, g.height), (0, g.height / 2)], fill=255)
+    core = Image.new("RGBA", g.size, (0, 0, 0, 0))
+    core.paste(g, (0, 0), mask)
+    c.layers["top"].alpha_composite(core, (x0, y0))
+    # a soft glow from the core (drawn on the lines layer so render() blurs it)
+    c.poly(_diamond(m, 24.5), (230, 230, 230, 170))
+    # a fine highlight along the core's upper left edge
+    c.line([(m - r + 5, m - 2), (m - 2, m - r + 5)], (255, 255, 255, 230), 1.4, layer="top")
+    return c.render(glow=1.2, shadow=0.4)
