@@ -126,6 +126,8 @@ def hairline_box(c, box, r, lit=True, width=1.6):
 # Rects in px of the 720x262 texture (Data.MODERN_UNIT mirrors them); room under the level circle.
 UNIT = {"w": 720, "h": 262, "ring": (12, 12, 232, 232), "portrait": (28, 28, 216, 216),
         "name": (250, 26, 704, 80), "health": (186, 91, 694, 141), "power": (186, 157, 686, 195),
+        # the bars end in a curve around the ring: `clear` px of gap outside it, then their `rim`
+        "clear": 6, "rim": 8,
         # a small round level badge on the ring's bottom edge (6 o'clock)
         "level": (103, 212, 141, 250)}
 
@@ -155,12 +157,16 @@ def backing(c, box, r=20):
     c.line([(x0 + r + 2, y0 + 1.3), (x1 - r - 2, y0 + 1.3)], (96, 170, 196, 150), 1.0, layer="top")
 
 
+# The bars' rim colours (a look such as tools/steel_art.py swaps them while it draws).
+GROOVE_RIM, GROOVE_EDGE = (4, 14, 24, 250), (40, 112, 140, 255)
+
+
 def groove(c, box, r=8, rim=8):
     """A bar's groove in its own thick dark rim: a teal line outside, a dark line where the rim
     meets the groove, the groove dark inside, a lit line along the rim's top."""
     x0, y0, x1, y1 = box
-    c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, fill=(4, 14, 24, 250), layer="body")
-    c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, outline=(40, 112, 140, 255), width=2.0)
+    c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, fill=GROOVE_RIM, layer="body")
+    c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, outline=GROOVE_EDGE, width=2.0)
     c.rrect((x0 - 1.5, y0 - 1.5, x1 + 1.5, y1 + 1.5), r + 1.5, outline=(0, 0, 0, 255), width=1.6, layer="body")
     c.rrect(box, r, fill=(1, 6, 11, 255), layer="body")
     c.line([(x0 + 16, y0 - rim + 1.2), (x1 - 16, y0 - rim + 1.2)], (96, 170, 196, 170), 1.0, layer="top")
@@ -177,6 +183,68 @@ def ring(c, box, band=12):
     c.ellipse((x0 + band, y0 + band, x1 - band, y1 - band), fill=(0, 0, 0, 255), layer="top")
 
 
+def ring_circle(extra=0):
+    """Centre and radius of the circle that cuts the bars: the ring plus the gap (and `extra`)."""
+    x0, y0, x1, y1 = UNIT["ring"]
+    return (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) / 2 + UNIT["clear"] + extra
+
+
+def _disk(size, cx, cy, r):
+    m = Image.new("L", size, 0)
+    ImageDraw.Draw(m).ellipse([v * SS for v in (cx - r, cy - r, cx + r, cy + r)], fill=255)
+    return m
+
+
+def bars_around_ring(c, keys):
+    """The bars' grooves, their left ends cut by a circle concentric with the portrait ring, `clear`
+    px outside it: the rim turns along the curve (its edge line following it), the dark well starts
+    `rim` px further in. The ring is drawn over them afterwards."""
+    g = Canvas(c.w, c.h)
+    for key in keys:
+        groove(g, UNIT[key])
+    size = g.layers["body"].size
+    cx, cy, r = ring_circle()
+    rim = UNIT["rim"]
+    shape = g.layers["body"].getchannel("A")
+    wells = Image.new("L", size, 0)
+    for key in keys:
+        x0, y0, x1, y1 = UNIT[key]
+        ImageDraw.Draw(wells).rounded_rectangle([v * SS for v in (x0, y0, x1, y1)], 8 * SS, fill=255)
+    # the rim band along the curve, over the well's end; a dark line where it meets the well
+    band = ImageChops.multiply(_disk(size, cx, cy, r + rim), wells)
+    paint = Image.new("RGBA", size, GROOVE_RIM[:3] + (0,))
+    paint.putalpha(band.point(lambda v: v * GROOVE_RIM[3] // 255))
+    g.layers["body"].alpha_composite(paint)
+    seam = ImageChops.subtract(_disk(size, cx, cy, r + rim + 0.8), _disk(size, cx, cy, r + rim - 0.8))
+    dark = Image.new("RGBA", size, (0, 0, 0, 0))
+    dark.putalpha(ImageChops.multiply(seam, wells))
+    g.layers["body"].alpha_composite(dark)
+    # the rim's edge line turning along the curve
+    edge = ImageChops.subtract(_disk(size, cx, cy, r + 2.0), _disk(size, cx, cy, r))
+    line = Image.new("RGBA", size, GROOVE_EDGE[:3] + (0,))
+    line.putalpha(ImageChops.multiply(edge, shape))
+    g.layers["lines"].alpha_composite(line)
+    g.cut((cx - r, cy - r, cx + r, cy + r), ellipse=True)
+    for k in c.layers:
+        c.layers[k].alpha_composite(g.layers[k])
+
+
+def unit_mask(mirror=False, size=(1024, 512)):
+    """The mask the game lays over the bars' fill (HUD/UnitFrames.lua): white over the whole frame
+    but the circle the bars are cut by, so the fill starts on the same curve as the well. Drawn at
+    a power-of-two size and stretched over the frame (no texture coordinates needed)."""
+    sx, sy = size[0] / UNIT["w"], size[1] / UNIT["h"]
+    cx, cy, r = ring_circle(UNIT["rim"])
+    if mirror:
+        cx = UNIT["w"] - cx
+    k = 4
+    a = Image.new("L", (size[0] * k, size[1] * k), 255)
+    ImageDraw.Draw(a).ellipse(((cx - r) * sx * k, (cy - r) * sy * k, (cx + r) * sx * k, (cy + r) * sy * k), fill=0)
+    img = Image.new("RGBA", size, (255, 255, 255, 255))
+    img.putalpha(a.resize(size, Image.LANCZOS))
+    return img
+
+
 def unit_frame(level=True):
     """The unit frame; level=False for the small frames (focus, pet, target of target, party),
     where a level circle is too small to hold a readable number."""
@@ -185,9 +253,9 @@ def unit_frame(level=True):
     # gap where the scene used to show between the round portrait and the bars (the "cut" look). The
     # portrait is cut out of its left end, so the circle still sits in front.
     backing(c, (118, 18, 706, 206))
-    # each bar in its own thick dark rim (the user found the bars too close together)
-    for key in ("health", "power"):
-        groove(c, UNIT[key])
+    # each bar in its own thick dark rim (the user found the bars too close together), its left
+    # end curved around the ring
+    bars_around_ring(c, ("health", "power"))
     ring(c, UNIT["ring"])
     c.cut(UNIT["portrait"], ellipse=True)
     # soft inner vignette so the 2D portrait fades into the ring instead of ending in a hard cut

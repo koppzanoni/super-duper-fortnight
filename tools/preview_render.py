@@ -325,7 +325,11 @@ def render(rt, scene, out_path):
             mr = tuple(m.Rect(m).values())
             mbox = (int(round(mr[0])), int(round(H - (mr[1] + mr[3]))), max(1, int(round(mr[2]))), max(1, int(round(mr[3]))))
             full = Image.new("L", (W, H), 0)
-            full.paste(circle_mask((mbox[2], mbox[3])), (mbox[0], mbox[1]))
+            msrc = texture_image(str(m.file)) if m.file and "mask_circle" not in str(m.file) else None
+            if msrc is not None:  # a shaped mask (the bars' curve): its alpha, stretched over its rect
+                full.paste(msrc.getchannel("A").resize((mbox[2], mbox[3]), Image.LANCZOS), (mbox[0], mbox[1]))
+            else:
+                full.paste(circle_mask((mbox[2], mbox[3])), (mbox[0], mbox[1]))
             local = full.crop((box[0], box[1], box[0] + box[2], box[1] + box[3]))
             img.putalpha(ImageChops.multiply(img.getchannel("A"), local))
         clipper = r.parent

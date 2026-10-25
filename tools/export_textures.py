@@ -212,6 +212,8 @@ def export_all(out_dir=MEDIA):
         img = piece()
         save(name, img)
         save(name + "_black", modern_art.blackify(img))
+    save("mod_unit_mask", modern_art.unit_mask())
+    save("mod_unit_mask_r", modern_art.unit_mask(mirror=True))
     small = modern_art.unit_frame(level=False)
     save("mod_unit_small", small)
     save("mod_unit_small_black", modern_art.blackify(small))

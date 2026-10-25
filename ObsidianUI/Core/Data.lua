@@ -24,7 +24,9 @@ end
 Data.MODERN_UNIT = { w = 720, h = 262, ring = { x = 12, y = 12, w = 220, h = 220 },
   portrait = { x = 28, y = 28, w = 188, h = 188 }, name = { x = 250, y = 26, w = 454, h = 54 },
   health = { x = 186, y = 91, w = 508, h = 50 }, power = { x = 186, y = 157, w = 500, h = 38 },
-  level = { x = 103, y = 212, w = 38, h = 38 } }
+  level = { x = 103, y = 212, w = 38, h = 38 },
+  -- the bars end in a curve around the ring: clear px of gap outside it, then their rim
+  clear = 6, rim = 8 }
 -- Cast bar: one panel with the square icon socket, the progress groove and the name above it.
 Data.MODERN_CAST = { w = 940, h = 132, icon = { x = 22, y = 22, w = 88, h = 88 },
   bar = { x = 134, y = 68, w = 776, h = 40 }, name = { x = 140, y = 16, w = 480, h = 40 } }

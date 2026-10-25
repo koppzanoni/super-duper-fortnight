@@ -524,3 +524,46 @@ def test_money_stays_on_screen_beside_the_menu():
     band, bar = rect(ns.MenuPanels.bandFrame), rect(ns.ActionBars.modernFrame)
     assert m[1] >= 0 and m[0] + m[2] <= band[0]                         # on screen, left of the band
     assert m[0] > bar[0] + bar[2]                                       # clear of the action bar
+
+
+# ------------------------------------------------------------------ the bars' curve around the ring
+def test_unit_curve_spec_matches_the_art():
+    s, u = data().MODERN_UNIT, modern_art.UNIT
+    assert (s.clear, s.rim) == (u["clear"], u["rim"])
+
+
+def test_bars_end_in_a_curve_around_the_ring():
+    """The fill starts on the circle the well is cut by (concentric with the ring), and a mask with
+    that circle cuts the rest of its left end, mirrored for the target."""
+    import math
+    _, ns = preview(MODERN)
+    spec = ns.Data.MODERN_UNIT
+    for key, mask in (("player", "mod_unit_mask"), ("target", "mod_unit_mask_r")):
+        f = frames(ns)[key]
+        l, b, w, h = rect(f)
+        u = w / spec.w
+        cx = spec.ring.x + spec.ring.w / 2
+        cy = spec.ring.y + spec.ring.h / 2
+        R = spec.ring.w / 2 + spec.clear + spec.rim
+        for bar, r in ((f.health, spec.health), (f.power, spec.power)):
+            dy = max(abs(r.y - cy), abs(r.y + r.h - cy))
+            x0 = cx + math.sqrt(R * R - dy * dy)                       # leftmost point of the curve
+            bl, _, bw, _ = rect(bar)
+            start = (bl - l) / u if key == "player" else (l + w - (bl + bw)) / u
+            assert abs(start - x0) < 0.5, (key, start, x0)
+            fill = bar.GetStatusBarTexture(bar)
+            for t in (fill, bar.obShine, bar.obShade, bar.obSpark):
+                assert t.mask is not None and str(t.mask.file).endswith(mask), key
+        assert abs(rect(f.health.obCurve)[2] - w) < 0.5                  # the mask spans the frame
+
+
+def test_mask_hole_is_the_wells_circle():
+    import numpy as np
+    m = np.asarray(modern_art.unit_mask())[..., 3]
+    u = modern_art.UNIT
+    cx, cy, r = modern_art.ring_circle(u["rim"])
+    sx, sy = m.shape[1] / u["w"], m.shape[0] / u["h"]
+    assert m[round(cy * sy), round((cx + r - 3) * sx)] < 20                # inside: cut
+    assert m[round(cy * sy), round((cx + r + 3) * sx)] > 235               # outside: kept
+    flip = np.asarray(modern_art.unit_mask(mirror=True))[..., 3]
+    assert (flip == m[:, ::-1]).mean() > 0.99

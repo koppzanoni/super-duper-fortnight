@@ -38,10 +38,30 @@ local function mirrored(spec, r, mirror)
   return { x = ns.Layout.MirrorX(spec.w, r.x, r.w), y = r.y, w = r.w, h = r.h }
 end
 
--- A bar groove, starting at the ring's edge (the ring lies over its first part).
+-- The circle the bars' wells are cut by around the ring (tools/modern_art.py bars_around_ring).
+local function wellCircle(spec)
+  local ring = spec.ring
+  return ring.x + ring.w / 2, ring.y + ring.h / 2, ring.w / 2 + spec.clear + spec.rim
+end
+
+-- A bar's fill area: its well from the leftmost point of the curve inside it (the fill's mask,
+-- mod_unit_mask, cuts the rest of the curve, so the fill starts exactly where the well does).
 local function fromRing(spec, r)
-  local x0 = spec.ring.x + spec.ring.w - 4
+  local cx, cy, R = wellCircle(spec)
+  local dy = math.max(math.abs(r.y - cy), math.abs(r.y + r.h - cy))
+  local x0 = dy < R and math.max(r.x, cx + math.sqrt(R * R - dy * dy)) or r.x
   return { x = x0, y = r.y, w = r.x + r.w - x0, h = r.h }
+end
+
+-- The curve mask on everything drawn in a bar's fill (fill, shine, shade, spark).
+local function curve(bar)
+  if not bar.obCurve then return end
+  for _, t in ipairs({ bar:GetStatusBarTexture() or false, bar.obShine or false, bar.obShade or false, bar.obSpark or false }) do
+    if t and t.AddMaskTexture and t.obCurve ~= bar.obCurve then
+      t:AddMaskTexture(bar.obCurve)
+      t.obCurve = bar.obCurve
+    end
+  end
 end
 
 local function buildModern(f, k, unit, mirror)
@@ -73,6 +93,10 @@ local function buildModern(f, k, unit, mirror)
     bar:SetFrameLevel(f:GetFrameLevel() + 2)
     bar:SetReverseFill(mirror and true or false)
     ns.Smooth.Wrap(bar)
+    -- the fill ends in the same curve as the well around the ring (over the whole frame)
+    bar.obCurve = bar:CreateMaskTexture()
+    bar.obCurve:SetTexture(M[mirror and "mod_unit_mask_r" or "mod_unit_mask"].file, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    bar.obCurve:SetAllPoints(f)
     f[key] = bar
   end
   f.health:SetStatusBarColor(0.38, 0.84, 0.2)
@@ -106,6 +130,7 @@ local function buildModern(f, k, unit, mirror)
     setRect(self.levelBadge, self, spec, mirrored(spec, spec.level, mirror), w, h)
     self.health:SetStatusBarTexture(ns.Look.BarTexture())
     self.power:SetStatusBarTexture(ns.Look.BarTexture())
+    curve(self.health); curve(self.power)
     -- the type scale (Look.TYPE): the big frames' name, health and power; the small ones all small
     local ks, big = screenH / 1080, not k.noLevel
     ns.Look.SetType(self.name, big and "display" or "small", ks)
@@ -274,6 +299,9 @@ function UnitFrames.Style(f)
     f.obPlate:SetPoint(far, f.power, far, -out * 2, 0)
     f.obPlate:SetShown(st.plate == true)
   end
+  -- the shine, shade and spark made above end in the bars' curve too
+  if f.health then curve(f.health) end
+  if f.power then curve(f.power) end
 end
 
 function UnitFrames.ApplyStyle()

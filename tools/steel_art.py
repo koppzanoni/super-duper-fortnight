@@ -182,12 +182,12 @@ def window_panel():
 @contextmanager
 def steel():
     """modern_art's pieces drawn in steel while inside the block."""
-    saved = ma.backing, ma.groove, ma.ring
-    ma.backing, ma.groove, ma.ring = backing, groove, ring
+    saved = ma.backing, ma.groove, ma.ring, ma.GROOVE_RIM, ma.GROOVE_EDGE
+    ma.backing, ma.groove, ma.ring, ma.GROOVE_RIM, ma.GROOVE_EDGE = backing, groove, ring, RIM, EDGE
     try:
         yield
     finally:
-        ma.backing, ma.groove, ma.ring = saved
+        ma.backing, ma.groove, ma.ring, ma.GROOVE_RIM, ma.GROOVE_EDGE = saved
 
 
 def pieces():
