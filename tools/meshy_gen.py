@@ -1,7 +1,8 @@
 """Generate the HUD texture pieces with Meshy image-to-image, using the reference HUD image for style.
 
 Usage: python tools/meshy_gen.py [piece ...]   (no args = all pieces)
-Reads the API key from .meshy-key.txt in the project root. Outputs go to art/meshy/<piece>.png
+The API key comes from the MESHY_API_KEY environment variable, else the file named by MESHY_KEY_FILE,
+else .meshy-key.txt in the project root (never committed). Outputs go to art/meshy/<piece>.png
 """
 import base64
 import json
@@ -10,10 +11,21 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+import os
+
 import requests
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-KEY = (ROOT / ".meshy-key.txt").read_text().strip()
+
+
+def _key():
+    if os.environ.get("MESHY_API_KEY"):
+        return os.environ["MESHY_API_KEY"].strip()
+    path = pathlib.Path(os.environ.get("MESHY_KEY_FILE") or ROOT / ".meshy-key.txt")
+    return path.read_text().strip()
+
+
+KEY = _key()
 REF = ROOT / "Meshy_AI_Dark Fantasy MMORPG HUD.png"
 OUT = ROOT / "art" / "meshy"
 API = "https://api.meshy.ai/openapi/v1/image-to-image"
@@ -544,5 +556,38 @@ for _n in ("unit", "slot", "cast"):
     NO_ISOLATE.add("modern3_" + _n)
 
 
+# "Aço" (2026-10-25): crafted but modern and subtle steel. Our own steel pieces (tools/steel_art.py,
+# drawn on the screen grid) are the moulds: Meshy keeps their shape exactly and redraws the metal.
+STEEL = ("The attached image is a finished game UI element for a World of Warcraft UI addon, in steel. Redraw it "
+    "keeping EXACTLY the same shape, silhouette, proportions, layout, and the position and size of every part: do "
+    "not move, add or remove anything, keep the corner brackets, rivets and plates where they are. Upgrade only the "
+    "material and rendering: crafted, finely machined dark graphite steel with brushed grain, crisp polished silver "
+    "bevels catching a soft light from the top, fine engraved lines, subtle wear on the edges. Modern and subtle, "
+    "premium MMO interface: NO fantasy ornaments, no filigree, no wings, no spikes, no runes, no gems, no gold, no "
+    "blue, no color at all besides neutral steel greys. All panels are fully OPAQUE. No text, no numbers, no icons. "
+    "Every area that is flat magenta (#FF00FF) in the attached image stays perfectly flat magenta: the background "
+    "and the holes. Front view, flat, orthographic, same framing, sharp, high resolution. ")
+STEEL_PIECES = {
+    "unit": ("16:9", "A unit frame: round portrait ring with a small steel plate on top, a magenta hole inside; "
+             "a round level badge on its bottom; a plate on its right with two empty dark bar grooves."),
+    "unit_small": ("16:9", "A small unit frame: round portrait ring with a magenta hole inside and a plate on its "
+                   "right with two empty dark bar grooves."),
+    "cast": ("16:9", "A cast bar: one long plate holding a square spell icon socket (magenta hole) on the left and "
+             "one long empty dark progress groove."),
+    "slot": ("1:1", "One square action button slot with four small rivets in its corners; magenta hole inside."),
+    "map": ("1:1", "A round minimap ring with a small steel plate on top and a magenta hole inside; a slim name "
+            "plate with rounded ends above it."),
+    "menu": ("16:9", "A long horizontal band with a rounded left end, for a row of menu buttons."),
+}
+for _n, (_aspect, _desc) in STEEL_PIECES.items():
+    PIECES["steel_" + _n] = (_aspect, STEEL + _desc)
+    REFS_OVERRIDE["steel_" + _n] = ["art/steel_in_" + _n + ".png"]
+    NO_ISOLATE.add("steel_" + _n)
+
+
 if __name__ == "__main__":
+    if sys.argv[1:] == ["steel"]:  # every steel piece, from fresh moulds
+        import modern_meshy_inputs
+        modern_meshy_inputs.steel()
+        sys.argv[1:] = ["steel_" + n for n in STEEL_PIECES]
     main()

@@ -4,6 +4,7 @@ drawn without glow and shadow (they would tint the magenta), alone and centered 
 Usage: python tools/modern_meshy_inputs.py   (writes art/modern_in_*.png)
 """
 import pathlib
+import sys
 
 from PIL import Image
 
@@ -49,6 +50,20 @@ def on_magenta(img, size, fill=0.82):
     return out.convert("RGB")
 
 
+def steel():
+    """The steel moulds for Meshy (tools/steel_art.py): art/steel_in_*.png."""
+    import steel_art
+    with steel_art.steel():
+        for name, piece, size, fill, scale in (
+                ("unit", modern_art.unit_frame, (1376, 768), 0.82, 2),
+                ("unit_small", lambda: modern_art.unit_frame(level=False), (1376, 768), 0.82, 2),
+                ("cast", modern_art.cast_bar, (1376, 768), 0.9, 2),
+                ("slot", steel_art.slot_frame, (1024, 1024), 0.6, 6),
+                ("map", modern_art.minimap_ring, (1024, 1024), 0.82, 2),
+                ("menu", modern_art.menu_band, (1376, 768), 0.9, 2)):
+            on_magenta(clean(piece, scale), size, fill).save(ROOT / "art" / f"steel_in_{name}.png")
+
+
 def main():
     on_magenta(clean(modern_art.unit_frame, 2), (1376, 768)).save(ROOT / "art" / "modern_in_unit.png")
     on_magenta(clean(modern_art.slot_frame, 6), (1024, 1024), 0.6).save(ROOT / "art" / "modern_in_slot.png")
@@ -56,7 +71,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    steel() if sys.argv[1:] == ["steel"] else main()
 
 
 def placement(piece_size, size, fill):
