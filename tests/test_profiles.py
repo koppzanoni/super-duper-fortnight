@@ -82,6 +82,16 @@ def test_new_profile_switch_and_back_live():
     assert ns.db.modernCols == 8
 
 
+def test_block_log_is_account_data_not_a_setting():
+    rt, ns = boot()
+    rt.execute('PREVIEW_NS.db.blockLog = { "01:07:00 FORBIDDEN UseAction() combate=false abertas=" }')
+    ns.Profiles.New("Compacto")
+    ns.Profiles.Switch("Compacto")
+    assert ns.db.blockLog[1].startswith("01:07:00")              # kept across a switch
+    ns.Profiles.Save()
+    assert ns.db.profiles["Compacto"].blockLog is None           # never saved (or exported) in a profile
+
+
 def test_copy_and_delete():
     _, ns = boot()
     ns.db.scale = 0.8
