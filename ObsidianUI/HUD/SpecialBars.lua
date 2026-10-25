@@ -18,6 +18,19 @@ function ns.Stack.Anchor()
   return ns.ActionBars.modernFrame
 end
 
+-- One grid gap between the pieces of the stack (bar, class gems, cast bar), scaled with the
+-- screen so it holds at any resolution.
+function ns.Stack.Gap()
+  local _, H = UIParent:GetSize()
+  return ns.Layout.GAP * H / 1080
+end
+
+-- Heights above the bar's top where the class gems and the cast bar panel start.
+function ns.Stack.ResBottom() return ns.Stack.Gap() end
+function ns.Stack.CastBottom()
+  return ns.Stack.ResBottom() + ns.ClassResource.Height() + ns.Stack.Gap()
+end
+
 local function pin(key, point, x, yAboveBar)
   ns.Pin(ns.Resolve.First(ns.Data.FRAME_CANDIDATES[key]), function(frame)
     frame:ClearAllPoints()

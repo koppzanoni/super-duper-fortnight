@@ -223,7 +223,9 @@ local function layout()
   end
   -- The StatusBar itself fills exactly the groove; the frame art sits around it. Pinned:
   -- Blizzard re-anchors the bar on some casts, in combat too (the bar is not protected).
-  local x, y = -w / 2 + S.bar.x * u, 64 + (S.h - S.bar.y - S.bar.h) * u
+  -- the panel's visible foot one stack gap above the class gems
+  local foot = ns.Data.ART_EDGE.cast.b * u
+  local x, y = -w / 2 + S.bar.x * u, ns.Stack.CastBottom() - foot + (S.h - S.bar.y - S.bar.h) * u
   ns.Movers.Register("cast", "Barra de cast", bar, function(b)
     b:ClearAllPoints()
     b:SetPoint("BOTTOMLEFT", ns.Stack.Anchor(), "TOP", x, y)

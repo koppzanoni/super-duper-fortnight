@@ -14,12 +14,26 @@ function Layout.MirrorX(texW, x, w)
   return texW - x - w
 end
 
+-- The screen grid, in px of a 1080 px screen (scaled with the screen height): one margin between
+-- the HUD and every screen edge, one gap between neighbouring pieces (two between groups).
+-- Pieces are placed by their visible edges (Data.ART_EDGE), not their textures' transparent ones.
+Layout.MARGIN, Layout.GAP = 16, 15
+
+-- Visible edges of a piece drawn w px wide from a texture texW px wide: l, t, r, b insets in
+-- frame px (mirrored swaps left and right).
+function Layout.Edges(edge, texW, w, mirror)
+  local u = w / texW
+  local l, r = edge.l, edge.r
+  if mirror then l, r = r, l end
+  return l * u, edge.t * u, r * u, edge.b * u
+end
+
 -- Action bar: rows x columns of slots with the key numbers above the first row, at the bottom
 -- center of the screen. Sizes are those of a 1080 px screen, scaled by the HUD scale.
 function Layout.ModernBar(screenH, userScale, rows, cols)
   local s = screenH / 1080 * (userScale or 1)
   rows = math.min(rows, math.ceil(36 / cols)) -- 36 buttons at most: no empty rows
-  local g = { rows = rows, cols = cols, slot = 54 * s, gap = 7 * s, numbers = 18 * s, bottom = 14 * s, s = s }
+  local g = { rows = rows, cols = cols, slot = 54 * s, gap = 7 * s, numbers = 18 * s, bottom = Layout.MARGIN * s, s = s }
   g.width = cols * g.slot + (cols - 1) * g.gap
   g.height = g.numbers + rows * g.slot + (rows - 1) * g.gap
   return g

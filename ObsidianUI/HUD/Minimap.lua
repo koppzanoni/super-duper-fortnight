@@ -49,7 +49,10 @@ local function layout()
   local u = w / S.w
   ns.Movers.Register("map", "Minimapa", container, function(f)
     f:ClearAllPoints()
-    f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -0.012 * H, -0.02 * H)
+    -- the ring's right edge and the zone plate's top at the screen margin
+    local _, t, r = ns.Layout.Edges(ns.Data.ART_EDGE.map, S.w, w)
+    local m = ns.Layout.MARGIN * H / 1080
+    f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -(m - r), -(m - t))
   end)
   ns.Movers.Place("map")
   container:SetSize(w, S.h * u)

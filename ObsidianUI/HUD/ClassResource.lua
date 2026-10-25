@@ -16,6 +16,12 @@ function ClassResource.HalfWidth(count)
   return (count * SIZE + (count - 1) * GAP) * H / 2
 end
 
+-- Height of the gem row, for the cast bar stacked above it.
+function ClassResource.Height()
+  local _, H = UIParent:GetSize()
+  return SIZE * H
+end
+
 local holder = CreateFrame("Frame", "ObsidianUIClassResource", UIParent)
 holder:SetFrameStrata("LOW")
 ClassResource.holder = holder
@@ -87,7 +93,7 @@ local function place(count)
   holder:SetSize(math.max(1, total), barStyle() and size * 0.45 or size)
   ns.Movers.Register("res", "Recurso de classe", holder, function(f)
     f:ClearAllPoints()
-    f:SetPoint("BOTTOM", ns.Stack.Anchor(), "TOP", 0, 34)
+    f:SetPoint("BOTTOM", ns.Stack.Anchor(), "TOP", 0, ns.Stack.ResBottom())
   end)
   ns.Movers.Place("res")
 end

@@ -80,7 +80,7 @@ def test_bar_geometry(pure):
     from conftest import load_pure
     L = load_pure(pure, "Core/Layout.lua").Layout
     g = L.ModernBar(1080, 1, 2, 12)
-    assert (g.slot, g.gap, g.numbers, g.bottom) == (54, 7, 18, 14)
+    assert (g.slot, g.gap, g.numbers, g.bottom) == (54, 7, 18, L.MARGIN)  # the screen margin
     assert g.width == 12 * 54 + 11 * 7 and g.height == 18 + 2 * 54 + 7
     assert L.ModernBar(1080, 1, 4, 18).rows == 2               # 36 buttons at most
     small = L.ModernBar(1080, 0.5, 3, 4)
@@ -470,3 +470,47 @@ def test_no_power_text_when_the_unit_has_no_power():
     """)
     t = frames(rt.globals().PREVIEW_NS).target
     assert t.powerText.text == ""
+
+
+# ------------------------------------------------------------------ the screen grid
+def visible_box(region, edge, tex_w, mirror=False):
+    """A piece's visible box (left, top, right, bottom from the screen's top left), without the
+    transparent edges of its texture."""
+    l, b, w, h = rect(region)
+    u = w / tex_w
+    el, er = (edge.r, edge.l) if mirror else (edge.l, edge.r)
+    return l + el * u, 1080 - (b + h) + edge.t * u, l + w - er * u, 1080 - b - edge.b * u
+
+
+def test_everything_sits_on_one_screen_grid():
+    """One margin to every screen edge, one gap between neighbours, two between groups; nothing
+    overlaps."""
+    _, ns = preview(vbars=True)
+    D, M, G = ns.Data.ART_EDGE, ns.Layout.MARGIN, ns.Layout.GAP
+    f = frames(ns)
+    player = visible_box(f.player, D.unit, 720)
+    target = visible_box(f.target, D.unit, 720, True)
+    tot = visible_box(f.targettarget, D.unitSmall, 720, True)
+    focus = visible_box(f.focus, D.unitSmall, 720)
+    pet = visible_box(f.pet, D.unitSmall, 720)
+    mp = visible_box(ns.Minimap.frame, D.map, 340)
+    band = ns.MenuPanels.bandFrame
+    k = rect(band)[3] / 92
+    bl, bb, bw, bh = rect(band)
+    menu = (bl + 6 * k, 1080 - (bb + bh) + 10 * k, bl + bw - 6 * k, 1080 - bb - 10 * k)
+    il, ib, iw, ih = rect(ns.InfoBar.frame)
+    info = (il, 1080 - (ib + ih), il + iw, 1080 - ib)
+    xl, xb, xw, xh = rect(ns.DataBars.holder)
+    near = lambda a, b: abs(a - b) < 1
+    assert near(player[0], M) and near(player[1], M)
+    assert near(mp[1], M) and near(1920 - mp[2], M)
+    assert near(1920 - menu[2], M) and near(1080 - menu[3], M)
+    assert near(xb, M)                                                       # the XP bar's foot
+    assert near(1920 - rect(ns.VerticalBars.container)[0] - rect(ns.VerticalBars.container)[2], M)
+    assert near(target[0] - player[2], 2 * G) and near(focus[1] - player[3], 2 * G)
+    assert near(pet[1] - focus[3], G) and near(tot[1] - target[3], G) and near(tot[2], target[2])
+    assert near(menu[1] - info[3], G) and near(info[2], menu[2])
+    cast, res = rect(ns.CastBar.art), rect(ns.ClassResource.holder)
+    u = cast[2] / 940
+    cast_foot = 1080 - cast[1] - D.cast.b * u
+    assert near((1080 - res[1] - res[3]) - cast_foot, G)

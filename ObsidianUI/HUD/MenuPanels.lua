@@ -242,6 +242,11 @@ local function updateMoney()
   if not pcall(function() money:SetText(GetMoneyString(GetMoney(), true)) end) then money:SetText("") end
 end
 
+-- The band's visible edges inside its frame (l, t, r, b px), for pieces lined up with it.
+function MenuPanels.BandEdges()
+  return ns.Layout.Edges(ns.Data.ART_EDGE.menu, MENU_W, band:GetHeight() * MENU_W / MENU_H)
+end
+
 function MenuPanels.LayoutModern()
   if not next(MenuPanels.byId) then return end
   local _, H = UIParent:GetSize()
@@ -252,7 +257,10 @@ function MenuPanels.LayoutModern()
   band:SetSize(w, MENU_H * k)
   ns.Movers.Register("menu", "Menu", band, function(f)
     f:ClearAllPoints()
-    f:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -10 * s, 40 * s)
+    -- the band's visible right end and foot at the screen margin
+    local _, _, r, b = MenuPanels.BandEdges()
+    local m = ns.Layout.MARGIN * H / 1080
+    f:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -(m - r), m - b)
   end, { ownScale = true })
   ns.Movers.Place("menu")
   local tex = ns.ModernTex("mod_menu")
@@ -287,6 +295,8 @@ function MenuPanels.LayoutModern()
   end
   money:ClearAllPoints()
   money:SetPoint("TOPRIGHT", band, "BOTTOMRIGHT", -4 * s, -4 * s)
+  -- the info bar lines up with the band: place it again now that the band has its size
+  if ns.Movers.items.info then ns.Movers.Place("info") end
   updateMoney()
 end
 table.insert(HUD.onResize, function() ns.RunOutOfCombat(MenuPanels.LayoutModern) end)

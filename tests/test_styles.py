@@ -35,6 +35,20 @@ def test_glass_changes_live_and_buttons_stay_solid():
     assert ns.Inventory.frame.gems[1].IsShown(ns.Inventory.frame.gems[1])
 
 
+def test_bar_shine_covers_the_fill_only():
+    """The gloss light and shade sit on the filled part; the empty groove stays dark."""
+    _, ns = preview({"frameStyle": "gloss"})
+    for key in ("player", "target"):
+        bar = ns.UnitFrames.frames[key].health
+        fill = bar.GetStatusBarTexture(bar)
+        fl, _, fw, _ = fill.Rect(fill).values()
+        _, _, bw, _ = bar.Rect(bar).values()
+        assert fw < bw - 10, key                                 # the preview bar is not full
+        for t in (bar.obShine, bar.obShade):
+            l, _, w, _ = t.Rect(t).values()
+            assert abs(l - fl) < 0.5 and abs(w - fw) < 0.5, key
+
+
 def test_frame_styles():
     _, ns = preview({"frameStyle": "flat"})
     p = ns.UnitFrames.frames.player

@@ -166,18 +166,23 @@ function UnitFrames.Style(f)
   if not f.portrait then return end
   local st = STYLE[ns.db and ns.db.frameStyle or "gloss"] or STYLE.gloss
   local pw = width(f.portrait)
-  -- light on the top half of each bar, shade on the bottom quarter
+  -- light on the top half of each bar's fill, shade on its bottom quarter. On the fill only: over
+  -- the whole bar they turned the empty groove into a grey shine. The fill texture is replaced
+  -- when the bar texture changes, so they are anchored again here.
   for _, key in ipairs({ "health", "power" }) do
     local bar = f[key]
     if bar and not bar.obShine then
       bar.obShine = bar:CreateTexture(nil, "ARTWORK", nil, 7)
-      bar.obShine:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, 0)
-      bar.obShine:SetPoint("BOTTOMRIGHT", bar, "RIGHT", 0, 0)
       bar.obShade = bar:CreateTexture(nil, "ARTWORK", nil, 7)
-      bar.obShade:SetPoint("BOTTOMLEFT", bar, "BOTTOMLEFT", 0, 0)
-      bar.obShade:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", 0, 0)
     end
     if bar then
+      local fill = bar.GetStatusBarTexture and bar:GetStatusBarTexture() or bar
+      bar.obShine:ClearAllPoints()
+      bar.obShine:SetPoint("TOPLEFT", fill, "TOPLEFT", 0, 0)
+      bar.obShine:SetPoint("BOTTOMRIGHT", fill, "RIGHT", 0, 0)
+      bar.obShade:ClearAllPoints()
+      bar.obShade:SetPoint("BOTTOMLEFT", fill, "BOTTOMLEFT", 0, 0)
+      bar.obShade:SetPoint("BOTTOMRIGHT", fill, "BOTTOMRIGHT", 0, 0)
       gradient(bar.obShine, 1, 1, 1, 0, st.shine or 0)
       bar.obShine:SetShown((st.shine or 0) > 0)
       bar.obShade:SetHeight(math.max(1, width(bar) > 0 and (bar.GetHeight and bar:GetHeight() or 4) * 0.3 or 2))
@@ -613,14 +618,36 @@ local function layout()
   local s = H / 1080
   local f = UnitFrames.frames
   for _, frame in pairs(f) do frame:Resize(H) end
-  -- Defaults: player top left, target beside it, its target under the target's portrait, focus
-  -- and pet under the player. Each one can be moved and resized in the edit mode.
+  -- Defaults on the screen grid, by the frames' visible edges: the player at the margin of the top
+  -- left, the target beside it (two gaps), its target under the target's portrait (one gap, right
+  -- edges lined up), focus under the player (two gaps) and pet under the focus (one gap). Each one
+  -- can be moved and resized in the edit mode.
+  local M, G = ns.Layout.MARGIN * s, ns.Layout.GAP * s
+  local function edges(fr)
+    local e = ns.Data.ART_EDGE[KINDS[fr.kind].noLevel and "unitSmall" or "unit"]
+    return ns.Layout.Edges(e, KINDS[fr.kind].spec.w, fr:GetWidth(), fr.mirror)
+  end
+  -- fr hangs under `above` with its visible top `gap` below the visible bottom of `above`,
+  -- lined up on the side `side` ("LEFT" or "RIGHT")
+  local function under(fr, above, gap, side)
+    local al, _, ar, ab = edges(above)
+    local fl, ft, fr2 = edges(fr)
+    local x = side == "LEFT" and (al - fl) or (fr2 - ar)
+    fr:SetPoint("TOP" .. side, above, "BOTTOM" .. side, x, ab - gap + ft)
+  end
   local defaults = {
-    { "player", "Jogador", function(fr) fr:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 18 * s, -14 * s) end },
-    { "target", "Alvo", function(fr) fr:SetPoint("TOPLEFT", f.player, "TOPRIGHT", 32 * s, 0) end },
-    { "targettarget", "Alvo do alvo", function(fr) fr:SetPoint("TOPRIGHT", f.target, "TOPRIGHT", -19 * s, -124 * s) end },
-    { "focus", "Foco", function(fr) fr:SetPoint("TOPLEFT", f.player, "BOTTOMLEFT", 0, -40 * s) end },
-    { "pet", "Pet", function(fr) fr:SetPoint("TOPLEFT", f.focus, "BOTTOMLEFT", 0, -12 * s) end },
+    { "player", "Jogador", function(fr)
+      local l, t = edges(fr)
+      fr:SetPoint("TOPLEFT", UIParent, "TOPLEFT", M - l, -(M - t))
+    end },
+    { "target", "Alvo", function(fr)
+      local _, _, pr = edges(f.player)
+      local tl = edges(fr)
+      fr:SetPoint("TOPLEFT", f.player, "TOPRIGHT", 2 * G - pr - tl, 0)
+    end },
+    { "targettarget", "Alvo do alvo", function(fr) under(fr, f.target, G, "RIGHT") end },
+    { "focus", "Foco", function(fr) under(fr, f.player, 2 * G, "LEFT") end },
+    { "pet", "Pet", function(fr) under(fr, f.focus, G, "LEFT") end },
   }
   for _, d in ipairs(defaults) do
     local unit, label, place = d[1], d[2], d[3]

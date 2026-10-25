@@ -36,6 +36,13 @@ Data.MODERN_MAP.map = Data.MODERN_MAP.hole
 -- on its lower edge, the calendar on its upper right edge (all three on the ring, 150 px out).
 Data.MODERN_MAP.sockets = { { 170, 398 }, { 62, 318 }, { 278, 318 }, { 276, 110 } }
 Data.MODERN_MAP.socketSize = 44
+-- Where each piece's art visibly starts inside its texture (l, t, r, b in texture px), for placing
+-- pieces by what the eye sees (Layout.Edges). Small unit frames end at the ring (no level circle).
+Data.ART_EDGE = {
+  unit = { l = 12, t = 12, r = 14, b = 10 }, unitSmall = { l = 12, t = 12, r = 14, b = 30 },
+  map = { l = 14, t = 4, r = 14, b = 12 }, menu = { l = 6, t = 10, r = 6, b = 10 },
+  cast = { l = 6, t = 6, r = 6, b = 8 },
+}
 -- One action slot frame (the icon sits 10 px inside it).
 Data.MODERN_SLOT = { size = 104, inset = 10 }
 

@@ -47,7 +47,7 @@ end
 ns.Movers.Register("vbars", "Barras verticais", container, function(f)
   local _, screenH = UIParent:GetSize()
   f:ClearAllPoints()
-  f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -4, -VerticalBars.TOP * screenH)
+  f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -ns.Layout.MARGIN * screenH / 1080, -VerticalBars.TOP * screenH)
 end)
 
 function VerticalBars.Refresh()

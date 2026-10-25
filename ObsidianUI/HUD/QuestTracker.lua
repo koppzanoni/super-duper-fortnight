@@ -52,9 +52,9 @@ function QuestTracker.Place()
     f:ClearAllPoints()
     local bars = ns.VerticalBars and ns.VerticalBars.container
     if bars and bars:IsShown() then
-      f:SetPoint("TOPRIGHT", bars, "TOPLEFT", -10, 0)
+      f:SetPoint("TOPRIGHT", bars, "TOPLEFT", -ns.Layout.GAP * H / 1080, 0)
     else
-      f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -0.012 * H, -ns.VerticalBars.TOP * H)
+      f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -ns.Layout.MARGIN * H / 1080, -ns.VerticalBars.TOP * H)
     end
   end)
   ns.Movers.Place("quests")

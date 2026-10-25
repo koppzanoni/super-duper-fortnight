@@ -87,7 +87,7 @@ end
 local function shownFaction() return db().rep_on ~= false and watched() end
 
 -- Room (unscaled) the bars need between the action bar and the screen bottom; 0 once moved away.
-local MARGIN_TOP, MARGIN_BOTTOM = 4, 3
+local MARGIN_TOP, MARGIN_BOTTOM = 7, ns.Layout.MARGIN -- the action slots' gap above, the screen margin under
 -- Bars that can show text are at least as tall as it (thinner ones only without text).
 local TEXT_MIN = 10
 local function barHeight()
