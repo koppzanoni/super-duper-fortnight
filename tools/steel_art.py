@@ -13,16 +13,18 @@ import pathlib
 import random
 import sys
 from contextlib import contextmanager
+from functools import lru_cache
 
+import numpy as np
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 import modern_art as ma
 from modern_art import Canvas
 
 PANEL = (22, 23, 26, 244)       # graphite plate
-RIM = (30, 31, 35, 252)         # the bars' rim band
-EDGE = (120, 124, 132, 240)     # the silver edge line
-LIT = (232, 234, 238, 200)      # light along top edges
+RIM = (58, 58, 60, 252)         # the bars' rim band (the metal's mean, for the flat bits)
+EDGE = (150, 154, 162, 245)     # the silver edge line
+LIT = (240, 242, 246, 220)      # light along top edges
 RING = (150, 154, 162, 255)
 RING_FILL = (26, 27, 31, 255)
 RING_LIT = (240, 242, 246, 230)
@@ -30,6 +32,47 @@ RING_INNER = (58, 60, 66, 255)
 SLOT = (128, 132, 140, 255)
 METAL = (150, 154, 162, 255)    # brackets, rivets, plates
 SHINE = (245, 246, 250, 230)
+
+
+# The metal itself: the brushed plate Meshy drew for the action slot (art/meshy_steel), made neutral
+# grey and brought to each part's brightness. Our shapes stay exact; only their surface is Meshy's.
+MATERIAL = pathlib.Path(__file__).resolve().parent.parent / "art" / "meshy_steel" / "steel_slot.png"
+MATERIAL_BOX = (150, 150, 874, 874)  # the plain plate inside that slot
+
+
+@lru_cache(maxsize=None)
+def _material_source():
+    img = Image.open(MATERIAL).convert("L").crop(MATERIAL_BOX)
+    a = np.asarray(img).astype(np.float32)
+    return (a - a.mean()) / max(1.0, a.std())  # brushed grain and sheen, around 0
+
+
+def material(size, mean, spread=15.0):
+    """A size (w, h) px piece of the brushed metal at brightness `mean` (0-255), as an L image."""
+    src = Image.fromarray(_material_source())
+    a = np.asarray(src.resize(size, Image.LANCZOS)).astype(np.float32)
+    return Image.fromarray(np.clip(mean + a * spread, 0, 255).astype(np.uint8))
+
+
+def material_ring(size, inner, mean, spread=15.0):
+    """The metal brushed in circles (the plate's grain bent around the centre), for rings."""
+    w, h = size
+    src = _material_source()
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    cx, cy = (w - 1) / 2, (h - 1) / 2
+    r = np.hypot(xx - cx, yy - cy)
+    th = (np.arctan2(yy - cy, xx - cx) + math.pi) / (2 * math.pi)
+    rr = np.clip((r - inner) / max(1.0, w / 2 - inner), 0, 1)
+    u = (th * (src.shape[1] - 1)).astype(int)
+    v = (src.shape[0] * 0.3 + rr * src.shape[0] * 0.4).astype(int)  # a band of the plate, across the ring
+    return Image.fromarray(np.clip(mean + src[v, u] * spread, 0, 255).astype(np.uint8))
+
+
+def _paint(c, layer, at, grey, mask, tint=(0, 0, 2)):
+    """Paint the grey metal into c's layer at `at`, where `mask` (L) allows."""
+    rgb = [grey.point(lambda v, t=t: min(255, v + t)) for t in tint]
+    piece = Image.merge("RGBA", (*rgb, mask))
+    c.layers[layer].alpha_composite(piece, at)
 
 
 def _mask(box, r):
@@ -108,9 +151,8 @@ def keystone(c, cx, y, w=40, h=10):
 # ------------------------------------------------------------------ the pieces' parts in steel
 def backing(c, box, r=20):
     x0, y0, x1, y1 = box
-    c.rrect(box, r, fill=PANEL, layer="body")
-    sheen(c, box, r)
-    brushed(c, box, r)
+    at, m = _mask(box, r)
+    _paint(c, "body", at, material(m.size, 46), m.point(lambda v: v * PANEL[3] // 255))
     c.rrect(box, r, outline=EDGE, width=1.3)
     c.line([(x0 + r + 2, y0 + 1.2), (x1 - r - 2, y0 + 1.2)], LIT, 1.0, layer="top")
     bevel(c, box, r)
@@ -124,8 +166,8 @@ def backing(c, box, r=20):
 def groove(c, box, r=8, rim=7):
     x0, y0, x1, y1 = box
     outer = (x0 - rim, y0 - rim, x1 + rim, y1 + rim)
-    c.rrect(outer, r + rim, fill=RIM, layer="body")
-    brushed(c, outer, r + rim, seed=3)
+    at, m = _mask(outer, r + rim)
+    _paint(c, "body", at, material(m.size, 58), m)
     c.rrect(outer, r + rim, outline=EDGE, width=1.3)
     c.rrect((x0 - 1.5, y0 - 1.5, x1 + 1.5, y1 + 1.5), r + 1.5, outline=(0, 0, 0, 255), width=1.6, layer="body")
     c.rrect(box, r, fill=(2, 2, 3, 255), layer="body")
@@ -138,7 +180,11 @@ def groove(c, box, r=8, rim=7):
 
 def ring(c, box, band=12):
     x0, y0, x1, y1 = box
-    c.ellipse(box, fill=RING_FILL, layer="body")
+    s0 = [round(v * ma.SS) for v in box]
+    size = (s0[2] - s0[0], s0[3] - s0[1])
+    m = Image.new("L", size, 0)
+    ImageDraw.Draw(m).ellipse((0, 0, size[0] - 1, size[1] - 1), fill=255)
+    _paint(c, "body", (s0[0], s0[1]), material_ring(size, (band - 3) * ma.SS, 62), m)
     c.ellipse(box, outline=RING, width=2.2)
     c.draw("top").arc(c.s((x0 + 1, y0 + 1, x1 - 1, y1 - 1)), 196, 344, fill=RING_LIT, width=round(1.4 * ma.SS))
     c.ellipse((x0 + band - 3, y0 + band - 3, x1 - band + 3, y1 - band + 3), outline=RING_INNER, width=2.0, layer="top")
@@ -156,7 +202,8 @@ def slot_frame():
     n = ma.SLOT_TEX
     c = Canvas(n, n)
     b = (6, 6, n - 6, n - 6)
-    c.rrect(b, 9, fill=RIM, layer="body")
+    at, m = _mask(b, 9)
+    _paint(c, "body", at, material(m.size, 58), m)
     c.rrect((b[0] - 1.4, b[1] - 1.4, b[2] + 1.4, b[3] + 1.4), 10, outline=(0, 0, 0, 255), width=1.6, layer="body")
     c.rrect(b, 9, outline=SLOT, width=1.8)
     c.line([(b[0] + 11, b[1] + 0.8), (b[2] - 11, b[1] + 0.8)], LIT, 1.0, layer="top")
@@ -179,15 +226,38 @@ def window_panel():
     return c.render(glow=0.1, shadow=0.7)
 
 
+def gem_socket():
+    """Class resource point, empty: a slim diamond of the metal with a silver edge, dark inside."""
+    n = ma.GEM_TEX
+    c = Canvas(n, n)
+    m = n / 2
+
+    def diamond(r):
+        return [(m, m - r), (m + r, m), (m, m + r), (m - r, m)]
+    c.poly(diamond(34), (0, 0, 0, 255), layer="body")
+    s0 = round(ma.SS * (m - 32.5)), round(ma.SS * (m - 32.5))
+    size = (round(ma.SS * 65), round(ma.SS * 65))
+    mask = Image.new("L", size, 0)
+    ImageDraw.Draw(mask).polygon([(size[0] / 2, 0), (size[0], size[1] / 2), (size[0] / 2, size[1]), (0, size[1] / 2)], fill=255)
+    _paint(c, "body", s0, material(size, 58), mask)
+    c.line(diamond(32.5) + [diamond(32.5)[0]], EDGE, 1.3)
+    c.poly(diamond(21), (2, 2, 3, 255), layer="top")
+    c.line([(m - 31, m - 1), (m, m - 32)], LIT, 1.0, layer="top")
+    return c.render(glow=0.1, shadow=0.5)
+
+
 @contextmanager
 def steel():
     """modern_art's pieces drawn in steel while inside the block."""
-    saved = ma.backing, ma.groove, ma.ring, ma.GROOVE_RIM, ma.GROOVE_EDGE
-    ma.backing, ma.groove, ma.ring, ma.GROOVE_RIM, ma.GROOVE_EDGE = backing, groove, ring, RIM, EDGE
+    names = ("backing", "groove", "ring", "GROOVE_RIM", "GROOVE_EDGE", "MARKER")
+    saved = {n: getattr(ma, n) for n in names}
+    for n, v in zip(names, (backing, groove, ring, RIM, EDGE, ((170, 174, 182), (244, 245, 248)))):
+        setattr(ma, n, v)
     try:
         yield
     finally:
-        ma.backing, ma.groove, ma.ring, ma.GROOVE_RIM, ma.GROOVE_EDGE = saved
+        for n, v in saved.items():
+            setattr(ma, n, v)
 
 
 def pieces():
@@ -195,7 +265,7 @@ def pieces():
     with steel():
         return {"mod_unit": ma.unit_frame(), "mod_unit_small": ma.unit_frame(level=False), "mod_cast": ma.cast_bar(),
                 "mod_map": ma.minimap_ring(), "mod_menu": ma.menu_band(), "mod_slot": slot_frame(),
-                "mod_window": window_panel()}
+                "mod_window": window_panel(), "mod_gem_off": gem_socket()}
 
 
 def main():

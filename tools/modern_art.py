@@ -157,8 +157,10 @@ def backing(c, box, r=20):
     c.line([(x0 + r + 2, y0 + 1.3), (x1 - r - 2, y0 + 1.3)], (96, 170, 196, 150), 1.0, layer="top")
 
 
-# The bars' rim colours (a look such as tools/steel_art.py swaps them while it draws).
+# The bars' rim colours and the accent of small marks (a look such as tools/steel_art.py swaps
+# them while it draws).
 GROOVE_RIM, GROOVE_EDGE = (4, 14, 24, 250), (40, 112, 140, 255)
+MARKER = ((60, 170, 210), (150, 222, 244))
 
 
 def groove(c, box, r=8, rim=8):
@@ -377,10 +379,10 @@ def minimap_ring():
     band = 12
     ring(c, (x0 - band, y0 - band, x1 + band, y1 + band), band)
     c.cut((x0, y0, x1, y1), ellipse=True)
-    # N marker: a small teal diamond sitting on the ring's top edge
+    # N marker: a small diamond in the accent colour sitting on the ring's top edge
     cx, ny = (x0 + x1) / 2, y0 - band
-    c.poly([(cx, ny - 9), (cx + 7, ny), (cx, ny + 9), (cx - 7, ny)], (60, 170, 210, 255), layer="top")
-    c.poly([(cx, ny - 9), (cx + 7, ny), (cx, ny + 1)], (150, 222, 244, 255), layer="top")
+    c.poly([(cx, ny - 9), (cx + 7, ny), (cx, ny + 9), (cx - 7, ny)], MARKER[0] + (255,), layer="top")
+    c.poly([(cx, ny - 9), (cx + 7, ny), (cx, ny + 1)], MARKER[1] + (255,), layer="top")
     # the zone name on a pill centred over the map (the calendar sits on the ring, like mail and
     # tracking)
     px0, py0, px1, py1 = MAP["plate"]
