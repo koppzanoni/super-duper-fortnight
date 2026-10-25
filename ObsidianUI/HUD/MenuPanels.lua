@@ -270,12 +270,13 @@ function MenuPanels.LayoutModern()
   ns.Media.ApplyRange(bandMid, tex, false, CAP / MENU_W, 1 - CAP / MENU_W)
   band:Show()
   local wanted = {}
+  local pad = (w - #list * step) / 2 -- the row centred in the band
   for i, id in ipairs(list) do
     wanted[id] = true
     local b = MenuPanels.byId[id]
     if b then
       b:ClearAllPoints()
-      b:SetPoint("LEFT", band, "LEFT", CAP * k + (i - 1) * step + (step - size) / 2, 0)
+      b:SetPoint("LEFT", band, "LEFT", pad + (i - 1) * step + (step - size) / 2, 0)
       b:SetSize(size, size)
       if b.obIcon and id ~= "character" then b.obIcon:SetVertexColor(0.86, 0.87, 0.89) end
       b:Show()

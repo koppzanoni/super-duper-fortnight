@@ -10,8 +10,9 @@ local KINDS = {
   -- Moderno: player and target, then focus and pet, then the target of target (widths of the
   -- screen height; spec 2026-10-23-hud-moderno).
   modern = { spec = ns.Data.MODERN_UNIT, width = 1 / 3, modern = true },
-  modernSmall = { spec = ns.Data.MODERN_UNIT, width = 0.2, modern = true },
-  modernTiny = { spec = ns.Data.MODERN_UNIT, width = 1 / 6, modern = true, tiny = true },
+  -- The small ones have no level circle: at their size it cannot hold a readable number.
+  modernSmall = { spec = ns.Data.MODERN_UNIT, width = 0.2, modern = true, noLevel = true },
+  modernTiny = { spec = ns.Data.MODERN_UNIT, width = 1 / 6, modern = true, tiny = true, noLevel = true },
 }
 UnitFrames.KINDS = KINDS
 
@@ -53,7 +54,7 @@ local function buildModern(f, k, unit, mirror)
   f.mirror = mirror
   f.art = f:CreateTexture(nil, "ARTWORK")
   f.art:SetAllPoints(f)
-  ns.Media.Apply(f.art, ns.ModernTex("mod_unit"), mirror)
+  ns.Media.Apply(f.art, ns.ModernTex(k.noLevel and "mod_unit_small" or "mod_unit"), mirror)
 
   -- The player's arcane ring turns slowly over the portrait, under the ring (setting "arcaneRing").
   if unit == "player" then
@@ -89,6 +90,7 @@ local function buildModern(f, k, unit, mirror)
   f.levelText = f.levelBadge:CreateFontString(nil, "OVERLAY", "GameFontNormal")
   f.levelText:SetPoint("CENTER", f.levelBadge, "CENTER", 0, 1)
   f.levelText:SetTextColor(0.92, 0.95, 0.99)
+  if k.noLevel then f.levelBadge:Hide() end
   f.hpText = f.health:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   f.hpText:SetPoint("CENTER", f.health)
   f.powerText = f.power:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")

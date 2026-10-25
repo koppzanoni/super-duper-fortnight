@@ -21,20 +21,20 @@ end
 
 -- HUD (tools/modern_art.py; spec docs/superpowers/specs/2026-10-23-hud-moderno-design.md).
 -- Unit frame: portrait opening inside the ring, the bar grooves, name and level spots.
-Data.MODERN_UNIT = { w = 720, h = 250, ring = { x = 12, y = 12, w = 220, h = 220 },
+Data.MODERN_UNIT = { w = 720, h = 262, ring = { x = 12, y = 12, w = 220, h = 220 },
   portrait = { x = 28, y = 28, w = 188, h = 188 }, name = { x = 250, y = 26, w = 454, h = 54 },
   health = { x = 186, y = 91, w = 508, h = 50 }, power = { x = 186, y = 157, w = 500, h = 38 },
   level = { x = 103, y = 212, w = 38, h = 38 } }
 -- Cast bar: one panel with the square icon socket, the progress groove and the name above it.
 Data.MODERN_CAST = { w = 940, h = 132, icon = { x = 22, y = 22, w = 88, h = 88 },
   bar = { x = 134, y = 68, w = 776, h = 40 }, name = { x = 140, y = 16, w = 480, h = 40 } }
--- Minimap: the ring's opening, the zone plate and the round button beside it.
-Data.MODERN_MAP = { w = 340, h = 376, hole = { x = 26, y = 72, w = 288, h = 286 },
-  plate = { x = 10, y = 4, w = 260, h = 46 }, button = { x = 282, y = 4, w = 48, h = 48 } }
+-- Minimap: the ring's (square) opening and the zone plate centred over it.
+Data.MODERN_MAP = { w = 340, h = 384, hole = { x = 26, y = 72, w = 288, h = 288 },
+  plate = { x = 40, y = 4, w = 260, h = 46 } }
 Data.MODERN_MAP.map = Data.MODERN_MAP.hole
--- Socket centers (clock, mail, tracking, calendar): the clock under the ring,
--- mail and tracking on its lower edge, the calendar in the round button beside the zone plate.
-Data.MODERN_MAP.sockets = { { 170, 378 }, { 62, 318 }, { 278, 318 }, { 306, 28 } }
+-- Socket centers (clock, mail, tracking, calendar): the clock under the ring, mail and tracking
+-- on its lower edge, the calendar on its upper right edge (all three on the ring, 150 px out).
+Data.MODERN_MAP.sockets = { { 170, 398 }, { 62, 318 }, { 278, 318 }, { 276, 110 } }
 Data.MODERN_MAP.socketSize = 44
 -- One action slot frame (the icon sits 10 px inside it).
 Data.MODERN_SLOT = { size = 104, inset = 10 }

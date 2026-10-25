@@ -38,7 +38,7 @@ def test_minimap_spec_matches_the_art():
     s = data().MODERN_MAP
     m = modern_art.MAP
     assert (s.w, s.h) == (m["w"], m["h"])
-    for key in ("hole", "plate", "button"):
+    for key in ("hole", "plate"):
         assert box(s[key]) == m[key], key
 
 
@@ -161,6 +161,34 @@ def test_menu_is_one_row_at_the_bottom_right():
     assert visible(ns.MenuPanels.band) and str(ns.MenuPanels.band.file).endswith("mod_menu_black")
 
 
+def test_menu_row_is_centred_in_its_band():
+    _, ns = preview(MODERN)
+    band = rect(ns.MenuPanels.bandFrame)
+    shown = [rect(ns.MenuPanels.byId[i]) for i in ns.Data.MODERN_MENU.values()]
+    left = shown[0][0] - band[0]
+    right = band[0] + band[2] - (shown[-1][0] + shown[-1][2])
+    assert abs(left - right) < 0.5
+
+
+def test_nothing_in_the_art_is_cut_by_its_texture_edge():
+    """The level circle under the portrait ring (and its rim) stays inside the unit frame
+    texture; the minimap ring stays inside its texture. Only the faint tail of a soft shadow
+    may reach an edge."""
+    import numpy as np
+    faint = 32
+    for art in (modern_art.unit_frame(), modern_art.minimap_ring(), modern_art.cast_bar()):
+        a = np.asarray(art)[..., 3]
+        assert max(a[:2].max(), a[-2:].max(), a[:, :2].max(), a[:, -2:].max()) < faint
+
+
+def test_minimap_is_round_and_its_name_centred_over_it():
+    m = modern_art.MAP
+    x0, y0, x1, y1 = m["hole"]
+    assert x1 - x0 == y1 - y0                                 # a square opening: the map is not squashed
+    px0, _, px1, _ = m["plate"]
+    assert (px0 + px1) / 2 == (x0 + x1) / 2
+
+
 # ------------------------------------------------------------------ unit frames
 def frames(ns):
     return ns.UnitFrames.frames
@@ -202,6 +230,20 @@ def test_texts_numbers_and_level_badge():
     assert p.levelText.text == "58"
     lv, badge = rect(p.levelText), rect(p.levelBadge)
     assert abs((lv[0] + lv[2] / 2) - (badge[0] + badge[2] / 2)) < 2
+
+
+def test_small_frames_have_no_level_circle_too_small_for_its_number():
+    """Focus, pet and target of target: a level circle of ~10 px cannot hold a readable number,
+    so they use the art without it and hide the number; player and target keep theirs."""
+    _, ns = preview(MODERN)
+    f = frames(ns)
+    for key in ("focus", "pet", "targettarget"):
+        assert str(f[key].art.file).endswith("mod_unit_small_black"), key
+        assert not visible(f[key].levelText), key
+    for key in ("player", "target"):
+        assert str(f[key].art.file).endswith("mod_unit_black"), key
+        assert visible(f[key].levelText), key
+        assert rect(f[key].levelBadge)[2] >= 16                      # room for the number
 
 
 def test_arcane_ring_is_a_setting():

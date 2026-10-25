@@ -123,8 +123,8 @@ def hairline_box(c, box, r, lit=True, width=1.6):
 
 
 # ------------------------------------------------------------------ unit frame (player, target)
-# Rects in px of the 700x220 texture (Data.MODERN_UNIT mirrors them).
-UNIT = {"w": 720, "h": 250, "ring": (12, 12, 232, 232), "portrait": (28, 28, 216, 216),
+# Rects in px of the 720x262 texture (Data.MODERN_UNIT mirrors them); room under the level circle.
+UNIT = {"w": 720, "h": 262, "ring": (12, 12, 232, 232), "portrait": (28, 28, 216, 216),
         "name": (250, 26, 704, 80), "health": (186, 91, 694, 141), "power": (186, 157, 686, 195),
         # a small round level badge on the ring's bottom edge (6 o'clock)
         "level": (103, 212, 141, 250)}
@@ -177,7 +177,9 @@ def ring(c, box, band=12):
     c.ellipse((x0 + band, y0 + band, x1 - band, y1 - band), fill=(0, 0, 0, 255), layer="top")
 
 
-def unit_frame():
+def unit_frame(level=True):
+    """The unit frame; level=False for the small frames (focus, pet, target of target, party),
+    where a level circle is too small to hold a readable number."""
     c = Canvas(UNIT["w"], UNIT["h"])
     # Backing panel behind the ring and the bars so they read as one continuous piece: it fills the
     # gap where the scene used to show between the round portrait and the bars (the "cut" look). The
@@ -192,6 +194,8 @@ def unit_frame():
     px0, py0, px1, py1 = UNIT["portrait"]
     vig = _radial_vignette(round((px1 - px0) * SS), round((py1 - py0) * SS))
     c.layers["top"].alpha_composite(vig, (round(px0 * SS), round(py0 * SS)))
+    if not level:
+        return c.render()
     # level: a minimalist circle on the ring's bottom edge with a clean light rim and (in Lua) a
     # white number — small but clearly visible, no gold.
     lx0, ly0, lx1, ly1 = UNIT["level"]
@@ -295,8 +299,8 @@ def nine_slice(tex, w, h, corner):
 
 # ------------------------------------------------------------------ minimap
 # The map in the portrait's ring (thick dark band, teal line lit across the top); the zone name on
-# a pill in the backing panel's look, the calendar in a small ring beside it. No arrow tips.
-MAP = {"w": 340, "h": 376, "hole": (26, 72, 314, 360 - 2), "plate": (10, 4, 270, 50), "button": (282, 4, 330, 52)}
+# a pill in the backing panel's look, centred over it. No arrow tips.
+MAP = {"w": 340, "h": 384, "hole": (26, 72, 314, 360), "plate": (40, 4, 300, 50)}
 
 
 def minimap_ring():
@@ -309,9 +313,10 @@ def minimap_ring():
     cx, ny = (x0 + x1) / 2, y0 - band
     c.poly([(cx, ny - 9), (cx + 7, ny), (cx, ny + 9), (cx - 7, ny)], (60, 170, 210, 255), layer="top")
     c.poly([(cx, ny - 9), (cx + 7, ny), (cx, ny + 1)], (150, 222, 244, 255), layer="top")
+    # the zone name on a pill centred over the map (the calendar sits on the ring, like mail and
+    # tracking)
     px0, py0, px1, py1 = MAP["plate"]
     backing(c, MAP["plate"], (py1 - py0) / 2)
-    ring(c, MAP["button"], 5)
     return c.render()
 
 
