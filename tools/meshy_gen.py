@@ -2,7 +2,8 @@
 
 Usage: python tools/meshy_gen.py [piece ...]   (no args = all pieces)
 The API key comes from the MESHY_API_KEY environment variable, else the file named by MESHY_KEY_FILE,
-else .meshy-key.txt in the project root (never committed). Outputs go to art/meshy/<piece>.png
+else .meshy-key.txt in the project root (never committed); with none of them the requests go without
+it (a cloud session's network secret adds it). Outputs go to art/meshy/<piece>.png
 """
 import base64
 import json
@@ -19,10 +20,12 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def _key():
+    """The API key, or None: in a cloud session the environment's network secret for api.meshy.ai adds
+    it to the requests itself (and a key the script sends is dropped on the way)."""
     if os.environ.get("MESHY_API_KEY"):
         return os.environ["MESHY_API_KEY"].strip()
     path = pathlib.Path(os.environ.get("MESHY_KEY_FILE") or ROOT / ".meshy-key.txt")
-    return path.read_text().strip()
+    return path.read_text().strip() if path.exists() else None
 
 
 KEY = _key()
@@ -30,7 +33,7 @@ REF = ROOT / "Meshy_AI_Dark Fantasy MMORPG HUD.png"
 OUT = ROOT / "art" / "meshy"
 API = "https://api.meshy.ai/openapi/v1/image-to-image"
 MODEL = "nano-banana-2"
-HEADERS = {"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}
+HEADERS = {"Content-Type": "application/json", **({"Authorization": f"Bearer {KEY}"} if KEY else {})}
 
 STYLE = (
     "Use the attached reference image ONLY as the art style guide: copy exactly its materials "
