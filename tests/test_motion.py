@@ -33,6 +33,14 @@ def test_spark_shows_on_health_and_power_by_default():
     assert p.health.obSpark.blend == "ADD"
 
 
+def test_spark_is_thin_and_faint_so_the_value_stays_readable():
+    _, ns = run()
+    bar = ns.UnitFrames.frames.player.health
+    _, _, bw, bh = bar.Rect(bar).values()
+    _, _, sw, sh = bar.obSpark.Rect(bar.obSpark).values()
+    assert sw <= 0.12 * bh and sh <= bh                       # a thin line, not a band over the text
+
+
 def test_spark_setting_off_hides_it():
     _, ns = run({"barSpark": False})
     p = ns.UnitFrames.frames.player

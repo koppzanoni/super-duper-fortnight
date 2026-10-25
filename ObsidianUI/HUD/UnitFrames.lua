@@ -216,15 +216,16 @@ function UnitFrames.Style(f)
       f.obDiamond:SetShown(st.diamond == true)
     end
   end
-  -- leading-edge spark: a soft white glow riding the fill's edge, so a changing bar reads as
-  -- alive (setting barSpark). Anchored to the StatusBar's fill region, it follows the value and
-  -- is re-anchored here because the fill texture is replaced when the bar texture changes.
+  -- leading-edge spark: a thin, faint white glow riding the fill's edge, so a changing bar reads
+  -- as alive without covering the value text (setting barSpark). Anchored to the StatusBar's fill
+  -- region, it follows the value and is re-anchored here because the fill texture is replaced
+  -- when the bar texture changes.
   local sparkOn = not (ns.db and ns.db.barSpark == false)
   for _, key in ipairs({ "health", "power" }) do
     local bar = f[key]
     if bar then
       if not bar.obSpark then
-        bar.obSpark = ns.Widgets.SoftTexture(bar, "OVERLAY", 1, 1, 1, 0.5, 2)
+        bar.obSpark = ns.Widgets.SoftTexture(bar, "OVERLAY", 1, 1, 1, 0.22, 2)
         bar.obSpark:SetBlendMode("ADD")
       end
       local h = (bar.GetHeight and bar:GetHeight()) or 0
@@ -232,7 +233,7 @@ function UnitFrames.Style(f)
       local fillTex = bar.GetStatusBarTexture and bar:GetStatusBarTexture()
       bar.obSpark:ClearAllPoints()
       if fillTex then bar.obSpark:SetPoint("CENTER", fillTex, f.mirror and "LEFT" or "RIGHT", 0, 0) end
-      bar.obSpark:SetSize(math.max(2, h * 0.34), math.max(2, h * 1.15))
+      bar.obSpark:SetSize(math.max(2, h * 0.10), math.max(2, h * 0.9))
       bar.obSpark:SetShown(sparkOn and fillTex ~= nil)
     end
   end
