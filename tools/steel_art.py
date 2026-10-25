@@ -149,15 +149,47 @@ def keystone(c, cx, y, w=40, h=10):
 
 
 # ------------------------------------------------------------------ the pieces' parts in steel
+GLASS_ALPHA = 178   # the smoked glass in the plates (of 255): the scene shows faintly through
+FRAME_W = 5         # the steel frame around a plate's glass
+
+
+def glass(c, box, r):
+    """Smoked glass: dark, faintly see-through, a soft light across its top half and one diagonal
+    reflection streak, the brushed grain barely there."""
+    at, m = _mask(box, r)
+    _paint(c, "body", at, material(m.size, 26, spread=5), m.point(lambda v: v * GLASS_ALPHA // 255))
+    w, h = m.size
+    top = Image.new("L", (1, h))
+    for y in range(h):
+        top.putpixel((0, y), round(30 * max(0.0, 1 - y / max(1, h - 1) / 0.55)))
+    streak = Image.new("L", (w, h), 0)
+    k = h * 0.9  # the streak leans: it runs from the top edge down to the left
+    x0 = w * 0.18
+    ImageDraw.Draw(streak).polygon([(x0, 0), (x0 + h * 0.35, 0), (x0 + h * 0.35 - k, h), (x0 - k, h)], fill=24)
+    streak = streak.filter(ImageFilter.GaussianBlur(radius=h * 0.08))
+    light = ImageChops.multiply(m, ImageChops.lighter(top.resize((w, h)), streak))
+    layer = Image.new("RGBA", (w, h), (255, 255, 255, 0))
+    layer.putalpha(light)
+    c.layers["body"].alpha_composite(layer, at)
+
+
 def backing(c, box, r=20):
+    """A plate: smoked glass held in a thin brushed steel frame (opaque), the frame's silver edge."""
     x0, y0, x1, y1 = box
     at, m = _mask(box, r)
-    _paint(c, "body", at, material(m.size, 46), m.point(lambda v: v * PANEL[3] // 255))
+    inner = (x0 + FRAME_W, y0 + FRAME_W, x1 - FRAME_W, y1 - FRAME_W)
+    _, hole = _mask(inner, max(1, r - FRAME_W))
+    frame = m.copy()
+    frame.paste(ImageChops.subtract(m.crop((round(FRAME_W * ma.SS), round(FRAME_W * ma.SS),
+                                            round(FRAME_W * ma.SS) + hole.width, round(FRAME_W * ma.SS) + hole.height)), hole),
+                (round(FRAME_W * ma.SS), round(FRAME_W * ma.SS)))
+    _paint(c, "body", at, material(m.size, 58), frame)
+    glass(c, inner, max(1, r - FRAME_W))
+    c.rrect(inner, max(1, r - FRAME_W), outline=(0, 0, 0, 150), width=1.0, layer="top")
     c.rrect(box, r, outline=EDGE, width=1.3)
     c.line([(x0 + r + 2, y0 + 1.2), (x1 - r - 2, y0 + 1.2)], LIT, 1.0, layer="top")
     bevel(c, box, r)
     if (x1 - x0) > 120 and (y1 - y0) > 40:  # big plates only: on small ones the details turn to noise
-        etch(c, box, r)
         for x, sx in ((x0 + 2, 1), (x1 - 2, -1)):
             for y, sy in ((y0 + 2, 1), (y1 - 2, -1)):
                 bracket(c, x, y, sx, sy)
