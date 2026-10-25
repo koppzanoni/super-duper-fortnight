@@ -41,7 +41,8 @@ def test_frame_styles():
     assert not p.health.obShine.IsShown(p.health.obShine)
     ns.db.frameStyle = "arcane"
     ns.UnitFrames.ApplyStyle()
-    assert p.obRing.IsShown(p.obRing) and p.obGold.IsShown(p.obGold) and p.obDiamond.IsShown(p.obDiamond)
+    # the level is a clean baked chip now; the arcane style keeps its glow ring and gold line
+    assert p.obRing.IsShown(p.obRing) and p.obGold.IsShown(p.obGold)
     ns.db.frameStyle = "plate"
     ns.UnitFrames.ApplyStyle()
     assert p.obPlate.IsShown(p.obPlate) and not p.obRing.IsShown(p.obRing)

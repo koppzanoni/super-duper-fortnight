@@ -132,7 +132,24 @@ def tip(c, x, y, direction, size=5, color=LINE):
 # Rects in px of the 700x220 texture (Data.MODERN_UNIT mirrors them).
 UNIT = {"w": 720, "h": 250, "ring": (12, 12, 232, 232), "portrait": (28, 28, 216, 216),
         "name": (250, 26, 704, 80), "health": (186, 91, 694, 141), "power": (186, 157, 686, 195),
-        "level": (4, 168, 80, 244)}
+        # a small level chip centred on the ring's bottom edge (6 o'clock), clear of the portrait
+        "level": (94, 214, 150, 248)}
+
+
+def _radial_vignette(w, h, inner=0.66, edge=165):
+    """A dark ring fading from the circle's edge inward to clear, so a cropped 2D portrait melts
+    into the frame instead of ending in a hard circular cut."""
+    import numpy as np
+    yy, xx = np.mgrid[0:h, 0:w]
+    cx, cy, radius = w / 2, h / 2, w / 2
+    d = np.hypot(xx - cx, yy - cy) / radius
+    t = np.clip((d - inner) / (1 - inner), 0, 1)
+    a = edge * t * t
+    a[d >= 1.0] = 0
+    out = np.zeros((h, w, 4), np.uint8)
+    out[..., 2] = 8  # the shadow keeps a faint navy tint
+    out[..., 3] = a.astype(np.uint8)
+    return Image.fromarray(out, "RGBA")
 
 
 def unit_frame():
@@ -155,11 +172,17 @@ def unit_frame():
     c.ellipse((x0 + 9, y0 + 9, x1 - 9, y1 - 9), outline=(22, 70, 92, 255), width=2.0, layer="top")
     c.ellipse((x0 + 12, y0 + 12, x1 - 12, y1 - 12), fill=(0, 0, 0, 255), layer="top")
     c.cut(UNIT["portrait"], ellipse=True)
-    # level badge: dark disc in a gold ring, overlapping the portrait ring
+    # soft inner vignette so the 2D portrait fades into the ring instead of ending in a hard cut
+    px0, py0, px1, py1 = UNIT["portrait"]
+    vig = _radial_vignette(round((px1 - px0) * SS), round((py1 - py0) * SS))
+    c.layers["top"].alpha_composite(vig, (round(px0 * SS), round(py0 * SS)))
+    # level chip: a small dark pill with a fine gold hairline, centred on the ring's bottom edge
     lx0, ly0, lx1, ly1 = UNIT["level"]
-    c.ellipse((lx0 - 3, ly0 - 3, lx1 + 3, ly1 + 3), fill=(4, 12, 20, 255), layer="top")
-    c.ellipse((lx0, ly0, lx1, ly1), fill=(8, 12, 16, 255), outline=GOLD + (255,), width=3.4, layer="top")
-    c.draw("top").arc(c.s((lx0 + 1, ly0 + 1, lx1 - 1, ly1 - 1)), 200, 330, fill=(250, 222, 140, 230), width=round(1.2 * SS))
+    rr = (ly1 - ly0) / 2
+    c.rrect((lx0 - 1.4, ly0 - 1.4, lx1 + 1.4, ly1 + 1.4), rr + 1.4, outline=EDGE + (255,), width=1.4, layer="body")
+    c.rrect((lx0, ly0, lx1, ly1), rr, fill=(6, 16, 24, 255), layer="body")
+    c.rrect((lx0, ly0, lx1, ly1), rr, outline=GOLD + (255,), width=1.6)
+    c.line([(lx0 + rr, ly0 + 0.7), (lx1 - rr, ly0 + 0.7)], (250, 222, 140, 210), 0.9, layer="top")
     return c.render()
 
 

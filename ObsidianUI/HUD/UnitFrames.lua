@@ -61,6 +61,7 @@ local function buildModern(f, k, unit, mirror)
     f.arcane:SetTexture(M.mod_arcane.file)
     f.arcane:SetTexCoord(0, M.mod_arcane.w / M.mod_arcane.potW, 0, M.mod_arcane.h / M.mod_arcane.potH)
     f.arcane:SetBlendMode("ADD")
+    f.arcane:SetAlpha(0.5) -- subtle: a hint of motion, not a bright purple halo
     local spin = f.arcane:CreateAnimationGroup()
     local turn = spin:CreateAnimation("Rotation")
     turn:SetDegrees(-360)
@@ -110,7 +111,7 @@ local function buildModern(f, k, unit, mirror)
     self.health:SetStatusBarTexture(ns.Look.BarTexture())
     self.power:SetStatusBarTexture(ns.Look.BarTexture())
     setFontSize(self.name, spec.name.h * u * 0.62)
-    setFontSize(self.levelText, spec.level.h * u * 0.42)
+    setFontSize(self.levelText, spec.level.h * u * 0.62)
     setFontSize(self.hpText, spec.health.h * u * 0.62)
     setFontSize(self.powerText, spec.power.h * u * 0.62)
     UnitFrames.Style(self)
@@ -124,8 +125,9 @@ end
 UnitFrames.STYLES = ns.Widgets.FRAME_STYLES
 local STYLE = {
   flat = {},
-  gloss = { shine = 0.45, shade = 0.35, ring = "metal", badgeGlow = true },
-  arcane = { shine = 0.3, ring = "glow", goldLine = true, diamond = true },
+  -- the level is a clean baked chip now; the old gold glow disc and diamond behind it are gone
+  gloss = { shine = 0.45, shade = 0.35, ring = "metal" },
+  arcane = { shine = 0.3, ring = "glow", goldLine = true },
   plate = { shine = 0.15, plate = true },
 }
 

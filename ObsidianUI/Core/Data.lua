@@ -24,7 +24,7 @@ end
 Data.MODERN_UNIT = { w = 720, h = 250, ring = { x = 12, y = 12, w = 220, h = 220 },
   portrait = { x = 28, y = 28, w = 188, h = 188 }, name = { x = 250, y = 26, w = 454, h = 54 },
   health = { x = 186, y = 91, w = 508, h = 50 }, power = { x = 186, y = 157, w = 500, h = 38 },
-  level = { x = 4, y = 168, w = 76, h = 76 } }
+  level = { x = 94, y = 214, w = 56, h = 34 } }
 -- Cast bar: square icon socket, progress groove, name on the tab above it.
 Data.MODERN_CAST = { w = 940, h = 124, icon = { x = 14, y = 14, w = 96, h = 96 },
   bar = { x = 122, y = 64, w = 784, h = 42 }, name = { x = 140, y = 12, w = 370, h = 48 } }
