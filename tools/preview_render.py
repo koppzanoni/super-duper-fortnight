@@ -25,6 +25,10 @@ FONTS = {"GameFontNormalLarge": (17, "serif", (1, .82, 0)), "GameFontNormal": (1
          "GameFontHighlightSmall": (12, "sans", (1, 1, 1)), "NumberFontNormalSmall": (11, "sans", (1, 1, 1)),
          "NumberFontNormal": (13, "sans", (1, 1, 1))}
 FONT_FILES = {"serif": "C:/Windows/Fonts/georgia.ttf", "sans": "C:/Windows/Fonts/arialbd.ttf"}
+# Linux (cloud sessions): metric-compatible Liberation fonts
+if not pathlib.Path(FONT_FILES["sans"]).exists():
+    FONT_FILES = {"serif": "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+                  "sans": "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"}
 
 
 def ref_icons():
@@ -177,7 +181,10 @@ def draw_text(canvas, r, region, rect):
         pts = list(region.points.values())
         point = pts[0].point if pts else "CENTER"
         x = l - bw / 2
-        if "LEFT" in point:
+        if w > 1:
+            # a set width and no height: the text is placed across that width, like the game
+            x = l + (w - bw) / 2 if region.justify not in ("LEFT", "RIGHT") else (l if region.justify == "LEFT" else l + w - bw)
+        elif "LEFT" in point:
             x = l
         elif "RIGHT" in point:
             x = l - bw

@@ -1,6 +1,8 @@
 """Art of the "Moderno" HUD style, copied from the concept art/concept_modern.png (the user's Meshy
-agent image "WoW Modern Clean HUD"): near-black navy panels, thin teal hairlines with a faint glow,
-small arrow tips at the ends of the lines, gold only on the level badge. The action bar is the
+agent image "WoW Modern Clean HUD"): near-black navy panels, thin teal hairlines with a faint glow.
+The clean look (the unit frame's, followed by the cast bar, minimap and menu band): one rounded
+backing panel per group, bars in thick dark rims, round parts in the portrait's ring; no arrow
+tips and no gold. The action bar is the
 concept's without its wings, gems and gold rails (the user's call).
 
 Colors are sampled from the concept. Each piece is drawn at SS times its texture size and scaled
@@ -120,14 +122,6 @@ def hairline_box(c, box, r, lit=True, width=1.6):
         c.line([(x0 + r + 2, y0 + 0.2), (x1 - r - 2, y0 + 0.2)], LINE_LIT + (200,), 0.9, layer="top")
 
 
-def tip(c, x, y, direction, size=5, color=LINE):
-    """Small arrow tip where a hairline ends (direction: -1 points left, 1 right, 2 down)."""
-    if direction == 2:
-        c.poly([(x - size * 0.7, y), (x + size * 0.7, y), (x, y + size)], color + (255,))
-    else:
-        c.poly([(x, y - size * 0.7), (x, y + size * 0.7), (x + direction * size, y)], color + (255,))
-
-
 # ------------------------------------------------------------------ unit frame (player, target)
 # Rects in px of the 700x220 texture (Data.MODERN_UNIT mirrors them).
 UNIT = {"w": 720, "h": 250, "ring": (12, 12, 232, 232), "portrait": (28, 28, 216, 216),
@@ -152,32 +146,47 @@ def _radial_vignette(w, h, inner=0.66, edge=165):
     return Image.fromarray(out, "RGBA")
 
 
+def backing(c, box, r=20):
+    """The clean look's panel: one dark rounded piece under a group of parts (they read as one
+    piece, nothing looks cut), a teal edge and a lit line along its top."""
+    x0, y0, x1, y1 = box
+    c.rrect(box, r, fill=(4, 13, 22, 236), layer="body")
+    c.rrect(box, r, outline=(40, 112, 140, 210), width=1.6)
+    c.line([(x0 + r + 2, y0 + 1.3), (x1 - r - 2, y0 + 1.3)], (96, 170, 196, 150), 1.0, layer="top")
+
+
+def groove(c, box, r=8, rim=8):
+    """A bar's groove in its own thick dark rim: a teal line outside, a dark line where the rim
+    meets the groove, the groove dark inside, a lit line along the rim's top."""
+    x0, y0, x1, y1 = box
+    c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, fill=(4, 14, 24, 250), layer="body")
+    c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, outline=(40, 112, 140, 255), width=2.0)
+    c.rrect((x0 - 1.5, y0 - 1.5, x1 + 1.5, y1 + 1.5), r + 1.5, outline=(0, 0, 0, 255), width=1.6, layer="body")
+    c.rrect(box, r, fill=(1, 6, 11, 255), layer="body")
+    c.line([(x0 + 16, y0 - rim + 1.2), (x1 - 16, y0 - rim + 1.2)], (96, 170, 196, 170), 1.0, layer="top")
+
+
+def ring(c, box, band=12):
+    """The portrait ring: a thick dark navy band between a teal line outside (lit across the top)
+    and a dark edge inside; black inside it (cut out by the caller)."""
+    x0, y0, x1, y1 = box
+    c.ellipse(box, fill=(5, 18, 30, 255), layer="body")
+    c.ellipse(box, outline=(58, 150, 182, 255), width=2.6)
+    c.draw("top").arc(c.s((x0 + 1, y0 + 1, x1 - 1, y1 - 1)), 196, 344, fill=(140, 214, 236, 220), width=round(1.6 * SS))
+    c.ellipse((x0 + band - 3, y0 + band - 3, x1 - band + 3, y1 - band + 3), outline=(22, 70, 92, 255), width=2.0, layer="top")
+    c.ellipse((x0 + band, y0 + band, x1 - band, y1 - band), fill=(0, 0, 0, 255), layer="top")
+
+
 def unit_frame():
     c = Canvas(UNIT["w"], UNIT["h"])
     # Backing panel behind the ring and the bars so they read as one continuous piece: it fills the
     # gap where the scene used to show between the round portrait and the bars (the "cut" look). The
     # portrait is cut out of its left end, so the circle still sits in front.
-    bx0, by0, bx1, by1 = 118, 18, 706, 206
-    c.rrect((bx0, by0, bx1, by1), 20, fill=(4, 13, 22, 236), layer="body")
-    c.rrect((bx0, by0, bx1, by1), 20, outline=(40, 112, 140, 210), width=1.6)
-    c.line([(bx0 + 22, by0 + 1.3), (bx1 - 22, by0 + 1.3)], (96, 170, 196, 150), 1.0, layer="top")
+    backing(c, (118, 18, 706, 206))
+    # each bar in its own thick dark rim (the user found the bars too close together)
     for key in ("health", "power"):
-        x0, y0, x1, y1 = UNIT[key]
-        r, rim = 8, 8
-        # each bar in its own thick dark rim (the user found the bars too close together): a teal
-        # line outside it, a dark line where it meets the groove, the groove dark inside
-        c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, fill=(4, 14, 24, 250), layer="body")
-        c.rrect((x0 - rim, y0 - rim, x1 + rim, y1 + rim), r + rim, outline=(40, 112, 140, 255), width=2.0)
-        c.rrect((x0 - 1.5, y0 - 1.5, x1 + 1.5, y1 + 1.5), r + 1.5, outline=(0, 0, 0, 255), width=1.6, layer="body")
-        c.rrect((x0, y0, x1, y1), r, fill=(1, 6, 11, 255), layer="body")
-        c.line([(x0 + 16, y0 - rim + 1.2), (x1 - 16, y0 - rim + 1.2)], (96, 170, 196, 170), 1.0, layer="top")
-    # the ring: a thick dark navy band between a teal line outside and a dark edge inside
-    x0, y0, x1, y1 = UNIT["ring"]
-    c.ellipse((x0, y0, x1, y1), fill=(5, 18, 30, 255), layer="body")
-    c.ellipse((x0, y0, x1, y1), outline=(58, 150, 182, 255), width=2.6)
-    c.draw("top").arc(c.s((x0 + 1, y0 + 1, x1 - 1, y1 - 1)), 196, 344, fill=(140, 214, 236, 220), width=round(1.6 * SS))
-    c.ellipse((x0 + 9, y0 + 9, x1 - 9, y1 - 9), outline=(22, 70, 92, 255), width=2.0, layer="top")
-    c.ellipse((x0 + 12, y0 + 12, x1 - 12, y1 - 12), fill=(0, 0, 0, 255), layer="top")
+        groove(c, UNIT[key])
+    ring(c, UNIT["ring"])
     c.cut(UNIT["portrait"], ellipse=True)
     # soft inner vignette so the 2D portrait fades into the ring instead of ending in a hard cut
     px0, py0, px1, py1 = UNIT["portrait"]
@@ -227,29 +236,18 @@ def arcane_ring(color=(170, 70, 255), seed=3):
 
 
 # ------------------------------------------------------------------ cast bar
-CASTBAR = {"w": 940, "h": 124, "icon": (14, 14, 110, 110), "tab": (122, 8, 520, 62),
-           "bar": (122, 64, 906, 106), "name": (140, 12, 510, 60)}
+# The unit frame's clean look: one backing panel holding the icon (square, in a thick rim like
+# the bars') and the groove; the spell name on the panel above the groove. No arrow tips.
+CASTBAR = {"w": 940, "h": 132, "panel": (6, 6, 934, 124), "icon": (22, 22, 110, 110),
+           "bar": (134, 68, 910, 108), "name": (140, 16, 620, 56)}
 
 
 def cast_bar():
     c = Canvas(CASTBAR["w"], CASTBAR["h"])
-    ix0, iy0, ix1, iy1 = CASTBAR["icon"]
-    c.rrect((ix0 - 4, iy0 - 4, ix1 + 4, iy1 + 4), 8, fill=PANEL + (235,), layer="body")
-    hairline_box(c, (ix0 - 4, iy0 - 4, ix1 + 4, iy1 + 4), 8, width=2.2)
-    tip(c, ix0 - 7, (iy0 + iy1) / 2, -1, 7)
-    tip(c, (ix0 + ix1) / 2, iy1 + 6, 2, 6)
-    # name tab: dark plate and a hairline along its top, both fading out to the right (no hard
-    # end); the groove below is drawn after the fade, so it stays whole
-    tx0, ty0, tx1, ty1 = CASTBAR["tab"]
-    bx0, by0, bx1, by1 = CASTBAR["bar"]
-    c.rrect((tx0, ty0, tx1 + 60, ty1 + 10), 14, fill=PANEL + (190,), layer="body")
-    c.line([(tx0 + 10, ty0), (tx1 + 50, ty0)], LINE_DIM + (255,), 1.4)
-    c.hfade((tx0 + (tx1 - tx0) * 0.55, ty0 - 4, tx1 + 62, by0))
-    # progress groove, pointed at the right end
-    c.rrect((bx0, by0, bx1, by1), (by1 - by0) / 2, fill=(1, 8, 14, 240), layer="body")
-    hairline_box(c, (bx0, by0, bx1, by1), (by1 - by0) / 2)
-    tip(c, bx1 + 1, (by0 + by1) / 2, 1, 8)
-    c.cut((ix0, iy0, ix1, iy1), 5)
+    backing(c, CASTBAR["panel"], 18)
+    groove(c, CASTBAR["icon"], r=4, rim=7)
+    groove(c, CASTBAR["bar"])
+    c.cut(CASTBAR["icon"], 4)
     return c.render()
 
 
@@ -296,44 +294,33 @@ def nine_slice(tex, w, h, corner):
 
 
 # ------------------------------------------------------------------ minimap
-MAP = {"w": 340, "h": 360, "hole": (26, 72, 314, 360 - 2), "plate": (10, 4, 270, 50), "button": (282, 4, 330, 52)}
+# The map in the portrait's ring (thick dark band, teal line lit across the top); the zone name on
+# a pill in the backing panel's look, the calendar in a small ring beside it. No arrow tips.
+MAP = {"w": 340, "h": 376, "hole": (26, 72, 314, 360 - 2), "plate": (10, 4, 270, 50), "button": (282, 4, 330, 52)}
 
 
 def minimap_ring():
     c = Canvas(MAP["w"], MAP["h"])
     x0, y0, x1, y1 = MAP["hole"]
-    c.ellipse((x0 - 4, y0 - 4, x1 + 4, y1 + 4), fill=EDGE + (255,), layer="body")
-    c.ellipse((x0 - 2.5, y0 - 2.5, x1 + 2.5, y1 + 2.5), outline=(150, 196, 214, 255), width=2.6)
+    band = 12
+    ring(c, (x0 - band, y0 - band, x1 + band, y1 + band), band)
     c.cut((x0, y0, x1, y1), ellipse=True)
-    # N marker: a small teal diamond on top of the ring
-    cx = (x0 + x1) / 2
-    c.poly([(cx, y0 - 14), (cx + 10, y0), (cx, y0 + 14), (cx - 10, y0)], (60, 170, 210, 255), layer="top")
-    c.poly([(cx, y0 - 14), (cx + 10, y0), (cx, y0 + 2)], (130, 214, 240, 255), layer="top")
-    # zone plate: dark band with hairlines top and bottom, an arrow tip at the left end
+    # N marker: a small teal diamond sitting on the ring's top edge
+    cx, ny = (x0 + x1) / 2, y0 - band
+    c.poly([(cx, ny - 9), (cx + 7, ny), (cx, ny + 9), (cx - 7, ny)], (60, 170, 210, 255), layer="top")
+    c.poly([(cx, ny - 9), (cx + 7, ny), (cx, ny + 1)], (150, 222, 244, 255), layer="top")
     px0, py0, px1, py1 = MAP["plate"]
-    c.rrect(MAP["plate"], 6, fill=PANEL + (200,), layer="body")
-    c.line([(px0 + 6, py0), (px1, py0)], LINE_DIM + (255,), 1.3)
-    c.line([(px0 + 6, py1), (px1 - 30, py1)], LINE + (255,), 1.3)
-    tip(c, px0 - 2, (py0 + py1) / 2, -1, 7)
-    c.line([(px0 + 4, (py0 + py1) / 2 - 10), (px0 - 2, (py0 + py1) / 2)], LINE + (255,), 1.3)
-    c.line([(px0 + 4, (py0 + py1) / 2 + 10), (px0 - 2, (py0 + py1) / 2)], LINE + (255,), 1.3)
-    # round button socket (calendar / day-night) at its right
-    bx0, by0, bx1, by1 = MAP["button"]
-    c.ellipse((bx0, by0, bx1, by1), fill=PANEL + (235,), layer="body")
-    c.ellipse((bx0, by0, bx1, by1), outline=LINE + (255,), width=1.8)
+    backing(c, MAP["plate"], (py1 - py0) / 2)
+    ring(c, MAP["button"], 5)
     return c.render()
 
 
 # ------------------------------------------------------------------ micro menu band
 def menu_band(w=620, h=92):
-    """Dark band with a hairline on top and bottom, arrow tips at the left end (stretched
-    horizontally in game: the middle is uniform)."""
+    """The backing panel's look as a band with a rounded left end (the game mirrors the left
+    end for the right one and stretches the middle, which is uniform)."""
     c = Canvas(w, h)
-    c.vgrad((20, 10, w, h - 10), 0, (6, 18, 28), PANEL, (215, 230))
-    c.line([(20, 10), (w, 10)], LINE + (255,), 1.6)
-    c.line([(20, h - 10), (w, h - 10)], LINE + (255,), 1.6)
-    c.line([(20, 10), (4, h / 2), (20, h - 10)], LINE + (255,), 1.6)
-    tip(c, 4, h / 2, -1, 6)
+    backing(c, (6, 10, w + 40, h - 10), 18)
     return c.render()
 
 

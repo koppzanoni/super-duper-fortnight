@@ -183,7 +183,7 @@ local function modernParts(bar)
   lagText:SetTextColor(0.55, 0.94, 0.6)
   lagText:SetPoint("TOPRIGHT", bar, "BOTTOMRIGHT", 0, -2)
   local time = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  time:SetTextColor(0.93, 0.78, 0.38)
+  time:SetTextColor(0.80, 0.88, 0.94)
   ns.CastBar.lag, ns.CastBar.queue, ns.CastBar.lagText, ns.CastBar.time = lag, queue, lagText, time
   hideZone()
   -- "elapsed / total" from the bar itself, quietly blank when the values are secret

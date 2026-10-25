@@ -25,11 +25,11 @@ Data.MODERN_UNIT = { w = 720, h = 250, ring = { x = 12, y = 12, w = 220, h = 220
   portrait = { x = 28, y = 28, w = 188, h = 188 }, name = { x = 250, y = 26, w = 454, h = 54 },
   health = { x = 186, y = 91, w = 508, h = 50 }, power = { x = 186, y = 157, w = 500, h = 38 },
   level = { x = 103, y = 212, w = 38, h = 38 } }
--- Cast bar: square icon socket, progress groove, name on the tab above it.
-Data.MODERN_CAST = { w = 940, h = 124, icon = { x = 14, y = 14, w = 96, h = 96 },
-  bar = { x = 122, y = 64, w = 784, h = 42 }, name = { x = 140, y = 12, w = 370, h = 48 } }
+-- Cast bar: one panel with the square icon socket, the progress groove and the name above it.
+Data.MODERN_CAST = { w = 940, h = 132, icon = { x = 22, y = 22, w = 88, h = 88 },
+  bar = { x = 134, y = 68, w = 776, h = 40 }, name = { x = 140, y = 16, w = 480, h = 40 } }
 -- Minimap: the ring's opening, the zone plate and the round button beside it.
-Data.MODERN_MAP = { w = 340, h = 360, hole = { x = 26, y = 72, w = 288, h = 286 },
+Data.MODERN_MAP = { w = 340, h = 376, hole = { x = 26, y = 72, w = 288, h = 286 },
   plate = { x = 10, y = 4, w = 260, h = 46 }, button = { x = 282, y = 4, w = 48, h = 48 } }
 Data.MODERN_MAP.map = Data.MODERN_MAP.hole
 -- Socket centers (clock, mail, tracking, calendar): the clock under the ring,

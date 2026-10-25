@@ -226,8 +226,8 @@ local function build()
   end
 end
 
--- Moderno: one row of buttons on a dark band at the bottom right (its left end and arrow tip at
--- their own size, the plain middle stretched), the money under it. Light grey icons.
+-- Moderno: one row of buttons on a dark band at the bottom right (its rounded ends at their own
+-- size, the plain middle stretched), the money under it. Light grey icons.
 local band = CreateFrame("Frame", "ObsidianUIModernMenu", UIParent)
 band:SetFrameStrata("LOW")
 band:Hide()
@@ -236,7 +236,7 @@ local bandLeft, bandMid = band:CreateTexture(nil, "BACKGROUND"), band:CreateText
 local bandRight = band:CreateTexture(nil, "BACKGROUND")
 MenuPanels.band, MenuPanels.bandFrame, MenuPanels.bandRight = bandMid, band, bandRight
 local money = band:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-local MENU_W, MENU_H, CAP = 620, 92, 40 -- mod_menu texture px; CAP: left end with the arrow tip
+local MENU_W, MENU_H, CAP = 620, 92, 40 -- mod_menu texture px; CAP: the rounded left end
 
 local function updateMoney()
   if not pcall(function() money:SetText(GetMoneyString(GetMoney(), true)) end) then money:SetText("") end
